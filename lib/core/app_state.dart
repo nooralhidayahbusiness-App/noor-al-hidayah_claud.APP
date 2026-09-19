@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'strings_prayer.dart';
+
 class AppState extends ChangeNotifier {
   bool _arabic = true;
 
@@ -15,7 +17,9 @@ class AppState extends ChangeNotifier {
 
   String tr(String key) {
     final table = _arabic ? _ar : _en;
-    return table[key] ?? key;
+    return table[key] ??
+        (_arabic ? prayerStringsAr : prayerStringsEn)[key] ??
+        key;
   }
 }
 
@@ -30,8 +34,25 @@ const Map<String, String> _ar = {
   'getStarted': 'ابدأ الآن',
   'haveAccount': 'لدي حساب بالفعل',
   'switchLanguage': 'English',
-  'comingSoon': 'هذه الصفحة قادمة في الخطوة التالية',
   'credit': 'By Abdel Rahmen Ben Romdhan',
+  'back': 'رجوع',
+  'createAccount': 'إنشاء حساب',
+  'createAccountSub': 'ابدأ رحلتك مع نور الهداية بحساب مجاني',
+  'login': 'تسجيل الدخول',
+  'loginSub': 'أهلًا بعودتك، أكمل رحلتك من حيث توقفت',
+  'email': 'البريد الإلكتروني',
+  'password': 'كلمة المرور',
+  'confirmPassword': 'تأكيد كلمة المرور',
+  'showPassword': 'إظهار كلمة المرور',
+  'hidePassword': 'إخفاء كلمة المرور',
+  'haveAccountQ': 'لديك حساب بالفعل؟',
+  'noAccountQ': 'ليس لديك حساب؟',
+  'errEmailEmpty': 'أدخل بريدك الإلكتروني',
+  'errEmailInvalid': 'البريد الإلكتروني غير صالح',
+  'errPasswordEmpty': 'أدخل كلمة المرور',
+  'errPasswordShort': 'كلمة المرور يجب ألا تقل عن 8 أحرف',
+  'errPasswordMismatch': 'كلمتا المرور غير متطابقتين',
+  'successDemo': 'البيانات صحيحة. ربط الحساب بالخادم قادم في الخطوة التالية.',
 };
 
 const Map<String, String> _en = {
@@ -43,6 +64,23 @@ const Map<String, String> _en = {
   'getStarted': 'Get Started',
   'haveAccount': 'I already have an account',
   'switchLanguage': 'العربية',
-  'comingSoon': 'This page arrives in the next step',
   'credit': 'By Abdel Rahmen Ben Romdhan',
+  'back': 'Back',
+  'createAccount': 'Create Account',
+  'createAccountSub': 'Start your journey with Noor Al-Hidayah with a free account',
+  'login': 'Sign In',
+  'loginSub': 'Welcome back, continue where you left off',
+  'email': 'Email',
+  'password': 'Password',
+  'confirmPassword': 'Confirm password',
+  'showPassword': 'Show password',
+  'hidePassword': 'Hide password',
+  'haveAccountQ': 'Already have an account?',
+  'noAccountQ': 'Don’t have an account?',
+  'errEmailEmpty': 'Enter your email',
+  'errEmailInvalid': 'This email is not valid',
+  'errPasswordEmpty': 'Enter your password',
+  'errPasswordShort': 'Password must be at least 8 characters',
+  'errPasswordMismatch': 'Passwords do not match',
+  'successDemo': 'Details look good. Connecting accounts to the server comes in the next step.',
 };

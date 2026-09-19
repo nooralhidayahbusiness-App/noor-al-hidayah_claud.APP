@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
+import 'register_screen.dart';
+import 'login_screen.dart';
+import '../core/navigation.dart';
 import '../core/fonts.dart';
 import '../core/theme.dart';
 import '../widgets/app_branding.dart';
@@ -47,21 +50,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     super.dispose();
   }
 
-  void _comingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.green,
-          content: Text(
-            appState.tr('comingSoon'),
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.cream),
-          ),
-        ),
-      );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +159,7 @@ const Spacer(flex: 3),
                                 child: Column(
                                   children: [
                                     FilledButton(
-                                      onPressed: () => _comingSoon(context),
+                                      onPressed: () => Navigator.of(context).push(fadeRoute(const RegisterScreen())),
                                       style: FilledButton.styleFrom(
                                         backgroundColor: AppColors.gold,
                                         foregroundColor: AppColors.deepGreen,
@@ -191,7 +179,7 @@ const Spacer(flex: 3),
                                     ),
                                     const SizedBox(height: 12),
                                     OutlinedButton(
-                                      onPressed: () => _comingSoon(context),
+                                      onPressed: () => Navigator.of(context).push(fadeRoute(const LoginScreen())),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: AppColors.softGold,
                                         minimumSize: const Size.fromHeight(52),
