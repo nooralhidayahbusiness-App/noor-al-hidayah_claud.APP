@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../core/app_state.dart';
 import '../core/fonts.dart';
@@ -14,6 +13,7 @@ import '../services/storage_service.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/number_text.dart';
 import 'location_screen.dart';
 
 enum _Status { loading, ready, error }
@@ -310,6 +310,7 @@ class _NextPrayerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             appState.tr('nextPrayer'),
@@ -318,41 +319,84 @@ class _NextPrayerCard extends StatelessWidget {
               color: AppColors.cream.withValues(alpha: 0.7),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            name,
-            style: brandStyle(
-              name,
-              fontSize: 40,
-              color: AppColors.softGold,
-              shadows: [
-                Shadow(
-                  color: AppColors.gold.withValues(alpha: 0.5),
-                  blurRadius: 16,
-                ),
-              ],
-            ),
-          ),
-          Text(
-            time,
-            style: const TextStyle(fontSize: 20, color: AppColors.cream),
-          ),
           const SizedBox(height: 14),
-          Text(
-            remaining,
-            style: GoogleFonts.robotoMono(
-              fontSize: 36,
-              fontWeight: FontWeight.w600,
-              color: AppColors.gold,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            appState.tr('remaining'),
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.cream.withValues(alpha: 0.6),
-            ),
+          Row(
+            children: [
+              Expanded(
+                flex: 4,
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Image.asset(
+                      'assets/images/clock.png',
+                      width: 112,
+                      height: 112,
+                      color: AppColors.gold,
+                      colorBlendMode: BlendMode.srcIn,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(
+                        Icons.access_time_rounded,
+                        size: 90,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 5,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        name,
+                        style: brandStyle(
+                          name,
+                          fontSize: 46,
+                          color: AppColors.softGold,
+                          shadows: [
+                            Shadow(
+                              color: AppColors.gold.withValues(alpha: 0.5),
+                              blurRadius: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      TimeText(time, fontSize: 24, color: AppColors.cream),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 4,
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CountdownText(
+                          remaining,
+                          fontSize: 40,
+                          color: AppColors.gold,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          appState.tr('remaining'),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.cream.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -409,13 +453,10 @@ class _PrayerRow extends StatelessWidget {
               ),
             ),
           ),
-          Text(
+          TimeText(
             time,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: highlighted ? AppColors.gold : AppColors.cream,
-            ),
+            fontSize: 19,
+            color: highlighted ? AppColors.gold : AppColors.cream,
           ),
         ],
       ),
