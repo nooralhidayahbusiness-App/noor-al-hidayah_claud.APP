@@ -7,7 +7,8 @@ import '../models/saved_location.dart';
 import '../services/location_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/auth_widgets.dart';
-import 'prayer_times_screen.dart';
+import '../core/prayer_state.dart';
+import 'home_shell.dart';
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
@@ -36,8 +37,9 @@ class _LocationScreenState extends State<LocationScreen> {
       };
 
   void _openTimes() {
+    prayerState.reset();
     Navigator.of(context).pushAndRemoveUntil(
-      fadeRoute(const PrayerTimesScreen()),
+      fadeRoute(const HomeShell()),
       (route) => false,
     );
   }
