@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/app_flow.dart';
+import '../../core/navigation.dart';
+import '../prayer_times_page.dart';
 import '../../core/app_state.dart';
 import '../../core/fonts.dart';
 import '../../core/prayer_state.dart';
@@ -70,7 +72,8 @@ class HomeTab extends StatelessWidget {
               children: [
                 _QuickTile(
                   label: appState.tr('tabPrayer'),
-                  onTap: () => onOpenTab(1),
+                  onTap: () => Navigator.of(context)
+                      .push(fadeRoute(const PrayerTimesPage())),
                   symbol: const SymbolImage(
                     'assets/images/Calling.png',
                     fallback: Icons.schedule_rounded,
@@ -78,7 +81,7 @@ class HomeTab extends StatelessWidget {
                 ),
                 _QuickTile(
                   label: appState.tr('tabQuran'),
-                  onTap: () => onOpenTab(2),
+                  onTap: () => onOpenTab(1),
                   symbol: const SymbolImage(
                     'assets/images/Quran.png',
                     fallback: Icons.menu_book_rounded,
@@ -86,10 +89,11 @@ class HomeTab extends StatelessWidget {
                 ),
                 _QuickTile(
                   label: appState.tr('tabAdhkar'),
-                  onTap: () => onOpenTab(3),
+                  onTap: () => onOpenTab(2),
                   symbol: const SymbolImage(
                     'assets/images/pattern.png',
                     fallback: Icons.auto_stories_rounded,
+                    tint: true,
                   ),
                 ),
                 _QuickTile(
@@ -111,10 +115,9 @@ class HomeTab extends StatelessWidget {
                 _QuickTile(
                   label: appState.tr('duas'),
                   onTap: soon,
-                  symbol: const Icon(
-                    Icons.volunteer_activism_rounded,
-                    color: AppColors.gold,
-                    size: 30,
+                  symbol: const SymbolImage(
+                    'assets/images/prayer.png',
+                    fallback: Icons.volunteer_activism_rounded,
                   ),
                 ),
               ],

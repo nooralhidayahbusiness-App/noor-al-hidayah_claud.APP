@@ -45,6 +45,16 @@ const Map<String, String> prayerStringsAr = {
   'chooseAvatar': 'اختر صورة ملفك الشخصي',
   'avatarMan': 'رجل',
   'avatarWoman': 'امرأة',
+  'tabCommunity': 'المجتمع',
+  'communitySoon': 'مجتمع نور الهداية قادم قريبًا، نتشارك فيه الفائدة والدعاء.',
+  'myChannel': 'قناتي',
+  'channelSub': 'قناة يوتيوب',
+  'subscribe': 'اشترك في القناة',
+  'openChannel': 'فتح القناة على يوتيوب',
+  'latestVideos': 'فيديوهات القناة',
+  'videosSoon': 'ستظهر فيديوهات القناة هنا قريبًا.',
+  'channelNotSet': 'لم يتم ربط رابط القناة بعد.',
+  'linkFailed': 'تعذّر فتح الرابط.',
 };
 
 const Map<String, String> prayerStringsEn = {
@@ -96,4 +106,14 @@ const Map<String, String> prayerStringsEn = {
   'chooseAvatar': 'Choose your profile picture',
   'avatarMan': 'Man',
   'avatarWoman': 'Woman',
+  'tabCommunity': 'Community',
+  'communitySoon': 'The Noor Al-Hidayah community is coming soon, to share benefits and duas together.',
+  'myChannel': 'My Channel',
+  'channelSub': 'YouTube channel',
+  'subscribe': 'Subscribe to the channel',
+  'openChannel': 'Open the channel on YouTube',
+  'latestVideos': 'Channel videos',
+  'videosSoon': 'The channel videos will appear here soon.',
+  'channelNotSet': 'The channel link has not been set yet.',
+  'linkFailed': 'Could not open the link.',
 };

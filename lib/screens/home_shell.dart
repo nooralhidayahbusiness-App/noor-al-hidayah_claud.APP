@@ -7,9 +7,9 @@ import '../core/profile_state.dart';
 import '../core/theme.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/auth_widgets.dart';
+import 'tabs/community_tab.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/more_tab.dart';
-import 'tabs/prayer_times_tab.dart';
 import 'tabs/soon_tabs.dart';
 
 /// Main app frame: top bar, five tabs and the bottom navigation bar.
@@ -63,9 +63,9 @@ class _HomeShellState extends State<HomeShell> {
                       index: _index,
                       children: [
                         HomeTab(onOpenTab: _select),
-                        const PrayerTimesTab(),
                         const QuranTab(),
                         const AdhkarTab(),
+                        const CommunityTab(),
                         const MoreTab(),
                       ],
                     ),
@@ -130,11 +130,6 @@ class _BottomBar extends StatelessWidget {
               label: appState.tr('tabHome'),
             ),
             NavigationDestination(
-              icon: const Icon(Icons.schedule_outlined),
-              selectedIcon: const Icon(Icons.schedule_rounded),
-              label: appState.tr('tabPrayer'),
-            ),
-            NavigationDestination(
               icon: const Icon(Icons.menu_book_outlined),
               selectedIcon: const Icon(Icons.menu_book_rounded),
               label: appState.tr('tabQuran'),
@@ -143,6 +138,11 @@ class _BottomBar extends StatelessWidget {
               icon: const Icon(Icons.auto_stories_outlined),
               selectedIcon: const Icon(Icons.auto_stories_rounded),
               label: appState.tr('tabAdhkar'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.groups_outlined),
+              selectedIcon: const Icon(Icons.groups_rounded),
+              label: appState.tr('tabCommunity'),
             ),
             NavigationDestination(
               icon: const Icon(Icons.grid_view_outlined),
