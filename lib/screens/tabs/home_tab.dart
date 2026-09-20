@@ -3,17 +3,18 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/app_flow.dart';
-import '../../core/navigation.dart';
-import '../prayer_times_page.dart';
 import '../../core/app_state.dart';
 import '../../core/fonts.dart';
+import '../../core/navigation.dart';
 import '../../core/prayer_state.dart';
 import '../../core/profile_state.dart';
 import '../../core/theme.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/avatar_picker.dart';
+import '../../widgets/daily_cards.dart';
 import '../../widgets/ornament_medallion.dart';
 import '../../widgets/prayer_widgets.dart';
+import '../prayer_times_page.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
@@ -97,6 +98,24 @@ class HomeTab extends StatelessWidget {
                   ),
                 ),
                 _QuickTile(
+                  label: appState.tr('duas'),
+                  onTap: soon,
+                  symbol: const SymbolImage(
+                    'assets/images/dua-hands.png',
+                    fallback: Icons.volunteer_activism_rounded,
+                    tint: true,
+                  ),
+                ),
+                _QuickTile(
+                  label: appState.tr('hadiths'),
+                  onTap: soon,
+                  symbol: const SymbolImage(
+                    'assets/images/muhammad.png',
+                    fallback: Icons.format_quote_rounded,
+                    tint: true,
+                  ),
+                ),
+                _QuickTile(
                   label: appState.tr('qibla'),
                   onTap: soon,
                   symbol: const SymbolImage(
@@ -113,15 +132,52 @@ class HomeTab extends StatelessWidget {
                   ),
                 ),
                 _QuickTile(
-                  label: appState.tr('duas'),
+                  label: appState.tr('nearbyMosques'),
                   onTap: soon,
                   symbol: const SymbolImage(
-                    'assets/images/prayer.png',
-                    fallback: Icons.volunteer_activism_rounded,
+                    'assets/images/mosque.png',
+                    fallback: Icons.mosque_rounded,
+                    tint: true,
+                  ),
+                ),
+                _QuickTile(
+                  label: appState.tr('khatmPlan'),
+                  onTap: soon,
+                  symbol: const SymbolImage(
+                    'assets/images/Read.png',
+                    fallback: Icons.auto_stories_rounded,
+                  ),
+                ),
+                _QuickTile(
+                  label: appState.tr('zakat'),
+                  onTap: soon,
+                  symbol: const SymbolImage(
+                    'assets/images/heart.png',
+                    fallback: Icons.favorite_rounded,
+                  ),
+                ),
+                _QuickTile(
+                  label: appState.tr('haram'),
+                  onTap: soon,
+                  symbol: const SymbolImage(
+                    'assets/images/haram.png',
+                    fallback: Icons.block_rounded,
+                    tint: true,
+                  ),
+                ),
+                _QuickTile(
+                  label: appState.tr('makruh'),
+                  onTap: soon,
+                  symbol: const SymbolImage(
+                    'assets/images/stop.png',
+                    fallback: Icons.warning_amber_rounded,
+                    tint: true,
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            const DailyContentSection(),
           ],
         );
       },

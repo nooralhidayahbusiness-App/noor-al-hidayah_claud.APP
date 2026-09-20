@@ -13,7 +13,7 @@ class DevSkipFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!kDebugMode) return link;
+    if (!(kDebugMode || const bool.fromEnvironment('SHOW_SKIP'))) return link;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
