@@ -49,7 +49,7 @@ class PrayerTimesData {
       hijriAr =
           '${weekday['ar']}، ${hijri['day']} ${month['ar']} ${hijri['year']} هـ';
       hijriEn =
-          '${weekday['en']}, ${hijri['day']} ${month['en']} ${hijri['year']} AH';
+          '${_englishWeekday(date)}, ${hijri['day']} ${month['en']} ${hijri['year']} AH';
     } catch (_) {}
 
     return PrayerTimesData(
@@ -63,4 +63,27 @@ class PrayerTimesData {
       hijriEn: hijriEn,
     );
   }
+}
+
+
+/// English weekday name (Sunday, Monday ...). The API's own English weekday
+/// for the hijri date is a transliteration ("Al Ahad"), so we use the
+/// gregorian one, and fall back to the device date.
+String _englishWeekday(Map<String, dynamic> date) {
+  const names = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  try {
+    final gregorian = date['gregorian'] as Map<String, dynamic>;
+    final weekday = gregorian['weekday'] as Map<String, dynamic>;
+    final english = weekday['en'] as String?;
+    if (english != null && english.isNotEmpty) return english;
+  } catch (_) {}
+  return names[DateTime.now().weekday - 1];
 }
