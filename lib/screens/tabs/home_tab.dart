@@ -1,11 +1,16 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/app_flow.dart';
 import '../../core/app_state.dart';
 import '../../core/fonts.dart';
 import '../../core/prayer_state.dart';
+import '../../core/profile_state.dart';
 import '../../core/theme.dart';
 import '../../widgets/auth_widgets.dart';
+import '../../widgets/avatar_picker.dart';
+import '../../widgets/ornament_medallion.dart';
 import '../../widgets/prayer_widgets.dart';
 
 class HomeTab extends StatelessWidget {
@@ -56,45 +61,101 @@ class HomeTab extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             GridView.extent(
-              maxCrossAxisExtent: 120,
+              maxCrossAxisExtent: 130,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
+              childAspectRatio: 0.72,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 _QuickTile(
-                  icon: Icons.schedule_rounded,
                   label: appState.tr('tabPrayer'),
                   onTap: () => onOpenTab(1),
+                  symbol: const SymbolImage(
+                    'assets/images/Calling.png',
+                    fallback: Icons.schedule_rounded,
+                  ),
                 ),
                 _QuickTile(
-                  icon: Icons.menu_book_rounded,
                   label: appState.tr('tabQuran'),
                   onTap: () => onOpenTab(2),
+                  symbol: const SymbolImage(
+                    'assets/images/Quran.png',
+                    fallback: Icons.menu_book_rounded,
+                  ),
                 ),
                 _QuickTile(
-                  icon: Icons.auto_stories_rounded,
                   label: appState.tr('tabAdhkar'),
                   onTap: () => onOpenTab(3),
+                  symbol: const SymbolImage(
+                    'assets/images/pattern.png',
+                    fallback: Icons.auto_stories_rounded,
+                  ),
                 ),
                 _QuickTile(
-                  icon: Icons.explore_rounded,
                   label: appState.tr('qibla'),
                   onTap: soon,
+                  symbol: const SymbolImage(
+                    'assets/images/Kaaba.png',
+                    fallback: Icons.explore_rounded,
+                  ),
                 ),
                 _QuickTile(
-                  icon: Icons.touch_app_rounded,
                   label: appState.tr('tasbeeh'),
                   onTap: soon,
+                  symbol: const SymbolImage(
+                    'assets/images/tasbih.png',
+                    fallback: Icons.touch_app_rounded,
+                  ),
                 ),
                 _QuickTile(
-                  icon: Icons.volunteer_activism_rounded,
                   label: appState.tr('duas'),
                   onTap: soon,
+                  symbol: const Icon(
+                    Icons.volunteer_activism_rounded,
+                    color: AppColors.gold,
+                    size: 30,
+                  ),
                 ),
               ],
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  const _Avatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: profileState,
+      builder: (context, _) {
+        final path = switch (profileState.avatar) {
+          'man' => 'assets/images/arabian.png',
+          'woman' => 'assets/images/hijab.png',
+          _ => null,
+        };
+        const placeholder = Icon(
+          Icons.person_rounded,
+          color: AppColors.gold,
+          size: 40,
+        );
+        return GestureDetector(
+          onTap: () => showAvatarPicker(context),
+          child: OrnamentMedallion(
+            size: 104,
+            child: path == null
+                ? placeholder
+                : Image.asset(
+                    path,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => placeholder,
+                  ),
+          ),
         );
       },
     );
@@ -112,6 +173,8 @@ class _Greeting extends StatelessWidget {
     final greeting = appState.tr('greeting');
     return Column(
       children: [
+        const _Avatar(),
+        const SizedBox(height: 12),
         Text(
           greeting,
           textAlign: TextAlign.center,
@@ -175,47 +238,37 @@ class _Greeting extends StatelessWidget {
 
 class _QuickTile extends StatelessWidget {
   const _QuickTile({
-    required this.icon,
     required this.label,
     required this.onTap,
+    required this.symbol,
   });
 
-  final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Widget symbol;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: AppColors.deepGreen.withValues(alpha: 0.6),
-            border: Border.all(color: AppColors.gold.withValues(alpha: 0.28)),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.gold.withValues(alpha: 0.12),
-                  border: Border.all(
-                    color: AppColors.gold.withValues(alpha: 0.4),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = math.min(constraints.maxWidth - 8, 112.0);
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: onTap,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OrnamentMedallion(
+                  size: size,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: symbol,
                   ),
                 ),
-                child: Icon(icon, color: AppColors.gold, size: 26),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Text(
+                const SizedBox(height: 8),
+                Text(
                   label,
                   textAlign: TextAlign.center,
                   maxLines: 2,
@@ -226,11 +279,11 @@ class _QuickTile extends StatelessWidget {
                     color: AppColors.cream,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_flow.dart';
 import '../core/app_state.dart';
 import '../core/prayer_state.dart';
+import '../core/profile_state.dart';
 import '../core/theme.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/auth_widgets.dart';
@@ -26,6 +27,7 @@ class _HomeShellState extends State<HomeShell> {
   void initState() {
     super.initState();
     prayerState.start();
+    profileState.load();
   }
 
   void _select(int index) => setState(() => _index = index);

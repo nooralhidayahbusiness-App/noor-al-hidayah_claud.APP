@@ -42,6 +42,9 @@ const Map<String, String> prayerStringsAr = {
   'adhkarSoon': 'أذكار الصباح والمساء وما بعد الصلاة.',
   'language': 'اللغة',
   'account': 'الحساب',
+  'chooseAvatar': 'اختر صورة ملفك الشخصي',
+  'avatarMan': 'رجل',
+  'avatarWoman': 'امرأة',
 };
 
 const Map<String, String> prayerStringsEn = {
@@ -90,4 +93,7 @@ const Map<String, String> prayerStringsEn = {
   'adhkarSoon': 'Morning, evening and after-prayer adhkar.',
   'language': 'Language',
   'account': 'Account',
+  'chooseAvatar': 'Choose your profile picture',
+  'avatarMan': 'Man',
+  'avatarWoman': 'Woman',
 };
