@@ -3,35 +3,34 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import 'glow_sparks.dart';
 
 Offset _polar(Offset c, double r, double angle) {
   return Offset(c.dx + r * math.cos(angle), c.dy + r * math.sin(angle));
 }
 
-/// Round medallion with a gold Islamic geometric ornament around [child].
+/// Round medallion with a gold Islamic geometric ornament around [child],
+/// with a golden glow and rising sparks behind it.
 class OrnamentMedallion extends StatelessWidget {
-  const OrnamentMedallion({super.key, required this.size, required this.child});
+  const OrnamentMedallion({
+    super.key,
+    required this.size,
+    required this.child,
+    this.glow = true,
+  });
 
   final double size;
   final Widget child;
+  final bool glow;
 
   static const double _innerRatio = 0.55;
 
   @override
   Widget build(BuildContext context) {
     final inner = size * _innerRatio * 0.94;
-    return Container(
+    final medallion = SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.gold.withValues(alpha: 0.25),
-            blurRadius: 16,
-          ),
-        ],
-      ),
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -48,6 +47,8 @@ class OrnamentMedallion extends StatelessWidget {
         ],
       ),
     );
+    if (!glow) return medallion;
+    return GlowSparks(spread: size * 0.3, sparks: 6, child: medallion);
   }
 }
 

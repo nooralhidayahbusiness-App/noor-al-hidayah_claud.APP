@@ -7,7 +7,7 @@ import '../../core/theme.dart';
 import '../../services/link_service.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/glass_card.dart';
-import '../../widgets/ornament_medallion.dart';
+import '../../widgets/glow_sparks.dart';
 
 /// "قناتي": channel card with a subscribe button and the list of videos.
 class ChannelView extends StatelessWidget {
@@ -36,16 +36,7 @@ class ChannelView extends StatelessWidget {
             GlassCard(
               child: Column(
                 children: [
-                  const OrnamentMedallion(
-                    size: 96,
-                    child: Padding(
-                      padding: EdgeInsets.all(2),
-                      child: SymbolImage(
-                        'assets/images/logo.png',
-                        fallback: Icons.play_circle_fill_rounded,
-                      ),
-                    ),
-                  ),
+                  const _ChannelLogo(),
                   const SizedBox(height: 12),
                   Text(
                     name,
@@ -212,6 +203,46 @@ class _VideoCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Channel logo: plain circle with a glowing gold edge and rising sparks.
+class _ChannelLogo extends StatelessWidget {
+  const _ChannelLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return GlowSparks(
+      spread: 40,
+      sparks: 14,
+      intensity: 1.25,
+      child: Container(
+        width: 132,
+        height: 132,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.gold, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.45),
+              blurRadius: 28,
+            ),
+          ],
+        ),
+        child: ClipOval(
+          child: Image.asset(
+            'assets/images/logo.png',
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => const Icon(
+              Icons.play_circle_fill_rounded,
+              size: 64,
+              color: AppColors.gold,
+            ),
           ),
         ),
       ),

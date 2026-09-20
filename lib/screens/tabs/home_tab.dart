@@ -152,8 +152,9 @@ class HomeTab extends StatelessWidget {
                   label: appState.tr('zakat'),
                   onTap: soon,
                   symbol: const SymbolImage(
-                    'assets/images/heart.png',
+                    'assets/images/zakat.png',
                     fallback: Icons.favorite_rounded,
+                    tint: true,
                   ),
                 ),
                 _QuickTile(
