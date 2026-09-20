@@ -112,7 +112,7 @@ class ChannelView extends StatelessWidget {
                 ),
               )
             else
-              for (final video in kChannelVideos)
+              for (final video in kChannelVideos.reversed)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 14),
                   child: _VideoCard(

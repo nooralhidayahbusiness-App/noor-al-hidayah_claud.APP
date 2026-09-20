@@ -5,6 +5,7 @@ import '../core/app_state.dart';
 import '../core/navigation.dart';
 import '../core/validators.dart';
 import '../widgets/auth_widgets.dart';
+import '../widgets/dev_skip.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -46,12 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
         return AuthScaffold(
           title: appState.tr('login'),
           subtitle: appState.tr('loginSub'),
-          footer: AuthSwitchLink(
+          footer: DevSkipFooter(link: AuthSwitchLink(
             question: appState.tr('noAccountQ'),
             action: appState.tr('createAccount'),
             onTap: () => Navigator.of(context)
                 .pushReplacement(fadeRoute(const RegisterScreen())),
-          ),
+          )),
           child: Form(
             key: _formKey,
             child: Column(
