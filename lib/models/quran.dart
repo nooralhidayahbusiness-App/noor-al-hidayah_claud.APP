@@ -66,12 +66,39 @@ class QuranSurah {
   }
 }
 
+/// One verse and the surah it belongs to (used by the mushaf pages).
+class PageEntry {
+  const PageEntry(this.surah, this.ayah);
+
+  final QuranSurah surah;
+  final QuranAyah ayah;
+}
+
 class QuranData {
-  const QuranData(this.surahs);
+  QuranData(this.surahs) {
+    var maxPage = 0;
+    for (final s in surahs) {
+      for (final a in s.ayahs) {
+        if (a.page > maxPage) maxPage = a.page;
+      }
+    }
+    final grouped = [for (var i = 0; i < maxPage; i++) <PageEntry>[]];
+    for (final s in surahs) {
+      for (final a in s.ayahs) {
+        if (a.page >= 1) grouped[a.page - 1].add(PageEntry(s, a));
+      }
+    }
+    pages = grouped;
+  }
 
   final List<QuranSurah> surahs;
 
+  /// The mushaf pages: pages[0] is page 1.
+  late final List<List<PageEntry>> pages;
+
   QuranSurah surah(int number) => surahs[number - 1];
+
+  int firstPageOf(QuranSurah surah) => surah.ayahs.first.page;
 
   /// The basmalah, taken from the first verse of Al-Fatiha.
   String basmalah({required bool simple}) {

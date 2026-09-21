@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../core/app_state.dart';
+import '../core/divine_names.dart';
 import '../core/quran_prefs.dart';
 import '../core/theme.dart';
 import '../models/quran.dart';
@@ -102,8 +103,8 @@ class AyahCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        arabic,
+                      Text.rich(
+                        TextSpan(children: quranSpans(arabic, arabicStyle)),
                         textAlign: TextAlign.center,
                         textDirection: TextDirection.rtl,
                         style: arabicStyle,

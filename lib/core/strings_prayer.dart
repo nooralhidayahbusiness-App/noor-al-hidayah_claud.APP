@@ -86,6 +86,16 @@ const Map<String, String> prayerStringsAr = {
   'fontUthmani': 'خط عثماني',
   'translationBtn': 'الترجمة',
   'quranLoadError': 'تعذّر تحميل المصحف. تأكد من تشغيل سكربت البيانات.',
+  'modeLines': 'أسطر',
+  'modePage': 'صفحة كاملة',
+  'tafsirBtn': 'التفسير',
+  'enlargeBtn': 'تكبير',
+  'apologyTitle': 'اعتذار',
+  'apologyMsg': 'الخيار "{option}" لا ينطبق في وضع الصفحة الكاملة',
+  'apologyOk': 'حسنًا',
+  'zoomHint': 'كبّر الصفحة بإصبعين، وحرّكها بإصبع واحد، واضغط مرتين للرجوع.',
+  'tafsirSoon': 'التفسير قادم في الخطوة التالية إن شاء الله',
+  'apologyTry': 'جرّب وضع الأسطر، وإن شاء الله سيعمل معك بلا مشاكل',
 };
 
 const Map<String, String> prayerStringsEn = {
@@ -178,4 +188,14 @@ const Map<String, String> prayerStringsEn = {
   'fontUthmani': 'Uthmani font',
   'translationBtn': 'Translation',
   'quranLoadError': 'Could not load the Quran. Make sure the data script was run.',
+  'modeLines': 'Lines',
+  'modePage': 'Full page',
+  'tafsirBtn': 'Tafsir',
+  'enlargeBtn': 'Enlarge',
+  'apologyTitle': 'Sorry',
+  'apologyMsg': 'The option "{option}" does not apply in full-page mode',
+  'apologyOk': 'OK',
+  'zoomHint': 'Pinch with two fingers to zoom, drag to move, and double-tap to reset.',
+  'tafsirSoon': 'Tafsir is coming in the next step, God willing',
+  'apologyTry': 'Try the Lines mode, and it will work for you without any problem, God willing',
 };
