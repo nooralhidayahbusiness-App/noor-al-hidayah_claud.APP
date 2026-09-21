@@ -72,6 +72,10 @@ const Map<String, String> prayerStringsAr = {
   'copy': 'نسخ',
   'copied': 'تم النسخ',
   'dailyMissing': 'المحتوى اليومي غير متوفر بعد.',
+  'teacherTitle': 'المعلم',
+  'teacherDesc': 'تعلّم تلاوة القرآن الكريم: استمع إلى القارئ، ثم اقرأ بصوتك، ويرشدك المعلم بالذكاء الاصطناعي إلى مواضع المراجعة خطوة بخطوة.',
+  'teacherCta': 'ابدأ التعلم',
+  'teacherSoon': 'معلم القرآن بالذكاء الاصطناعي قادم قريبًا إن شاء الله',
 };
 
 const Map<String, String> prayerStringsEn = {
@@ -150,4 +154,8 @@ const Map<String, String> prayerStringsEn = {
   'copy': 'Copy',
   'copied': 'Copied',
   'dailyMissing': 'Daily content is not available yet.',
+  'teacherTitle': 'Quran Teacher',
+  'teacherDesc': 'Learn to recite the Holy Quran: listen to a reciter, recite in your own voice, and the AI teacher guides you to what needs review, step by step.',
+  'teacherCta': 'Start learning',
+  'teacherSoon': 'The AI Quran Teacher is coming soon, God willing',
 };

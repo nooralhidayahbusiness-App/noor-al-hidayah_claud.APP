@@ -10,6 +10,7 @@ import '../../core/prayer_state.dart';
 import '../../core/profile_state.dart';
 import '../../core/theme.dart';
 import '../../widgets/auth_widgets.dart';
+import '../../widgets/ai_teacher_card.dart';
 import '../../widgets/avatar_picker.dart';
 import '../../widgets/daily_cards.dart';
 import '../../widgets/ornament_medallion.dart';
@@ -53,6 +54,11 @@ class HomeTab extends StatelessWidget {
                   child: CircularProgressIndicator(color: AppColors.gold),
                 ),
               ),
+            const SizedBox(height: 18),
+            AiTeacherCard(
+              onTap: () =>
+                  showAuthMessage(context, appState.tr('teacherSoon')),
+            ),
             const SizedBox(height: 24),
             Text(
               appState.tr('quickAccess'),
