@@ -9,6 +9,7 @@ import '../core/divine_names.dart';
 import '../core/quran_prefs.dart';
 import '../core/theme.dart';
 import '../models/quran.dart';
+import '../services/share_service.dart';
 import '../services/tafsir_service.dart';
 import 'auth_widgets.dart';
 import 'glow_sparks.dart';
@@ -108,6 +109,19 @@ class AyahCard extends StatelessWidget {
                         children: [
                           StarBadge(number: ayah.number, size: 38),
                           const Spacer(),
+                          IconButton(
+                            tooltip: appState.tr('saveImage'),
+                            onPressed: () => shareAyahImage(
+                              context,
+                              surah: surah,
+                              ayah: ayah,
+                            ),
+                            icon: Icon(
+                              Icons.image_outlined,
+                              size: 21,
+                              color: AppColors.gold.withValues(alpha: 0.8),
+                            ),
+                          ),
                           IconButton(
                             tooltip: appState.tr('copy'),
                             onPressed: () => _copy(

@@ -99,6 +99,15 @@ const Map<String, String> prayerStringsAr = {
   'tafsirTitle': 'التفسير',
   'tafsirShared': 'ورد تفسير هذه الآية مع الآيات المجاورة.',
   'tafsirError': 'تعذّر تحميل التفسير. تأكد من تشغيل سكربت البيانات.',
+  'saveImage': 'حفظ كصورة',
+  'preparingImage': 'جاري تجهيز الصورة...',
+  'imageError': 'تعذّر تجهيز الصورة، حاول مرة أخرى.',
+  'imageUnsupported': 'المشاركة غير مدعومة في هذا المتصفح. جرّبها من هاتفك.',
+  'savePosition': 'حفظ المكان',
+  'spotSaved': 'تم حفظ مكان القراءة',
+  'continueReading': 'متابعة القراءة',
+  'savedSpot': 'علامتي المحفوظة',
+  'pageLabel': 'صفحة',
 };
 
 const Map<String, String> prayerStringsEn = {
@@ -204,4 +213,13 @@ const Map<String, String> prayerStringsEn = {
   'tafsirTitle': 'Tafsir',
   'tafsirShared': 'This verse is explained together with the neighbouring verses.',
   'tafsirError': 'Could not load the tafsir. Make sure the data script was run.',
+  'saveImage': 'Save as image',
+  'preparingImage': 'Preparing the image...',
+  'imageError': 'Could not prepare the image, please try again.',
+  'imageUnsupported': 'Sharing is not supported in this browser. Try it on your phone.',
+  'savePosition': 'Save spot',
+  'spotSaved': 'Reading spot saved',
+  'continueReading': 'Continue reading',
+  'savedSpot': 'My saved spot',
+  'pageLabel': 'Page',
 };

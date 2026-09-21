@@ -1,31 +1,42 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../core/app_state.dart';
 import '../core/arabic_text.dart';
 import '../core/divine_names.dart';
 import '../core/quran_prefs.dart';
+import '../core/reading_state.dart';
 import '../core/theme.dart';
 import '../models/quran.dart';
 import '../widgets/apology_dialog.dart';
 import '../widgets/app_branding.dart';
+import '../widgets/auth_widgets.dart';
 import '../widgets/ayah_card.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/star_badge.dart';
 
 /// Reads a surah in two modes: lines (one verse per card) or full mushaf pages.
+/// It can start from a saved place (a verse or a page).
 class QuranReaderScreen extends StatefulWidget {
   const QuranReaderScreen({
     super.key,
     required this.data,
     required this.surah,
+    this.initialAyah,
+    this.startInPageMode = false,
+    this.initialPage,
   });
 
   final QuranData data;
   final QuranSurah surah;
+  final int? initialAyah;
+  final bool startInPageMode;
+  final int? initialPage;
 
   @override
   State<QuranReaderScreen> createState() => _QuranReaderScreenState();
@@ -36,16 +47,29 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   bool _fullscreen = false;
   bool _showHint = false;
   bool _zoomed = false;
+  bool _dirty = false;
   late int _page;
+  int _currentAyah = 1;
   PageController? _pageController;
   final TransformationController _transform = TransformationController();
+  final ItemScrollController _itemScroll = ItemScrollController();
+  final ItemPositionsListener _positions = ItemPositionsListener.create();
+  Timer? _saveTimer;
 
   @override
   void initState() {
     super.initState();
     final total = widget.data.pages.length;
-    _page = math.min(math.max(widget.data.firstPageOf(widget.surah), 1), total);
+    final startPage =
+        widget.initialPage ?? widget.data.firstPageOf(widget.surah);
+    _page = math.min(math.max(startPage, 1), total);
+    _currentAyah = widget.initialAyah ?? 1;
+    if (widget.startInPageMode) {
+      _pageMode = true;
+      _pageController = PageController(initialPage: _page - 1);
+    }
     _transform.addListener(_onTransform);
+    _positions.itemPositions.addListener(_onPositions);
     quranPrefs.load();
     // The page size is fitted using the real font: redraw once it is loaded.
     GoogleFonts.pendingFonts([GoogleFonts.amiriQuran()]).then((_) {
@@ -56,11 +80,61 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 
   @override
   void dispose() {
+    _saveTimer?.cancel();
+    if (_dirty) {
+      final position = _currentPosition();
+      Future.microtask(() => readingState.saveLast(position));
+    }
+    _positions.itemPositions.removeListener(_onPositions);
     _transform.removeListener(_onTransform);
     _transform.dispose();
     _pageController?.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
+  }
+
+  ReadingPosition _currentPosition() {
+    if (_pageMode) {
+      final entries = widget.data.pages[_page - 1];
+      final first = entries.isNotEmpty ? entries.first : null;
+      return ReadingPosition(
+        surah: first?.surah.number ?? widget.surah.number,
+        ayah: first?.ayah.number ?? 1,
+        page: _page,
+        pageMode: true,
+      );
+    }
+    final ayahs = widget.surah.ayahs;
+    final index = math.min(math.max(_currentAyah, 1), ayahs.length) - 1;
+    return ReadingPosition(
+      surah: widget.surah.number,
+      ayah: ayahs[index].number,
+      page: ayahs[index].page,
+      pageMode: false,
+    );
+  }
+
+  void _scheduleSave() {
+    _dirty = true;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 700), () {
+      _dirty = false;
+      readingState.saveLast(_currentPosition());
+    });
+  }
+
+  void _onPositions() {
+    if (_pageMode) return;
+    final visible = _positions.itemPositions.value
+        .where((p) => p.itemTrailingEdge > 0.05)
+        .toList();
+    if (visible.isEmpty) return;
+    final index = visible.map((p) => p.index).reduce(math.min);
+    final ayah = math.max(index, 1);
+    if (ayah != _currentAyah) {
+      _currentAyah = ayah;
+      _scheduleSave();
+    }
   }
 
   void _onTransform() {
@@ -71,12 +145,26 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   void _setPageMode(bool value) {
     if (value == _pageMode) return;
     setState(() {
-      _pageMode = value;
       if (value) {
+        final ayahs = widget.surah.ayahs;
+        final index = math.min(math.max(_currentAyah, 1), ayahs.length) - 1;
+        _page = math.min(
+          math.max(ayahs[index].page, 1),
+          widget.data.pages.length,
+        );
         _pageController?.dispose();
         _pageController = PageController(initialPage: _page - 1);
+      } else {
+        for (final e in widget.data.pages[_page - 1]) {
+          if (e.surah.number == widget.surah.number) {
+            _currentAyah = e.ayah.number;
+            break;
+          }
+        }
       }
+      _pageMode = value;
     });
+    _scheduleSave();
   }
 
   Future<void> _setFullscreen(bool value) async {
@@ -120,6 +208,11 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     }
   }
 
+  void _onSave() {
+    readingState.saveBookmark(_currentPosition());
+    showAuthMessage(context, appState.tr('spotSaved'));
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -146,6 +239,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                           onMode: _setPageMode,
                           onTranslation: _onTranslation,
                           onTafsir: _onTafsir,
+                          onSave: _onSave,
                           onEnlarge: () => _setFullscreen(true),
                         ),
                       ],
@@ -187,7 +281,12 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 
   Widget _buildLines() {
     final surah = widget.surah;
-    return ListView.builder(
+    final initial =
+        _currentAyah <= 1 ? 0 : math.min(_currentAyah, surah.ayahs.length);
+    return ScrollablePositionedList.builder(
+      itemScrollController: _itemScroll,
+      itemPositionsListener: _positions,
+      initialScrollIndex: initial,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       itemCount: surah.ayahs.length + 1,
       itemBuilder: (context, index) {
@@ -218,6 +317,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
         onPageChanged: (index) {
           _transform.value = Matrix4.identity();
           setState(() => _page = index + 1);
+          _scheduleSave();
         },
         itemBuilder: (context, index) {
           return _MushafPage(
@@ -280,6 +380,7 @@ class _Controls extends StatelessWidget {
     required this.onMode,
     required this.onTranslation,
     required this.onTafsir,
+    required this.onSave,
     required this.onEnlarge,
   });
 
@@ -288,6 +389,7 @@ class _Controls extends StatelessWidget {
   final ValueChanged<bool> onMode;
   final VoidCallback onTranslation;
   final VoidCallback onTafsir;
+  final VoidCallback onSave;
   final VoidCallback onEnlarge;
 
   @override
@@ -324,6 +426,13 @@ class _Controls extends StatelessWidget {
                 label: appState.tr('tafsirBtn'),
                 active: !pageMode && quranPrefs.showTafsir,
                 onTap: onTafsir,
+              ),
+              const SizedBox(width: 10),
+              _ControlChip(
+                icon: Icons.bookmark_add_outlined,
+                label: appState.tr('savePosition'),
+                active: false,
+                onTap: onSave,
               ),
               if (pageMode) ...[
                 const SizedBox(width: 10),
