@@ -10,6 +10,7 @@ import '../widgets/auth_widgets.dart';
 import 'tabs/community_tab.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/more_tab.dart';
+import 'tabs/quran_browser_tab.dart';
 import 'tabs/soon_tabs.dart';
 
 /// Main app frame: top bar, five tabs and the bottom navigation bar.
@@ -63,7 +64,7 @@ class _HomeShellState extends State<HomeShell> {
                       index: _index,
                       children: [
                         HomeTab(onOpenTab: _select),
-                        const QuranTab(),
+                        const QuranBrowserTab(),
                         const AdhkarTab(),
                         const CommunityTab(),
                         const MoreTab(),

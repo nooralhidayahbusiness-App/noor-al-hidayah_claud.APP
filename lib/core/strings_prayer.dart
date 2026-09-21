@@ -76,6 +76,16 @@ const Map<String, String> prayerStringsAr = {
   'teacherDesc': 'تعلّم تلاوة القرآن الكريم: استمع إلى القارئ، ثم اقرأ بصوتك، ويرشدك المعلم بالذكاء الاصطناعي إلى مواضع المراجعة خطوة بخطوة.',
   'teacherCta': 'ابدأ التعلم',
   'teacherSoon': 'معلم القرآن بالذكاء الاصطناعي قادم قريبًا إن شاء الله',
+  'quranTitle': 'القرآن الكريم',
+  'searchSurah': 'ابحث عن سورة',
+  'noResults': 'لا توجد نتائج',
+  'meccan': 'مكية',
+  'medinan': 'مدنية',
+  'versesWord': 'آية',
+  'fontSimple': 'خط عادي',
+  'fontUthmani': 'خط عثماني',
+  'translationBtn': 'الترجمة',
+  'quranLoadError': 'تعذّر تحميل المصحف. تأكد من تشغيل سكربت البيانات.',
 };
 
 const Map<String, String> prayerStringsEn = {
@@ -158,4 +168,14 @@ const Map<String, String> prayerStringsEn = {
   'teacherDesc': 'Learn to recite the Holy Quran: listen to a reciter, recite in your own voice, and the AI teacher guides you to what needs review, step by step.',
   'teacherCta': 'Start learning',
   'teacherSoon': 'The AI Quran Teacher is coming soon, God willing',
+  'quranTitle': 'The Holy Quran',
+  'searchSurah': 'Search for a surah',
+  'noResults': 'No results',
+  'meccan': 'Meccan',
+  'medinan': 'Medinan',
+  'versesWord': 'verses',
+  'fontSimple': 'Simple font',
+  'fontUthmani': 'Uthmani font',
+  'translationBtn': 'Translation',
+  'quranLoadError': 'Could not load the Quran. Make sure the data script was run.',
 };
