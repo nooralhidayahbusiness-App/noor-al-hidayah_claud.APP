@@ -96,6 +96,9 @@ const Map<String, String> prayerStringsAr = {
   'zoomHint': 'كبّر الصفحة بإصبعين، وحرّكها بإصبع واحد، واضغط مرتين للرجوع.',
   'tafsirSoon': 'التفسير قادم في الخطوة التالية إن شاء الله',
   'apologyTry': 'جرّب وضع الأسطر، وإن شاء الله سيعمل معك بلا مشاكل',
+  'tafsirTitle': 'التفسير',
+  'tafsirShared': 'ورد تفسير هذه الآية مع الآيات المجاورة.',
+  'tafsirError': 'تعذّر تحميل التفسير. تأكد من تشغيل سكربت البيانات.',
 };
 
 const Map<String, String> prayerStringsEn = {
@@ -198,4 +201,7 @@ const Map<String, String> prayerStringsEn = {
   'zoomHint': 'Pinch with two fingers to zoom, drag to move, and double-tap to reset.',
   'tafsirSoon': 'Tafsir is coming in the next step, God willing',
   'apologyTry': 'Try the Lines mode, and it will work for you without any problem, God willing',
+  'tafsirTitle': 'Tafsir',
+  'tafsirShared': 'This verse is explained together with the neighbouring verses.',
+  'tafsirError': 'Could not load the tafsir. Make sure the data script was run.',
 };

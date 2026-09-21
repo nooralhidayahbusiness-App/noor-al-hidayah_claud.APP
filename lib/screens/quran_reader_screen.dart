@@ -12,7 +12,6 @@ import '../core/theme.dart';
 import '../models/quran.dart';
 import '../widgets/apology_dialog.dart';
 import '../widgets/app_branding.dart';
-import '../widgets/auth_widgets.dart';
 import '../widgets/ayah_card.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/star_badge.dart';
@@ -117,7 +116,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     if (_pageMode) {
       showApologyDialog(context, appState.tr('tafsirBtn'));
     } else {
-      showAuthMessage(context, appState.tr('tafsirSoon'));
+      quranPrefs.toggleTafsir();
     }
   }
 
@@ -323,7 +322,7 @@ class _Controls extends StatelessWidget {
               _ControlChip(
                 icon: Icons.lightbulb_outline_rounded,
                 label: appState.tr('tafsirBtn'),
-                active: false,
+                active: !pageMode && quranPrefs.showTafsir,
                 onTap: onTafsir,
               ),
               if (pageMode) ...[

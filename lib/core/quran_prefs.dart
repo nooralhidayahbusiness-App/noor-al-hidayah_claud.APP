@@ -5,10 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class QuranPrefs extends ChangeNotifier {
   static const _fontKey = 'quran_simple_font';
   static const _translationKey = 'quran_show_translation';
+  static const _tafsirKey = 'quran_show_tafsir';
 
   /// false = Uthmani script (default), true = simple vowelled script.
   bool simpleFont = false;
   bool showTranslation = false;
+  bool showTafsir = false;
   bool _loaded = false;
 
   Future<void> load() async {
@@ -17,6 +19,7 @@ class QuranPrefs extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     simpleFont = prefs.getBool(_fontKey) ?? false;
     showTranslation = prefs.getBool(_translationKey) ?? false;
+    showTafsir = prefs.getBool(_tafsirKey) ?? false;
     notifyListeners();
   }
 
@@ -32,6 +35,13 @@ class QuranPrefs extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_translationKey, showTranslation);
+  }
+
+  Future<void> toggleTafsir() async {
+    showTafsir = !showTafsir;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_tafsirKey, showTafsir);
   }
 }
 

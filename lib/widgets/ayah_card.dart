@@ -9,6 +9,7 @@ import '../core/divine_names.dart';
 import '../core/quran_prefs.dart';
 import '../core/theme.dart';
 import '../models/quran.dart';
+import '../services/tafsir_service.dart';
 import 'auth_widgets.dart';
 import 'glow_sparks.dart';
 import 'star_badge.dart';
@@ -20,6 +21,40 @@ class AyahCard extends StatelessWidget {
 
   final QuranSurah surah;
   final QuranAyah ayah;
+
+  Future<void> _copy(
+    BuildContext context,
+    String arabic,
+    bool withTranslation,
+    bool withTafsir,
+  ) async {
+    final buffer = StringBuffer()
+      ..writeln(arabic)
+      ..writeln();
+    if (withTranslation) {
+      buffer
+        ..writeln(ayah.translation)
+        ..writeln();
+    }
+    if (withTafsir) {
+      final text = TafsirService.cachedData?.textFor(
+            arabic: appState.isArabic,
+            surah: surah.number,
+            ayah: ayah.number,
+          ) ??
+          '';
+      if (text.isNotEmpty) {
+        buffer
+          ..writeln(text)
+          ..writeln();
+      }
+    }
+    buffer.write('${surah.nameAr} • ${ayah.number}');
+    await Clipboard.setData(ClipboardData(text: buffer.toString()));
+    if (context.mounted) {
+      showAuthMessage(context, appState.tr('copied'));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +76,7 @@ class AyahCard extends StatelessWidget {
               );
         final showTranslation =
             quranPrefs.showTranslation && ayah.translation.isNotEmpty;
+        final showTafsir = quranPrefs.showTafsir;
 
         return GlowSparks(
           shape: GlowShape.card,
@@ -74,26 +110,12 @@ class AyahCard extends StatelessWidget {
                           const Spacer(),
                           IconButton(
                             tooltip: appState.tr('copy'),
-                            onPressed: () async {
-                              final buffer = StringBuffer()
-                                ..writeln(arabic)
-                                ..writeln();
-                              if (showTranslation) {
-                                buffer
-                                  ..writeln(ayah.translation)
-                                  ..writeln();
-                              }
-                              buffer.write('${surah.nameAr} • ${ayah.number}');
-                              await Clipboard.setData(
-                                ClipboardData(text: buffer.toString()),
-                              );
-                              if (context.mounted) {
-                                showAuthMessage(
-                                  context,
-                                  appState.tr('copied'),
-                                );
-                              }
-                            },
+                            onPressed: () => _copy(
+                              context,
+                              arabic,
+                              showTranslation,
+                              showTafsir,
+                            ),
                             icon: Icon(
                               Icons.copy_rounded,
                               size: 20,
@@ -127,6 +149,15 @@ class AyahCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                      if (showTafsir) ...[
+                        const SizedBox(height: 12),
+                        Divider(
+                          height: 1,
+                          color: AppColors.gold.withValues(alpha: 0.25),
+                        ),
+                        const SizedBox(height: 12),
+                        _TafsirSection(surah: surah, ayah: ayah),
+                      ],
                     ],
                   ),
                 ),
@@ -135,6 +166,160 @@ class AyahCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// The tafsir of one verse (Arabic or English, following the app language).
+class _TafsirSection extends StatelessWidget {
+  const _TafsirSection({required this.surah, required this.ayah});
+
+  final QuranSurah surah;
+  final QuranAyah ayah;
+
+  @override
+  Widget build(BuildContext context) {
+    final cached = TafsirService.cachedData;
+    if (cached != null) return _body(cached);
+    return FutureBuilder<TafsirData>(
+      future: TafsirService.load(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text(
+            appState.tr('tafsirError'),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.cream.withValues(alpha: 0.7)),
+          );
+        }
+        final data = snapshot.data;
+        if (data == null) {
+          return const Padding(
+            padding: EdgeInsets.all(8),
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.4,
+                color: AppColors.gold,
+              ),
+            ),
+          );
+        }
+        return _body(data);
+      },
+    );
+  }
+
+  Widget _body(TafsirData data) {
+    final arabic = appState.isArabic;
+    final text = data.textFor(
+      arabic: arabic,
+      surah: surah.number,
+      ayah: ayah.number,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.lightbulb_outline_rounded,
+              size: 18,
+              color: AppColors.gold,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              appState.tr('tafsirTitle'),
+              style: const TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.gold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (text.isEmpty)
+          Text(
+            appState.tr('tafsirShared'),
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.6,
+              color: AppColors.cream.withValues(alpha: 0.6),
+            ),
+          )
+        else
+          _TafsirText(text: text, arabic: arabic),
+        const SizedBox(height: 6),
+        Text(
+          data.sourceName(arabic),
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.gold.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Long tafsir texts are shortened, with a "show more" button.
+class _TafsirText extends StatefulWidget {
+  const _TafsirText({required this.text, required this.arabic});
+
+  final String text;
+  final bool arabic;
+
+  @override
+  State<_TafsirText> createState() => _TafsirTextState();
+}
+
+class _TafsirTextState extends State<_TafsirText> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final long = widget.text.length > 320;
+    final collapsed = long && !_expanded;
+    final style = widget.arabic
+        ? GoogleFonts.notoNaskhArabic(
+            fontSize: 17,
+            height: 1.9,
+            color: AppColors.cream.withValues(alpha: 0.92),
+          )
+        : TextStyle(
+            fontSize: 15,
+            height: 1.65,
+            color: AppColors.cream.withValues(alpha: 0.88),
+          );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: double.infinity,
+            child: Text(
+              widget.text,
+              textDirection:
+                  widget.arabic ? TextDirection.rtl : TextDirection.ltr,
+              textAlign: widget.arabic ? TextAlign.right : TextAlign.left,
+              maxLines: collapsed ? 6 : null,
+              overflow: collapsed ? TextOverflow.fade : TextOverflow.clip,
+              style: style,
+            ),
+          ),
+        ),
+        if (long)
+          TextButton(
+            onPressed: () => setState(() => _expanded = !_expanded),
+            child: Text(
+              appState.tr(_expanded ? 'showLess' : 'showMore'),
+              style: const TextStyle(color: AppColors.gold),
+            ),
+          ),
+      ],
     );
   }
 }
