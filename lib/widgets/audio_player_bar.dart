@@ -162,18 +162,6 @@ class AudioPlayerBar extends StatelessWidget {
                       ),
                     ],
                   ),
-                  ValueListenableBuilder<String>(
-                    valueListenable: quranAudio.currentUrl,
-                    builder: (context, url, _) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Text(
-                        url,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 9, color: AppColors.cream.withValues(alpha: 0.4)),
-                      ),
-                    ),
-                  ),
                   if (full) const _FullSurahClock() else const _AyahSeekBar(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,

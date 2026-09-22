@@ -15,11 +15,17 @@ class PlaybackSpot {
   final int ayah;
 }
 
+/// Plays a surah one verse-file at a time. A brand-new AudioPlayer is
+/// created for every verse (instead of reusing one and swapping its
+/// source), which avoids a browser quirk where the previous audio keeps
+/// playing even after the source is changed.
 class QuranAudioService {
   QuranAudioService._();
   static final QuranAudioService instance = QuranAudioService._();
 
-  final AudioPlayer player = AudioPlayer();
+  AudioPlayer _player = AudioPlayer();
+  AudioPlayer get player => _player;
+
   final ValueNotifier<PlaybackSpot?> nowPlaying = ValueNotifier(null);
   final ValueNotifier<bool> isPlaying = ValueNotifier(false);
   final ValueNotifier<bool> isBuffering = ValueNotifier(false);
@@ -65,9 +71,14 @@ class QuranAudioService {
     if (surah == null || reciter == null) return;
     final number = _ayahNumbers[_index];
 
+    // Throw away the old player entirely: a brand-new one guarantees a
+    // fresh underlying audio element, with no leftover state.
+    final oldPlayer = _player;
     await _positionSub?.cancel();
     await _playingSub?.cancel();
     await _stateSub?.cancel();
+    _player = AudioPlayer();
+    unawaited(oldPlayer.dispose());
 
     final local = await AudioDownloadService.localPathIfExists(
       reciter.id,
@@ -78,11 +89,11 @@ class QuranAudioService {
     final uri = local != null
         ? Uri.file(local)
         : Uri.parse(reciter.ayahUrl(surah.number, number));
-
     currentUrl.value = uri.toString();
+
     isBuffering.value = true;
     try {
-      await player.setAudioSource(AudioSource.uri(uri));
+      await _player.setAudioSource(AudioSource.uri(uri));
     } catch (_) {
       isBuffering.value = false;
       return;
@@ -92,24 +103,24 @@ class QuranAudioService {
 
     nowPlaying.value = PlaybackSpot(surah.number, number);
 
-    _positionSub = player.positionStream.listen((pos) {
+    _positionSub = _player.positionStream.listen((pos) {
       sessionElapsed.value = _elapsedBeforeCurrent + pos;
     });
-    _playingSub = player.playingStream.listen((p) => isPlaying.value = p);
-    _stateSub = player.processingStateStream.listen((state) {
+    _playingSub = _player.playingStream.listen((p) => isPlaying.value = p);
+    _stateSub = _player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
         _onAyahCompleted(token);
       }
     });
 
-    await player.play();
+    await _player.play();
   }
 
   Future<void> _onAyahCompleted(int token) async {
     if (token != _playToken) return;
-    _elapsedBeforeCurrent += player.duration ?? Duration.zero;
+    _elapsedBeforeCurrent += _player.duration ?? Duration.zero;
     if (!reciterPrefs.autoAdvance) {
-      await player.pause();
+      await _player.pause();
       return;
     }
     if (_index + 1 >= _ayahNumbers.length) return;
@@ -118,24 +129,24 @@ class QuranAudioService {
   }
 
   Future<void> toggle() async {
-    if (player.playing) {
-      await player.pause();
+    if (_player.playing) {
+      await _player.pause();
     } else {
-      await player.play();
+      await _player.play();
     }
   }
 
   Future<void> seekBy(Duration delta) async {
-    final duration = player.duration ?? Duration.zero;
-    var position = player.position + delta;
+    final duration = _player.duration ?? Duration.zero;
+    var position = _player.position + delta;
     if (position < Duration.zero) position = Duration.zero;
     if (position > duration) position = duration;
-    await player.seek(position);
+    await _player.seek(position);
   }
 
   Future<void> stop() async {
     _playToken++;
-    await player.stop();
+    await _player.stop();
     nowPlaying.value = null;
     _surah = null;
   }
