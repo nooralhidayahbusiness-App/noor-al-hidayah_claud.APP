@@ -9,14 +9,12 @@ import '../models/quran.dart';
 import '../models/reciter.dart';
 import 'audio_download_service.dart';
 
-/// Where playback currently is: which surah and which verse.
 class PlaybackSpot {
   const PlaybackSpot(this.surah, this.ayah);
   final int surah;
   final int ayah;
 }
 
-/// Plays a surah verse by verse and reports which verse is currently playing.
 class QuranAudioService {
   QuranAudioService._();
   static final QuranAudioService instance = QuranAudioService._();
@@ -25,11 +23,17 @@ class QuranAudioService {
   final ValueNotifier<PlaybackSpot?> nowPlaying = ValueNotifier(null);
   final ValueNotifier<bool> isPlaying = ValueNotifier(false);
   final ValueNotifier<bool> isBuffering = ValueNotifier(false);
+  final ValueNotifier<Duration> sessionElapsed = ValueNotifier(Duration.zero);
+  final ValueNotifier<String> currentUrl = ValueNotifier('');
 
   QuranSurah? _surah;
   Reciter? _reciter;
   List<int> _ayahNumbers = [];
-  StreamSubscription<int?>? _indexSub;
+  int _index = 0;
+  Duration _elapsedBeforeCurrent = Duration.zero;
+  int _playToken = 0;
+
+  StreamSubscription<Duration>? _positionSub;
   StreamSubscription<bool>? _playingSub;
   StreamSubscription<ProcessingState>? _stateSub;
 
@@ -45,53 +49,73 @@ class QuranAudioService {
     _surah = surah;
     _reciter = reciter;
     _ayahNumbers = [for (final a in surah.ayahs) a.number];
+    _index = math.max(0, _ayahNumbers.indexOf(startAyah));
+    _elapsedBeforeCurrent = Duration.zero;
+    sessionElapsed.value = Duration.zero;
+    final token = ++_playToken;
+    await _loadAndPlay(token);
+  }
 
-    final sources = <AudioSource>[];
-    for (final number in _ayahNumbers) {
-      final local = await AudioDownloadService.localPathIfExists(
-        reciter.id,
-        surah.number,
-        number,
-      );
-      final uri = local != null
-          ? Uri.file(local)
-          : Uri.parse(reciter.ayahUrl(surah.number, number));
-      sources.add(AudioSource.uri(uri));
-    }
-    final startIndex = math.max(0, _ayahNumbers.indexOf(startAyah));
+  Future<void> playFrom(QuranSurah surah, QuranAyah ayah, Reciter reciter) =>
+      playSurah(surah, reciter, startAyah: ayah.number);
 
-    await _indexSub?.cancel();
+  Future<void> _loadAndPlay(int token) async {
+    final surah = _surah;
+    final reciter = _reciter;
+    if (surah == null || reciter == null) return;
+    final number = _ayahNumbers[_index];
+
+    await _positionSub?.cancel();
     await _playingSub?.cancel();
     await _stateSub?.cancel();
 
+    final local = await AudioDownloadService.localPathIfExists(
+      reciter.id,
+      surah.number,
+      number,
+    );
+    if (token != _playToken) return;
+    final uri = local != null
+        ? Uri.file(local)
+        : Uri.parse(reciter.ayahUrl(surah.number, number));
+
+    currentUrl.value = uri.toString();
     isBuffering.value = true;
     try {
-      await player.setAudioSources(sources, initialIndex: startIndex);
-    } finally {
+      await player.setAudioSource(AudioSource.uri(uri));
+    } catch (_) {
       isBuffering.value = false;
+      return;
     }
+    if (token != _playToken) return;
+    isBuffering.value = false;
 
-    _indexSub = player.currentIndexStream.listen((index) {
-      if (index == null || _surah == null) return;
-      nowPlaying.value = PlaybackSpot(_surah!.number, _ayahNumbers[index]);
+    nowPlaying.value = PlaybackSpot(surah.number, number);
+
+    _positionSub = player.positionStream.listen((pos) {
+      sessionElapsed.value = _elapsedBeforeCurrent + pos;
     });
     _playingSub = player.playingStream.listen((p) => isPlaying.value = p);
     _stateSub = player.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed && !reciterPrefs.autoAdvance) {
-        player.pause();
+      if (state == ProcessingState.completed) {
+        _onAyahCompleted(token);
       }
     });
 
-    nowPlaying.value = PlaybackSpot(surah.number, startAyah);
     await player.play();
   }
 
-  Future<void> playFrom(
-    QuranSurah surah,
-    QuranAyah ayah,
-    Reciter reciter,
-  ) =>
-      playSurah(surah, reciter, startAyah: ayah.number);
+  Future<void> _onAyahCompleted(int token) async {
+    if (token != _playToken) return;
+    _elapsedBeforeCurrent += player.duration ?? Duration.zero;
+    if (!reciterPrefs.autoAdvance) {
+      await player.pause();
+      return;
+    }
+    if (_index + 1 >= _ayahNumbers.length) return;
+    _index += 1;
+    await _loadAndPlay(token);
+  }
 
   Future<void> toggle() async {
     if (player.playing) {
@@ -110,6 +134,7 @@ class QuranAudioService {
   }
 
   Future<void> stop() async {
+    _playToken++;
     await player.stop();
     nowPlaying.value = null;
     _surah = null;

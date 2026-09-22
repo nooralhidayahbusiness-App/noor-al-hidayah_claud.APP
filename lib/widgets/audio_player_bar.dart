@@ -10,12 +10,12 @@ import 'auth_widgets.dart';
 import 'reciter_picker.dart';
 
 String _mmss(Duration d) {
+  final h = d.inHours;
   final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
   final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$m:$s';
+  return h > 0 ? '$h:$m:$s' : '${d.inMinutes}:$s';
 }
 
-/// Bottom mini player, shown whenever a reciter is active.
 class AudioPlayerBar extends StatelessWidget {
   const AudioPlayerBar({super.key, required this.data});
 
@@ -25,8 +25,11 @@ class AudioPlayerBar extends StatelessWidget {
     final surah = quranAudio.currentSurah;
     final reciter = quranAudio.currentReciter;
     if (surah == null || reciter == null) return;
-    final already =
-        await AudioDownloadService.isDownloaded(reciter.id, surah.number, surah.count);
+    final already = await AudioDownloadService.isDownloaded(
+      reciter.id,
+      surah.number,
+      surah.count,
+    );
     if (!context.mounted) return;
     if (already) {
       showAuthMessage(context, appState.tr('alreadyDownloaded'));
@@ -83,6 +86,7 @@ class AudioPlayerBar extends StatelessWidget {
             final surah = data.surah(spot.surah);
             final reciter = quranAudio.currentReciter;
             final surahLabel = appState.isArabic ? surah.nameAr : surah.nameEn;
+            final full = reciterPrefs.autoAdvance;
             return Container(
               padding: EdgeInsets.fromLTRB(
                 14,
@@ -127,11 +131,7 @@ class AudioPlayerBar extends StatelessWidget {
                             color: AppColors.gold.withValues(alpha: 0.14),
                             border: Border.all(color: AppColors.gold),
                           ),
-                          child: const Icon(
-                            Icons.mic_rounded,
-                            color: AppColors.gold,
-                            size: 18,
-                          ),
+                          child: const Icon(Icons.mic_rounded, color: AppColors.gold, size: 18),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -140,21 +140,12 @@ class AudioPlayerBar extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              appState.isArabic
-                                  ? (reciter?.nameAr ?? '')
-                                  : (reciter?.nameEn ?? ''),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.gold,
-                              ),
+                              appState.isArabic ? (reciter?.nameAr ?? '') : (reciter?.nameEn ?? ''),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.gold),
                             ),
                             Text(
                               '$surahLabel • ${appState.tr('ayahWord')} ${spot.ayah}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.cream.withValues(alpha: 0.75),
-                              ),
+                              style: TextStyle(fontSize: 12, color: AppColors.cream.withValues(alpha: 0.75)),
                             ),
                           ],
                         ),
@@ -162,98 +153,36 @@ class AudioPlayerBar extends StatelessWidget {
                       IconButton(
                         tooltip: appState.tr('downloadReciter'),
                         onPressed: () => _download(context),
-                        icon: const Icon(
-                          Icons.download_rounded,
-                          color: AppColors.softGold,
-                          size: 20,
-                        ),
+                        icon: const Icon(Icons.download_rounded, color: AppColors.softGold, size: 20),
                       ),
                       IconButton(
                         tooltip: appState.tr('back'),
                         onPressed: quranAudio.stop,
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          color: AppColors.softGold,
-                          size: 20,
-                        ),
+                        icon: const Icon(Icons.close_rounded, color: AppColors.softGold, size: 20),
                       ),
                     ],
                   ),
-                  StreamBuilder<Duration>(
-                    stream: quranAudio.player.positionStream,
-                    builder: (context, snapshot) {
-                      final position = snapshot.data ?? Duration.zero;
-                      final duration =
-                          quranAudio.player.duration ?? Duration.zero;
-                      final max = duration.inMilliseconds > 0
-                          ? duration.inMilliseconds.toDouble()
-                          : 1.0;
-                      final value = position.inMilliseconds
-                          .clamp(0, max.toInt())
-                          .toDouble();
-                      return Column(
-                        children: [
-                          SliderTheme(
-                            data: SliderTheme.of(context).copyWith(
-                              trackHeight: 3,
-                              thumbShape: const RoundSliderThumbShape(
-                                enabledThumbRadius: 6,
-                              ),
-                              activeTrackColor: AppColors.gold,
-                              inactiveTrackColor:
-                                  AppColors.gold.withValues(alpha: 0.25),
-                              thumbColor: AppColors.gold,
-                            ),
-                            child: Slider(
-                              min: 0,
-                              max: max,
-                              value: value,
-                              onChanged: (v) => quranAudio.player
-                                  .seek(Duration(milliseconds: v.toInt())),
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 6),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  _mmss(position),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.cream
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                ),
-                                Text(
-                                  _mmss(duration),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.cream
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                  ValueListenableBuilder<String>(
+                    valueListenable: quranAudio.currentUrl,
+                    builder: (context, url, _) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text(
+                        url,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 9, color: AppColors.cream.withValues(alpha: 0.4)),
+                      ),
+                    ),
                   ),
+                  if (full) const _FullSurahClock() else const _AyahSeekBar(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _ModeChip(),
                       const Spacer(),
                       IconButton(
-                        onPressed: () =>
-                            quranAudio.seekBy(const Duration(seconds: -10)),
-                        icon: const Icon(
-                          Icons.replay_10_rounded,
-                          color: AppColors.softGold,
-                        ),
+                        onPressed: () => quranAudio.seekBy(const Duration(seconds: -10)),
+                        icon: const Icon(Icons.replay_10_rounded, color: AppColors.softGold),
                       ),
                       const SizedBox(width: 6),
                       ValueListenableBuilder<bool>(
@@ -266,21 +195,11 @@ class AudioPlayerBar extends StatelessWidget {
                               height: 52,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  colors: [AppColors.softGold, AppColors.gold],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        AppColors.gold.withValues(alpha: 0.5),
-                                    blurRadius: 14,
-                                  ),
-                                ],
+                                gradient: const LinearGradient(colors: [AppColors.softGold, AppColors.gold]),
+                                boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: 0.5), blurRadius: 14)],
                               ),
                               child: Icon(
-                                playing
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
+                                playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
                                 color: AppColors.deepGreen,
                                 size: 30,
                               ),
@@ -290,12 +209,8 @@ class AudioPlayerBar extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       IconButton(
-                        onPressed: () =>
-                            quranAudio.seekBy(const Duration(seconds: 10)),
-                        icon: const Icon(
-                          Icons.forward_10_rounded,
-                          color: AppColors.softGold,
-                        ),
+                        onPressed: () => quranAudio.seekBy(const Duration(seconds: 10)),
+                        icon: const Icon(Icons.forward_10_rounded, color: AppColors.softGold),
                       ),
                       const Spacer(),
                       const SizedBox(width: 38),
@@ -307,6 +222,79 @@ class AudioPlayerBar extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _AyahSeekBar extends StatelessWidget {
+  const _AyahSeekBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Duration>(
+      stream: quranAudio.player.positionStream,
+      builder: (context, snapshot) {
+        final position = snapshot.data ?? Duration.zero;
+        final duration = quranAudio.player.duration ?? Duration.zero;
+        final max = duration.inMilliseconds > 0 ? duration.inMilliseconds.toDouble() : 1.0;
+        final value = position.inMilliseconds.clamp(0, max.toInt()).toDouble();
+        return Column(
+          children: [
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                activeTrackColor: AppColors.gold,
+                inactiveTrackColor: AppColors.gold.withValues(alpha: 0.25),
+                thumbColor: AppColors.gold,
+              ),
+              child: Slider(
+                min: 0,
+                max: max,
+                value: value,
+                onChanged: (v) => quranAudio.player.seek(Duration(milliseconds: v.toInt())),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(_mmss(position), style: TextStyle(fontSize: 11, color: AppColors.cream.withValues(alpha: 0.7))),
+                  Text(_mmss(duration), style: TextStyle(fontSize: 11, color: AppColors.cream.withValues(alpha: 0.7))),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FullSurahClock extends StatelessWidget {
+  const _FullSurahClock();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: ValueListenableBuilder<Duration>(
+        valueListenable: quranAudio.sessionElapsed,
+        builder: (context, elapsed, _) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.graphic_eq_rounded, size: 16, color: AppColors.gold),
+              const SizedBox(width: 8),
+              Text(
+                _mmss(elapsed),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.gold, letterSpacing: 1),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -328,11 +316,7 @@ class _ModeChip extends StatelessWidget {
         ),
         child: Text(
           auto ? appState.tr('fullSurah') : appState.tr('ayahByAyah'),
-          style: const TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.gold,
-          ),
+          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.gold),
         ),
       ),
     );

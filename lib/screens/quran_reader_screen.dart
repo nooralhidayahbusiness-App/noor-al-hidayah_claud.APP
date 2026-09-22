@@ -74,6 +74,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     }
     _transform.addListener(_onTransform);
     _positions.itemPositions.addListener(_onPositions);
+    quranAudio.nowPlaying.addListener(_onAudioSpotChanged);
     quranPrefs.load();
     // The page size is fitted using the real font: redraw once it is loaded.
     GoogleFonts.pendingFonts([GoogleFonts.amiriQuran()]).then((_) {
@@ -89,6 +90,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       final position = _currentPosition();
       Future.microtask(() => readingState.saveLast(position));
     }
+    quranAudio.nowPlaying.removeListener(_onAudioSpotChanged);
     _positions.itemPositions.removeListener(_onPositions);
     _transform.removeListener(_onTransform);
     _transform.dispose();
@@ -125,6 +127,19 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       _dirty = false;
       readingState.saveLast(_currentPosition());
     });
+  }
+
+  void _onAudioSpotChanged() {
+    final spot = quranAudio.nowPlaying.value;
+    if (spot == null || _pageMode) return;
+    if (spot.surah != widget.surah.number) return;
+    if (!_itemScroll.isAttached) return;
+    _itemScroll.scrollTo(
+      index: spot.ayah,
+      alignment: 0.35,
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _onPositions() {
