@@ -7,8 +7,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../core/app_state.dart';
 import '../core/divine_names.dart';
 import '../core/quran_prefs.dart';
+import '../core/reciter_prefs.dart';
 import '../core/theme.dart';
 import '../models/quran.dart';
+import '../services/quran_audio_service.dart';
 import '../services/share_service.dart';
 import '../services/tafsir_service.dart';
 import 'auth_widgets.dart';
@@ -59,125 +61,151 @@ class AyahCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: Listenable.merge([appState, quranPrefs]),
-      builder: (context, _) {
-        final simple = quranPrefs.simpleFont;
-        final arabic = simple ? ayah.simple : ayah.uthmani;
-        final arabicStyle = simple
-            ? GoogleFonts.notoNaskhArabic(
-                fontSize: 24,
-                height: 2.1,
-                color: AppColors.cream,
-              )
-            : GoogleFonts.amiriQuran(
-                fontSize: 26,
-                height: 2.1,
-                color: AppColors.cream,
-              );
-        final showTranslation =
-            quranPrefs.showTranslation && ayah.translation.isNotEmpty;
-        final showTafsir = quranPrefs.showTafsir;
+    return ValueListenableBuilder(
+      valueListenable: quranAudio.nowPlaying,
+      builder: (context, spot, _) {
+        final active = spot != null &&
+            spot.surah == surah.number &&
+            spot.ayah == ayah.number;
+        return ListenableBuilder(
+          listenable: Listenable.merge([appState, quranPrefs]),
+          builder: (context, _) {
+            final simple = quranPrefs.simpleFont;
+            final arabic = simple ? ayah.simple : ayah.uthmani;
+            final arabicStyle = simple
+                ? GoogleFonts.notoNaskhArabic(
+                    fontSize: 24,
+                    height: 2.1,
+                    color: AppColors.cream,
+                  )
+                : GoogleFonts.amiriQuran(
+                    fontSize: 26,
+                    height: 2.1,
+                    color: AppColors.cream,
+                  );
+            final showTranslation =
+                quranPrefs.showTranslation && ayah.translation.isNotEmpty;
+            final showTafsir = quranPrefs.showTafsir;
 
-        return GlowSparks(
-          shape: GlowShape.card,
-          spread: 18,
-          sparks: 0,
-          intensity: 0.7,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.deepGreen.withValues(alpha: 0.82),
-                  AppColors.deepGreen.withValues(alpha: 0.92),
-                ],
-              ),
-              border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(21),
-              child: CustomPaint(
-                painter: const _AyahCornerPainter(),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-                  child: Column(
-                    children: [
-                      Row(
+            return GlowSparks(
+              shape: GlowShape.card,
+              spread: 18,
+              sparks: 0,
+              intensity: 0.7,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.deepGreen.withValues(alpha: 0.82),
+                      AppColors.deepGreen.withValues(alpha: 0.92),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: active ? 0.95 : 0.4),
+                    width: active ? 1.6 : 1,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(21),
+                  child: CustomPaint(
+                    painter: const _AyahCornerPainter(),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+                      child: Column(
                         children: [
-                          StarBadge(number: ayah.number, size: 38),
-                          const Spacer(),
-                          IconButton(
-                            tooltip: appState.tr('saveImage'),
-                            onPressed: () => shareAyahImage(
-                              context,
-                              surah: surah,
-                              ayah: ayah,
-                            ),
-                            icon: Icon(
-                              Icons.image_outlined,
-                              size: 21,
-                              color: AppColors.gold.withValues(alpha: 0.8),
-                            ),
+                          Row(
+                            children: [
+                              StarBadge(number: ayah.number, size: 38),
+                              const Spacer(),
+                              IconButton(
+                                tooltip: appState.tr('playAyah'),
+                                onPressed: () => quranAudio.playFrom(
+                                  surah,
+                                  ayah,
+                                  reciterPrefs.reciter,
+                                ),
+                                icon: Icon(
+                                  active
+                                      ? Icons.graphic_eq_rounded
+                                      : Icons.play_circle_outline_rounded,
+                                  size: 21,
+                                  color: AppColors.gold.withValues(alpha: 0.8),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: appState.tr('saveImage'),
+                                onPressed: () => shareAyahImage(
+                                  context,
+                                  surah: surah,
+                                  ayah: ayah,
+                                ),
+                                icon: Icon(
+                                  Icons.image_outlined,
+                                  size: 21,
+                                  color: AppColors.gold.withValues(alpha: 0.8),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: appState.tr('copy'),
+                                onPressed: () => _copy(
+                                  context,
+                                  arabic,
+                                  showTranslation,
+                                  showTafsir,
+                                ),
+                                icon: Icon(
+                                  Icons.copy_rounded,
+                                  size: 20,
+                                  color: AppColors.gold.withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            tooltip: appState.tr('copy'),
-                            onPressed: () => _copy(
-                              context,
-                              arabic,
-                              showTranslation,
-                              showTafsir,
-                            ),
-                            icon: Icon(
-                              Icons.copy_rounded,
-                              size: 20,
-                              color: AppColors.gold.withValues(alpha: 0.8),
-                            ),
+                          const SizedBox(height: 8),
+                          Text.rich(
+                            TextSpan(children: quranSpans(arabic, arabicStyle)),
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                            style: arabicStyle,
                           ),
+                          if (showTranslation) ...[
+                            const SizedBox(height: 12),
+                            Divider(
+                              height: 1,
+                              color: AppColors.gold.withValues(alpha: 0.25),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              ayah.translation,
+                              textDirection: TextDirection.ltr,
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                fontSize: 15.5,
+                                height: 1.65,
+                                color: AppColors.cream.withValues(alpha: 0.88),
+                              ),
+                            ),
+                          ],
+                          if (showTafsir) ...[
+                            const SizedBox(height: 12),
+                            Divider(
+                              height: 1,
+                              color: AppColors.gold.withValues(alpha: 0.25),
+                            ),
+                            const SizedBox(height: 12),
+                            _TafsirSection(surah: surah, ayah: ayah),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text.rich(
-                        TextSpan(children: quranSpans(arabic, arabicStyle)),
-                        textAlign: TextAlign.center,
-                        textDirection: TextDirection.rtl,
-                        style: arabicStyle,
-                      ),
-                      if (showTranslation) ...[
-                        const SizedBox(height: 12),
-                        Divider(
-                          height: 1,
-                          color: AppColors.gold.withValues(alpha: 0.25),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          ayah.translation,
-                          textDirection: TextDirection.ltr,
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            height: 1.65,
-                            color: AppColors.cream.withValues(alpha: 0.88),
-                          ),
-                        ),
-                      ],
-                      if (showTafsir) ...[
-                        const SizedBox(height: 12),
-                        Divider(
-                          height: 1,
-                          color: AppColors.gold.withValues(alpha: 0.25),
-                        ),
-                        const SizedBox(height: 12),
-                        _TafsirSection(surah: surah, ayah: ayah),
-                      ],
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );

@@ -108,6 +108,15 @@ const Map<String, String> prayerStringsAr = {
   'continueReading': 'متابعة القراءة',
   'savedSpot': 'علامتي المحفوظة',
   'pageLabel': 'صفحة',
+  'chooseReciter': 'اختر القارئ',
+  'playAyah': 'تشغيل هذه الآية',
+  'fullSurah': 'سورة كاملة',
+  'ayahByAyah': 'آية بآية',
+  'downloadReciter': 'تحميل للاستماع دون إنترنت',
+  'downloading': 'جاري التحميل...',
+  'downloadDone': 'تم التحميل بنجاح',
+  'downloadFailed': 'لم يكتمل التحميل. جرّب مرة أخرى.',
+  'alreadyDownloaded': 'هذه السورة محمّلة بالفعل لهذا القارئ',
 };
 
 const Map<String, String> prayerStringsEn = {
@@ -222,4 +231,13 @@ const Map<String, String> prayerStringsEn = {
   'continueReading': 'Continue reading',
   'savedSpot': 'My saved spot',
   'pageLabel': 'Page',
+  'chooseReciter': 'Choose reciter',
+  'playAyah': 'Play this verse',
+  'fullSurah': 'Full surah',
+  'ayahByAyah': 'Ayah by ayah',
+  'downloadReciter': 'Download for offline listening',
+  'downloading': 'Downloading...',
+  'downloadDone': 'Download complete',
+  'downloadFailed': 'Download did not finish. Please try again.',
+  'alreadyDownloaded': 'This surah is already downloaded for this reciter',
 };

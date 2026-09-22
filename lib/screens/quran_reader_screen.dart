@@ -14,6 +14,10 @@ import '../core/reading_state.dart';
 import '../core/theme.dart';
 import '../models/quran.dart';
 import '../widgets/apology_dialog.dart';
+import '../core/reciter_prefs.dart';
+import '../services/quran_audio_service.dart';
+import '../widgets/audio_player_bar.dart';
+import '../widgets/reciter_picker.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/ayah_card.dart';
@@ -208,6 +212,18 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     }
   }
 
+  Future<void> _onChooseReciter() async {
+    final picked = await showReciterPicker(context);
+    if (picked == null) return;
+    await reciterPrefs.setReciter(picked.id);
+    final position = _currentPosition();
+    quranAudio.playFrom(
+      widget.surah,
+      widget.surah.ayahs[math.min(position.ayah, widget.surah.ayahs.length) - 1],
+      picked,
+    );
+  }
+
   void _onSave() {
     readingState.saveBookmark(_currentPosition());
     showAuthMessage(context, appState.tr('spotSaved'));
@@ -241,11 +257,14 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                           onTafsir: _onTafsir,
                           onSave: _onSave,
                           onEnlarge: () => _setFullscreen(true),
+                          onChooseReciter: _onChooseReciter,
                         ),
                       ],
                       Expanded(
                         child: _pageMode ? _buildPages() : _buildLines(),
                       ),
+                      if (!_fullscreen)
+                        AudioPlayerBar(data: widget.data),
                     ],
                   ),
                   if (_fullscreen) ...[
@@ -382,6 +401,7 @@ class _Controls extends StatelessWidget {
     required this.onTafsir,
     required this.onSave,
     required this.onEnlarge,
+    required this.onChooseReciter,
   });
 
   final bool pageMode;
@@ -391,6 +411,7 @@ class _Controls extends StatelessWidget {
   final VoidCallback onTafsir;
   final VoidCallback onSave;
   final VoidCallback onEnlarge;
+  final VoidCallback onChooseReciter;
 
   @override
   Widget build(BuildContext context) {
@@ -426,6 +447,13 @@ class _Controls extends StatelessWidget {
                 label: appState.tr('tafsirBtn'),
                 active: !pageMode && quranPrefs.showTafsir,
                 onTap: onTafsir,
+              ),
+              const SizedBox(width: 10),
+              _ControlChip(
+                icon: Icons.mic_rounded,
+                label: appState.tr('chooseReciter'),
+                active: false,
+                onTap: onChooseReciter,
               ),
               const SizedBox(width: 10),
               _ControlChip(
