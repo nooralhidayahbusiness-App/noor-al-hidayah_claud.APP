@@ -9,9 +9,8 @@ Offset _polar(Offset c, double r, double angle) {
   return Offset(c.dx + r * math.cos(angle), c.dy + r * math.sin(angle));
 }
 
-/// Round medallion with a gold Islamic geometric ornament around [child].
-/// The ornament ring rotates slowly and smoothly; the base disc, the inner
-/// ring and [child] stay still.
+/// Round medallion: a plain circle with one gold 12-point star outline that
+/// rotates slowly around it, and the symbol image enlarged in the middle.
 class OrnamentMedallion extends StatefulWidget {
   const OrnamentMedallion({
     super.key,
@@ -24,7 +23,7 @@ class OrnamentMedallion extends StatefulWidget {
   final Widget child;
   final bool glow;
 
-  static const double _innerRatio = 0.55;
+  static const double _innerRatio = 0.72;
 
   @override
   State<OrnamentMedallion> createState() => _OrnamentMedallionState();
@@ -46,16 +45,16 @@ class _OrnamentMedallionState extends State<OrnamentMedallion>
   @override
   Widget build(BuildContext context) {
     final size = widget.size;
-    final inner = size * OrnamentMedallion._innerRatio * 0.94;
+    final inner = size * OrnamentMedallion._innerRatio;
     final medallion = SizedBox(
       width: size,
       height: size,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Static base: outer disc, outer thin rings, inner disc and ring.
+          // Static base: just the disc and one thin outer ring.
           Positioned.fill(child: CustomPaint(painter: const _MedallionBasePainter())),
-          // Rotating ornament: the two overlapping gold stars, no hard edge.
+          // Rotating ornament: a single gold star outline, nothing else.
           RotationTransition(
             turns: _rotation,
             child: SizedBox.expand(
@@ -78,7 +77,6 @@ class _MedallionBasePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final c = size.center(Offset.zero);
     final r = size.width / 2;
-    const innerRatio = OrnamentMedallion._innerRatio;
 
     canvas.drawCircle(
       c,
@@ -88,26 +86,13 @@ class _MedallionBasePainter extends CustomPainter {
             .createShader(Rect.fromCircle(center: c, radius: r)),
     );
     canvas.drawCircle(c, r * 0.97, Paint()..style = PaintingStyle.stroke..strokeWidth = 2..color = AppColors.gold);
-    canvas.drawCircle(
-      c,
-      r * 0.91,
-      Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = AppColors.gold.withValues(alpha: 0.55),
-    );
-
-    final innerRadius = r * innerRatio + 1.5;
-    canvas.drawCircle(c, innerRadius, Paint()..color = AppColors.deepGreen);
-    canvas.drawCircle(
-      c,
-      innerRadius,
-      Paint()..style = PaintingStyle.stroke..strokeWidth = 1.6..color = AppColors.gold,
-    );
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// The rotating part: the outer 12-point star and the interlaced star.
+/// The rotating part: only the outer 12-point star outline.
 class _MedallionOrnamentPainter extends CustomPainter {
   const _MedallionOrnamentPainter();
 
@@ -140,16 +125,6 @@ class _MedallionOrnamentPainter extends CustomPainter {
     star.close();
     canvas.drawPath(star, casing);
     canvas.drawPath(star, line);
-
-    final points = [
-      for (var k = 0; k < 12; k++) _polar(c, r * 0.72, math.pi / 6 * k - math.pi / 2),
-    ];
-    for (var k = 0; k < 12; k++) {
-      final a = points[k];
-      final b = points[(k + 5) % 12];
-      canvas.drawLine(a, b, casing);
-      canvas.drawLine(a, b, line);
-    }
   }
 
   @override

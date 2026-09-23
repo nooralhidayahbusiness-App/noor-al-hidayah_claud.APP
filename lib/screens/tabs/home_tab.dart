@@ -82,7 +82,7 @@ class HomeTab extends StatelessWidget {
                   onTap: () => Navigator.of(context)
                       .push(fadeRoute(const PrayerTimesPage())),
                   symbol: const SymbolImage(
-                    'assets/images/Calling.png',
+                    'assets/images/clock.png',
                     fallback: Icons.schedule_rounded,
                   ),
                 ),
