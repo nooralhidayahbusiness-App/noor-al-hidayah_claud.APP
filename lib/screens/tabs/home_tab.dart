@@ -16,7 +16,7 @@ import '../../widgets/daily_cards.dart';
 import '../../widgets/ornament_medallion.dart';
 import '../../widgets/prayer_widgets.dart';
 import '../prayer_times_page.dart';
-import 'hadith_tab.dart';
+import '../hadith_page.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
@@ -85,6 +85,7 @@ class HomeTab extends StatelessWidget {
                   symbol: const SymbolImage(
                     'assets/images/clock.png',
                     fallback: Icons.schedule_rounded,
+                    tint: true,
                   ),
                 ),
                 _QuickTile(
@@ -115,7 +116,7 @@ class HomeTab extends StatelessWidget {
                 ),
                 _QuickTile(
                   label: appState.tr('hadiths'),
-                  onTap: () => Navigator.of(context).push(fadeRoute(const HadithTab())),
+                  onTap: () => Navigator.of(context).push(fadeRoute(const HadithPage())),
                   symbol: const SymbolImage(
                     'assets/images/muhammad.png',
                     fallback: Icons.format_quote_rounded,
