@@ -117,6 +117,7 @@ const Map<String, String> prayerStringsAr = {
   'downloadDone': 'تم التحميل بنجاح',
   'downloadFailed': 'لم يكتمل التحميل. جرّب مرة أخرى.',
   'alreadyDownloaded': 'هذه السورة محمّلة بالفعل لهذا القارئ',
+  'hadithLoadError': 'تعذّر تحميل الأحاديث. تأكد من تشغيل سكربت البيانات.',
 };
 
 const Map<String, String> prayerStringsEn = {
@@ -240,4 +241,5 @@ const Map<String, String> prayerStringsEn = {
   'downloadDone': 'Download complete',
   'downloadFailed': 'Download did not finish. Please try again.',
   'alreadyDownloaded': 'This surah is already downloaded for this reciter',
+  'hadithLoadError': 'Could not load the hadiths. Make sure the data script was run.',
 };

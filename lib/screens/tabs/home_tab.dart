@@ -16,6 +16,7 @@ import '../../widgets/daily_cards.dart';
 import '../../widgets/ornament_medallion.dart';
 import '../../widgets/prayer_widgets.dart';
 import '../prayer_times_page.dart';
+import 'hadith_tab.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
@@ -114,7 +115,7 @@ class HomeTab extends StatelessWidget {
                 ),
                 _QuickTile(
                   label: appState.tr('hadiths'),
-                  onTap: soon,
+                  onTap: () => Navigator.of(context).push(fadeRoute(const HadithTab())),
                   symbol: const SymbolImage(
                     'assets/images/muhammad.png',
                     fallback: Icons.format_quote_rounded,
