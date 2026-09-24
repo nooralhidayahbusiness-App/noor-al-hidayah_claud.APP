@@ -1,10 +1,16 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'core/app_state.dart';
+import 'core/firebase_options.dart';
 import 'core/theme.dart';
 import 'screens/splash_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
+  } catch (_) {}
   runApp(const NoorApp());
 }
 

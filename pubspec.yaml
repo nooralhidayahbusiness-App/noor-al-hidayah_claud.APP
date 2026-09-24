@@ -46,6 +46,9 @@ dependencies:
   just_audio: ^0.10.6
   just_audio_background: ^0.0.1-beta.17
   path_provider: ^2.1.6
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  cloud_firestore: ^6.10.0
 
 dev_dependencies:
   flutter_test:
