@@ -22,7 +22,7 @@ class AppBackground extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         Image.asset(
-          'assets/images/background.png',
+          'assets/images/backgroundv2.jpg',
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) =>
               const _FallbackBackground(),
