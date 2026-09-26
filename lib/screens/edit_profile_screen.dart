@@ -215,7 +215,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: SwitchListTile(
                         value: _isPublic,
                         onChanged: (v) => setState(() => _isPublic = v),
-                        activeColor: AppColors.gold,
+                        activeThumbColor: AppColors.gold,
                         title: Text(
                           appState.tr('profileVisibility'),
                           style: const TextStyle(
