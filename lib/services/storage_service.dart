@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/saved_location.dart';
+import 'auth_service.dart';
 
-/// Keeps the chosen location on the device.
+/// Keeps the chosen location locally AND synced to Firestore.
 class StorageService {
   static const _lat = 'location_lat';
   static const _lng = 'location_lng';
@@ -10,6 +12,24 @@ class StorageService {
   static const _label = 'location_label';
 
   Future<SavedLocation?> loadLocation() async {
+    try {
+      if (authService.isSignedIn) {
+        final data = await authService.loadUserData();
+        if (data != null && data['location_label'] != null) {
+          final loc = SavedLocation(
+            label: data['location_label'] as String,
+            latitude: (data['location_lat'] as num?)?.toDouble(),
+            longitude: (data['location_lng'] as num?)?.toDouble(),
+            address: data['location_address'] as String?,
+          );
+          await _saveLocal(loc);
+          return loc;
+        }
+      }
+    } catch (e) {
+      debugPrint('StorageService.loadLocation remote error: $e');
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final label = prefs.getString(_label);
     if (label == null) return null;
@@ -22,6 +42,21 @@ class StorageService {
   }
 
   Future<void> saveLocation(SavedLocation location) async {
+    await _saveLocal(location);
+
+    try {
+      await authService.saveUserData({
+        'location_label': location.label,
+        'location_lat': location.latitude,
+        'location_lng': location.longitude,
+        'location_address': location.address,
+      });
+    } catch (e) {
+      debugPrint('StorageService.saveLocation remote error: $e');
+    }
+  }
+
+  Future<void> _saveLocal(SavedLocation location) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_label, location.label);
     final lat = location.latitude;
