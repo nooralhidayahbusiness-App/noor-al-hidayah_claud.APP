@@ -96,6 +96,8 @@ const Map<String, String> _ar = {
 'getVerifiedDesc': 'أضف صورة شخصية وفحص وجه للحصول على شعار التوثيق',
 'verifyNow': 'وثّق حسابي الآن',
 'verifiedDone': '🎉 تم توثيق حسابك!',
+'store': 'المتجر',
+'storeDesc': 'اشترِ خلفيات وأصوات ومؤذنين بالنقاط',
 };
 
 const Map<String, String> _en = {
@@ -167,4 +169,6 @@ const Map<String, String> _en = {
 'getVerifiedDesc': 'Add a profile picture and face scan to get the badge',
 'verifyNow': 'Verify My Account',
 'verifiedDone': '🎉 Your account is verified!',
+'store': 'Store',
+'storeDesc': 'Buy backgrounds, voices and adhans with points',
 };
