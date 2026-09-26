@@ -6,14 +6,16 @@ import '../core/prayer_state.dart';
 import '../core/profile_state.dart';
 import '../core/theme.dart';
 import '../widgets/app_branding.dart';
+import '../widgets/asset_icon.dart';
 import '../widgets/auth_widgets.dart';
+import 'challenge_screen.dart';
 import 'tabs/community_tab.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/more_tab.dart';
 import 'tabs/quran_browser_tab.dart';
 import 'tabs/soon_tabs.dart';
 
-/// Main app frame: top bar, five tabs and the bottom navigation bar.
+/// Main app frame: top bar, six tabs and the bottom navigation bar.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -45,16 +47,33 @@ class _HomeShellState extends State<HomeShell> {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 20, 0),
+                    padding:
+                        const EdgeInsetsDirectional.fromSTEB(8, 8, 20, 0),
                     child: Row(
                       children: [
                         IconButton(
                           onPressed: () => openLocationPicker(context),
                           tooltip: appState.tr('changeLocation'),
                           color: AppColors.softGold,
-                          icon: const Icon(Icons.edit_location_alt_outlined),
+                          icon: const Icon(
+                              Icons.edit_location_alt_outlined),
                         ),
                         const Spacer(),
+                        IconButton(
+                          onPressed: () {
+                            // TODO: شاشة الإعدادات (سنبنيها لاحقاً)
+                            showAuthMessage(
+                              context,
+                              appState.tr('comingSoon'),
+                            );
+                          },
+                          tooltip: appState.tr('settings'),
+                          icon: const AssetIcon(
+                            path: 'assets/icons/Setting.png',
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
                         const AuthLanguageButton(),
                       ],
                     ),
@@ -66,6 +85,7 @@ class _HomeShellState extends State<HomeShell> {
                         HomeTab(onOpenTab: _select),
                         const QuranBrowserTab(),
                         const AdhkarTab(),
+                        const ChallengeScreen(),
                         const CommunityTab(),
                         const MoreTab(),
                       ],
@@ -75,7 +95,8 @@ class _HomeShellState extends State<HomeShell> {
               ),
             ),
           ),
-          bottomNavigationBar: _BottomBar(index: _index, onSelected: _select),
+          bottomNavigationBar:
+              _BottomBar(index: _index, onSelected: _select),
         );
       },
     );
@@ -111,7 +132,7 @@ class _BottomBar extends StatelessWidget {
           ),
           labelTextStyle: WidgetStateProperty.resolveWith(
             (states) => TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: states.contains(WidgetState.selected)
                   ? FontWeight.w700
                   : FontWeight.w500,
@@ -124,6 +145,8 @@ class _BottomBar extends StatelessWidget {
         child: NavigationBar(
           selectedIndex: index,
           onDestinationSelected: onSelected,
+          labelBehavior:
+              NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
             NavigationDestination(
               icon: const Icon(Icons.home_outlined),
@@ -141,13 +164,32 @@ class _BottomBar extends StatelessWidget {
               label: appState.tr('tabAdhkar'),
             ),
             NavigationDestination(
+              icon: const AssetIcon(
+                path: 'assets/icons/challenge.png',
+                size: 26,
+                opacity: 0.75,
+              ),
+              selectedIcon: const AssetIcon(
+                path: 'assets/icons/challenge.png',
+                size: 26,
+              ),
+              label: appState.tr('tabChallenge'),
+            ),
+            NavigationDestination(
               icon: const Icon(Icons.groups_outlined),
               selectedIcon: const Icon(Icons.groups_rounded),
               label: appState.tr('tabCommunity'),
             ),
             NavigationDestination(
-              icon: const Icon(Icons.grid_view_outlined),
-              selectedIcon: const Icon(Icons.grid_view_rounded),
+              icon: const AssetIcon(
+                path: 'assets/icons/more.png',
+                size: 26,
+                opacity: 0.75,
+              ),
+              selectedIcon: const AssetIcon(
+                path: 'assets/icons/more.png',
+                size: 26,
+              ),
               label: appState.tr('tabMore'),
             ),
           ],
