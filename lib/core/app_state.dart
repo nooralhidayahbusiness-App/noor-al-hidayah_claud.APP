@@ -90,6 +90,12 @@ const Map<String, String> _ar = {
 'couponSuccess': 'تم! حصلت على 1000 نقطة 🎉',
 'couponInvalid': 'الكود غير صالح',
 'settings': 'الإعدادات',
+'couponAlreadyUsed': 'لقد استخدمت هذا الكود مسبقاً',
+'verified': 'موثوق',
+'getVerified': 'توثيق الحساب',
+'getVerifiedDesc': 'أضف صورة شخصية وفحص وجه للحصول على شعار التوثيق',
+'verifyNow': 'وثّق حسابي الآن',
+'verifiedDone': '🎉 تم توثيق حسابك!',
 };
 
 const Map<String, String> _en = {
@@ -155,4 +161,10 @@ const Map<String, String> _en = {
 'couponSuccess': 'Success! You got 1000 points 🎉',
 'couponInvalid': 'Invalid code',
 'settings': 'Settings',
+'couponAlreadyUsed': 'You already used this coupon',
+'verified': 'Verified',
+'getVerified': 'Get Verified',
+'getVerifiedDesc': 'Add a profile picture and face scan to get the badge',
+'verifyNow': 'Verify My Account',
+'verifiedDone': '🎉 Your account is verified!',
 };
