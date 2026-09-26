@@ -167,7 +167,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     ? 'assets/images/avatar_woman.png'
                     : 'assets/images/avatar_man.png',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Icon(
+                errorBuilder: (_, _, _) => Icon(
                   avatar == 'woman' ? Icons.face_3 : Icons.face_6,
                   size: 60,
                   color: AppColors.gold,
