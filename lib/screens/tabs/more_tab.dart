@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../account_screen.dart';
 import '../../core/app_flow.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
@@ -42,14 +42,14 @@ class MoreTab extends StatelessWidget {
                     onTap: () => openLocationPicker(context),
                   ),
                   divider(),
-                  _MoreRow(
-                    icon: Icons.person_outline_rounded,
-                    title: appState.tr('account'),
-                    trailing: appState.tr('soonBadge'),
-                    chevron: chevron,
-                    onTap: () =>
-                        showAuthMessage(context, appState.tr('comingSoon')),
-                  ),
+_MoreRow(
+  icon: Icons.person_outline_rounded,
+  title: appState.tr('account'),
+  chevron: chevron,
+  onTap: () => Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => const AccountScreen()),
+  ),
+),
                 ],
               ),
             ),
