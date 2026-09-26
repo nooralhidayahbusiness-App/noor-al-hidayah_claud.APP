@@ -15,12 +15,33 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  /// قائمة إيميلات المالك (تحصل على شعار true.me.png تلقائياً).
+  static const List<String> _ownerEmails = [
+    'abdelrahmenbenromdhan11@gmail.com',
+    'vevocom888@gmail.com',
+    'nooralimanechannel@gmail.com',
+    'nooralhidayahbusiness@gmail.com',
+  ];
+
   User? get currentUser => _auth.currentUser;
   bool get isSignedIn => _auth.currentUser != null;
   Stream<User?> get authChanges => _auth.authStateChanges();
 
   DocumentReference<Map<String, dynamic>> _userDoc(String uid) =>
       _db.collection('users').doc(uid);
+
+  Map<String, dynamic> _buildInitialProfile(String email) {
+    final isOwner = _ownerEmails.contains(email.toLowerCase());
+    return {
+      'name': '',
+      'bio': '',
+      'isPublic': true,
+      'country': '',
+      'verified': isOwner,
+      'verifiedType': isOwner ? 'owner' : 'none',
+      'faceScanDone': false,
+    };
+  }
 
   Future<void> register(String email, String password) async {
     try {
@@ -44,6 +65,7 @@ class AuthService {
             'totalCorrectAnswers': 0,
             'quranKhatmas': 0,
             'aiTeacherScore': 0,
+            'redeemedCoupons': <String>[],
           },
           'inventory': {
             'backgrounds': ['default'],
@@ -77,25 +99,6 @@ class AuthService {
         }, SetOptions(merge: true));
       }
     } on FirebaseAuthException catch (e) {
-    /// قائمة الإيميلات الموثوقة (المالك).
-static const List<String> _ownerEmails = [
-  'abdelrahmenbenromdhan11@gmail.com',
-  'vevocom888@gmail.com',
-  'nooralimanechannel@gmail.com',
-  'nooralhidayahbusiness@gmail.com',
-];
-
-Map<String, dynamic> _buildInitialProfile(String email) {
-  final isOwner = _ownerEmails.contains(email.toLowerCase());
-  return {
-    'name': '',
-    'bio': '',
-    'isPublic': true,
-    'country': '',
-    'verified': isOwner,
-    'verifiedType': isOwner ? 'owner' : 'none', // owner | user | none
-  };
-}
       throw AuthException(_mapError(e.code));
     } catch (e) {
       throw const AuthException('authErrGeneric');
