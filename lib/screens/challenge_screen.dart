@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/theme.dart';
+import '../data/questions.dart';
 import '../services/user_service.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
+import 'challenge_play_screen.dart';
 
 class ChallengeScreen extends StatefulWidget {
   const ChallengeScreen({super.key});
@@ -16,6 +18,7 @@ class ChallengeScreen extends StatefulWidget {
 
 class _ChallengeScreenState extends State<ChallengeScreen> {
   bool _loading = true;
+  bool _alreadyPlayedToday = false;
   int _todayPoints = 0;
   int _totalPoints = 0;
 
@@ -25,19 +28,91 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
     _load();
   }
 
+  String _todayKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  String _yesterdayKey() {
+    final y = DateTime.now().subtract(const Duration(days: 1));
+    return '${y.year}-${y.month.toString().padLeft(2, '0')}-${y.day.toString().padLeft(2, '0')}';
+  }
+
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final stats = await userService.loadStats();
+      final progress = await userService.loadProgress('challenges');
+      final lastPlayed = progress['lastPlayedDate'] as String?;
+      final todayPoints =
+          lastPlayed == _todayKey() ? (progress['todayPoints'] ?? 0) as int : 0;
+
       if (mounted) {
         setState(() {
           _totalPoints = (stats['points'] as num?)?.toInt() ?? 0;
-          _todayPoints = 0;
+          _alreadyPlayedToday = lastPlayed == _todayKey();
+          _todayPoints = todayPoints;
         });
       }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _startChallenge() async {
+    if (_alreadyPlayedToday) {
+      showAuthMessage(context, appState.tr('challengeAlreadyPlayed'),
+          error: true);
+      return;
+    }
+
+    // اختيار 5 أسئلة عشوائية
+    final pool = List<ChallengeQuestion>.from(allQuestions)..shuffle();
+    final picked = pool.take(5).toList();
+
+    final result = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        builder: (_) => ChallengePlayScreen(questions: picked),
+      ),
+    );
+
+    if (result == null) return;
+    if (!mounted) return;
+
+    // حفظ التقدم
+    final correct = result;
+    final gained = correct * 20;
+
+    // احسب streak
+    final progress = await userService.loadProgress('challenges');
+    final lastPlayed = progress['lastPlayedDate'] as String?;
+    int newStreak = 1;
+    if (lastPlayed == _yesterdayKey()) {
+      final stats = await userService.loadStats();
+      newStreak = ((stats['streak'] as num?)?.toInt() ?? 0) + 1;
+    }
+
+    await userService.saveProgress('challenges', {
+      'lastPlayedDate': _todayKey(),
+      'todayPoints': gained,
+      'todayCorrect': correct,
+    });
+
+    await userService.addPoints(gained);
+
+    await userService.saveProgress('challenges', {
+      'totalCompleted':
+          ((progress['totalCompleted'] as num?)?.toInt() ?? 0) + 1,
+    });
+
+    // تحديث الإحصائيات
+    await userService.saveStats({
+      'streak': newStreak,
+      'challengesCompleted': FieldValueIncrement.one,
+      'totalCorrectAnswers': FieldValueIncrement.by(correct),
+    });
+
+    await _load();
   }
 
   Future<void> _openCouponDialog() async {
@@ -116,7 +191,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
   }
 
   Future<void> _openStore() async {
-    // TODO: شاشة المتجر (سنبنيها لاحقاً)
     showAuthMessage(context, appState.tr('comingSoon'));
   }
 
@@ -128,7 +202,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
         return ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
-            // ============ العنوان + النقاط + زر المتجر ============
             Row(
               children: [
                 const AssetIcon(
@@ -170,8 +243,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
               ],
             ),
             const SizedBox(height: 20),
-
-            // ============ تحدي اليوم ============
             if (_loading)
               const Center(
                   child: CircularProgressIndicator(
@@ -180,11 +251,18 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
               GlassCard(
                 child: Column(
                   children: [
-                    const Icon(Icons.quiz_rounded,
-                        color: AppColors.gold, size: 44),
+                    Icon(
+                      _alreadyPlayedToday
+                          ? Icons.check_circle_rounded
+                          : Icons.quiz_rounded,
+                      color: AppColors.gold,
+                      size: 44,
+                    ),
                     const SizedBox(height: 12),
                     Text(
-                      appState.tr('dailyChallengeTitle'),
+                      _alreadyPlayedToday
+                          ? appState.tr('challengeDoneToday')
+                          : appState.tr('dailyChallengeTitle'),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -193,7 +271,9 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      appState.tr('dailyChallengeDesc'),
+                      _alreadyPlayedToday
+                          ? appState.tr('challengeComeBack')
+                          : appState.tr('dailyChallengeDesc'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppColors.cream.withValues(alpha: 0.75),
@@ -211,18 +291,16 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                     ),
                     const SizedBox(height: 16),
                     GoldButton(
-                      label: appState.tr('startChallenge'),
-                      onPressed: () {
-                        showAuthMessage(
-                            context, appState.tr('comingSoon'));
-                      },
+                      label: _alreadyPlayedToday
+                          ? appState.tr('challengeDone')
+                          : appState.tr('startChallenge'),
+                      onPressed:
+                          _alreadyPlayedToday ? null : _startChallenge,
                     ),
                   ],
                 ),
               ),
             const SizedBox(height: 16),
-
-            // ============ المتجر ============
             GlassCard(
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
@@ -251,8 +329,8 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                               appState.tr('storeDesc'),
                               style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.cream
-                                    .withValues(alpha: 0.65),
+                                color:
+                                    AppColors.cream.withValues(alpha: 0.65),
                               ),
                             ),
                           ],
@@ -267,8 +345,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // ============ استبدال الكوبون ============
             GlassCard(
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
@@ -297,8 +373,8 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                               appState.tr('redeemCouponDesc'),
                               style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.cream
-                                    .withValues(alpha: 0.65),
+                                color:
+                                    AppColors.cream.withValues(alpha: 0.65),
                               ),
                             ),
                           ],
