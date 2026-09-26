@@ -5,7 +5,6 @@ import '../core/profile_state.dart';
 import '../core/theme.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
-import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
 import 'edit_profile_screen.dart';
 
