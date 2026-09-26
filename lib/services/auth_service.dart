@@ -33,12 +33,58 @@ class AuthService {
         await _userDoc(uid).set({
           'email': email.trim(),
           'createdAt': FieldValue.serverTimestamp(),
+          'avatar': 'man',
+          'profile': {
+            'name': '',
+            'bio': '',
+            'isPublic': true,
+            'country': '',
+          },
+          'stats': {
+            'points': 0,
+            'level': 1,
+            'streak': 0,
+            'lastActiveDate': null,
+            'challengesCompleted': 0,
+            'totalCorrectAnswers': 0,
+            'quranKhatmas': 0,
+            'aiTeacherScore': 0,
+          },
+          'inventory': {
+            'backgrounds': ['default'],
+            'voices': ['default'],
+            'themes': ['default'],
+            'activeBackground': 'default',
+            'activeVoice': 'default',
+            'activeTheme': 'default',
+          },
+          'settings': {
+            'language': 'ar',
+            'theme': 'dark',
+            'notifications': {
+              'fajr': true,
+              'dhuhr': true,
+              'asr': true,
+              'maghrib': true,
+              'isha': true,
+              'adhanEnabled': true,
+              'adhanBeforeMinutes': 0,
+              'dailyChallenge': true,
+              'quranReminder': true,
+              'dailyVerse': true,
+            },
+          },
+          'progress': {
+            'challenges': {},
+            'quran': {},
+            'aiTeacher': {},
+          },
         }, SetOptions(merge: true));
       }
     } on FirebaseAuthException catch (e) {
-      throw AuthException('DEBUG: ${e.code} | ${e.message}');
+      throw AuthException(_mapError(e.code));
     } catch (e) {
-      throw AuthException('DEBUG-OTHER: $e');
+      throw const AuthException('authErrGeneric');
     }
   }
 
