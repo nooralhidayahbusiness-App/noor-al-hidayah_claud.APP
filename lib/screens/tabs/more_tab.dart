@@ -3,7 +3,6 @@ import '../account_screen.dart';
 import '../../core/app_flow.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
-import '../../widgets/auth_widgets.dart';
 import '../../widgets/glass_card.dart';
 
 class MoreTab extends StatelessWidget {
