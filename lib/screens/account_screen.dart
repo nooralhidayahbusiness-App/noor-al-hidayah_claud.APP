@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../widgets/verified_badge.dart';
 import '../core/app_state.dart';
 import '../core/profile_state.dart';
 import '../core/theme.dart';
@@ -17,24 +17,38 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen> {
   Map<String, dynamic> _stats = {};
-  bool _loading = true;
+Map<String, dynamic> _profile = {};
+bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _load();
+String _verifiedType() {
+  final vt = _profile['verifiedType'] as String?;
+  if (vt == 'owner' || vt == 'user') return vt!;
+  return 'none';
+}
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
-    try {
-      final stats = await userService.loadStats();
-      if (mounted) setState(() => _stats = stats);
-    } catch (e) {
-      debugPrint('AccountScreen load error: $e');
-    } finally {
-      if (mounted) setState(() => _loading = false);
+  setState(() => _loading = true);
+  try {
+    final results = await Future.wait([
+      userService.loadStats(),
+      userService.loadProfile(),
+    ]);
+    if (mounted) {
+      setState(() {
+        _stats = results[0];
+        _profile = results[1];
+      });
     }
+  } catch (e) {
+    debugPrint('AccountScreen load error: $e');
+  } finally {
+    if (mounted) setState(() => _loading = false);
+  }
   }
 
   Future<void> _signOut() async {
@@ -176,16 +190,23 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            profileState.name.isEmpty
-                ? appState.tr('noName')
-                : profileState.name,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: AppColors.softGold,
-            ),
-          ),
+          Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Text(
+      profileState.name.isEmpty
+          ? appState.tr('noName')
+          : profileState.name,
+      style: const TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: AppColors.softGold,
+      ),
+    ),
+    const SizedBox(width: 6),
+    VerifiedBadge(type: _verifiedType(), size: 22),
+  ],
+),
           if (profileState.bio.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
