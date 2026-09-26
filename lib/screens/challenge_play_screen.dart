@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../data/questions.dart';
-import '../widgets/auth_widgets.dart';
 import 'challenge_result_screen.dart';
 
 class ChallengePlayScreen extends StatefulWidget {
