@@ -1,82 +1,78 @@
-import 'package:cross_file/cross_file.dart';
-import 'package:flutter/material.dart';
-import 'package:screenshot/screenshot.dart';
-import 'package:share_plus/share_plus.dart'
-    show ShareParams, SharePlus, ShareResultStatus;
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../core/app_state.dart';
-import '../core/quran_prefs.dart';
-import '../models/quran.dart';
-import '../widgets/auth_widgets.dart';
-import '../widgets/ayah_share_card.dart';
-import 'tafsir_service.dart';
+import '../models/saved_location.dart';
+import 'auth_service.dart';
 
-/// Draws a beautiful image of the verse and opens the share sheet
-/// (save, WhatsApp, files ...).
-Future<void> shareAyahImage(
-  BuildContext context, {
-  required QuranSurah surah,
-  required QuranAyah ayah,
-}) async {
-  showAuthMessage(context, appState.tr('preparingImage'));
-  try {
-    var tafsirText = '';
-    var tafsirSource = '';
-    if (quranPrefs.showTafsir) {
-      final data = await TafsirService.load();
-      tafsirText = data.textFor(
-        arabic: appState.isArabic,
-        surah: surah.number,
-        ayah: ayah.number,
-      );
-      tafsirSource = tafsirText.isEmpty ? '' : data.sourceName(appState.isArabic);
-    }
-    if (!context.mounted) return;
+/// Keeps the chosen location locally AND synced to Firestore.
+class StorageService {
+  static const _lat = 'location_lat';
+  static const _lng = 'location_lng';
+  static const _address = 'location_address';
+  static const _label = 'location_label';
+
+  Future<SavedLocation?> loadLocation() async {
+    // 1) نحاول نقرأ من Firestore أولاً
     try {
-      await precacheImage(const AssetImage('assets/images/logo.png'), context);
-    } catch (_) {}
-    if (!context.mounted) return;
-
-    final card = AyahShareCard(
-      surah: surah,
-      ayah: ayah,
-      simpleFont: quranPrefs.simpleFont,
-      translation: quranPrefs.showTranslation ? ayah.translation : '',
-      tafsir: tafsirText,
-      tafsirSource: tafsirSource,
-    );
-    final bytes = await ScreenshotController().captureFromLongWidget(
-      InheritedTheme.captureAll(
-        context,
-        Material(
-          color: Colors.transparent,
-          child: MediaQuery(
-            data: MediaQuery.of(context),
-            child: Directionality(
-              textDirection: appState.direction,
-              child: card,
-            ),
-          ),
-        ),
-      ),
-      pixelRatio: 3,
-      delay: const Duration(milliseconds: 250),
-      context: context,
-      constraints: const BoxConstraints(maxWidth: 380),
-    );
-
-    final result = await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile.fromData(bytes, mimeType: 'image/png')],
-        fileNameOverrides: ['ayah-${surah.number}-${ayah.number}.png'],
-      ),
-    );
-    if (result.status == ShareResultStatus.unavailable && context.mounted) {
-      showAuthMessage(context, appState.tr('imageUnsupported'), error: true);
+      if (authService.isSignedIn) {
+        final data = await authService.loadUserData();
+        if (data != null && data['location_label'] != null) {
+          final loc = SavedLocation(
+            label: data['location_label'] as String,
+            latitude: (data['location_lat'] as num?)?.toDouble(),
+            longitude: (data['location_lng'] as num?)?.toDouble(),
+            address: data['location_address'] as String?,
+          );
+          await _saveLocal(loc);
+          return loc;
+        }
+      }
+    } catch (e) {
+      debugPrint('StorageService.loadLocation remote error: $e');
     }
-  } catch (_) {
-    if (context.mounted) {
-      showAuthMessage(context, appState.tr('imageError'), error: true);
+
+    // 2) ما فيه شي؟ نرجع للنسخة المحلية
+    final prefs = await SharedPreferences.getInstance();
+    final label = prefs.getString(_label);
+    if (label == null) return null;
+    return SavedLocation(
+      label: label,
+      latitude: prefs.getDouble(_lat),
+      longitude: prefs.getDouble(_lng),
+      address: prefs.getString(_address),
+    );
+  }
+
+  Future<void> saveLocation(SavedLocation location) async {
+    // 1) حفظ محلي
+    await _saveLocal(location);
+
+    // 2) حفظ في Firestore
+    try {
+      await authService.saveUserData({
+        'location_label': location.label,
+        'location_lat': location.latitude,
+        'location_lng': location.longitude,
+        'location_address': location.address,
+      });
+    } catch (e) {
+      debugPrint('StorageService.saveLocation remote error: $e');
+    }
+  }
+
+  Future<void> _saveLocal(SavedLocation location) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_label, location.label);
+    final lat = location.latitude;
+    final lng = location.longitude;
+    if (lat != null && lng != null) {
+      await prefs.setDouble(_lat, lat);
+      await prefs.setDouble(_lng, lng);
+      await prefs.remove(_address);
+    } else {
+      await prefs.remove(_lat);
+      await prefs.remove(_lng);
+      await prefs.setString(_address, location.address ?? location.label);
     }
   }
 }
