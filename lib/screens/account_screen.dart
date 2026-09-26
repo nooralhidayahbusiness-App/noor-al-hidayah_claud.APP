@@ -6,6 +6,7 @@ import '../core/theme.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/profile_avatar.dart';
 import '../widgets/verified_badge.dart';
 import 'edit_profile_screen.dart';
 
@@ -170,28 +171,8 @@ class _AccountScreenState extends State<AccountScreen> {
     return GlassCard(
       child: Column(
         children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.gold, width: 2),
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                avatar == 'woman'
-                    ? 'assets/images/avatar_woman.png'
-                    : 'assets/images/avatar_man.png',
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Icon(
-                  avatar == 'woman' ? Icons.face_3 : Icons.face_6,
-                  size: 60,
-                  color: AppColors.gold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
+          ProfileAvatar(email: email, avatar: avatar, size: 100),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
