@@ -44,8 +44,9 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       final stats = await userService.loadStats();
       final progress = await userService.loadProgress('challenges');
       final lastPlayed = progress['lastPlayedDate'] as String?;
-      final todayPoints =
-          lastPlayed == _todayKey() ? (progress['todayPoints'] ?? 0) as int : 0;
+      final todayPoints = lastPlayed == _todayKey()
+          ? ((progress['todayPoints'] as num?)?.toInt() ?? 0)
+          : 0;
 
       if (mounted) {
         setState(() {
@@ -76,42 +77,42 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       ),
     );
 
-    if (result == null) return;
-    if (!mounted) return;
+    if (result == null || !mounted) return;
 
-    // حفظ التقدم
     final correct = result;
     final gained = correct * 20;
 
-    // احسب streak
-    final progress = await userService.loadProgress('challenges');
-    final lastPlayed = progress['lastPlayedDate'] as String?;
+    // هل لعب أمس؟ لحساب streak
+    final oldProgress = await userService.loadProgress('challenges');
+    final lastPlayed = oldProgress['lastPlayedDate'] as String?;
+    final oldStats = await userService.loadStats();
+    final oldStreak = (oldStats['streak'] as num?)?.toInt() ?? 0;
+
     int newStreak = 1;
     if (lastPlayed == _yesterdayKey()) {
-      final stats = await userService.loadStats();
-      newStreak = ((stats['streak'] as num?)?.toInt() ?? 0) + 1;
+      newStreak = oldStreak + 1;
     }
 
+    final oldCompleted =
+        (oldProgress['totalCompleted'] as num?)?.toInt() ?? 0;
+
+    // حفظ التقدم
     await userService.saveProgress('challenges', {
       'lastPlayedDate': _todayKey(),
       'todayPoints': gained,
       'todayCorrect': correct,
+      'totalCompleted': oldCompleted + 1,
     });
 
+    // إضافة النقاط + تحديث الإحصائيات
     await userService.addPoints(gained);
-
-    await userService.saveProgress('challenges', {
-      'totalCompleted':
-          ((progress['totalCompleted'] as num?)?.toInt() ?? 0) + 1,
+    await userService.incrementStats({
+      'challengesCompleted': 1,
+      'totalCorrectAnswers': correct,
     });
+    await userService.setStats({'streak': newStreak});
 
-    // تحديث الإحصائيات
-    await userService.saveStats({
-      'streak': newStreak,
-      'challengesCompleted': FieldValueIncrement.one,
-      'totalCorrectAnswers': FieldValueIncrement.by(correct),
-    });
-
+    if (!mounted) return;
     await _load();
   }
 
@@ -245,8 +246,8 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
             const SizedBox(height: 20),
             if (_loading)
               const Center(
-                  child: CircularProgressIndicator(
-                      color: AppColors.gold))
+                  child:
+                      CircularProgressIndicator(color: AppColors.gold))
             else
               GlassCard(
                 child: Column(
