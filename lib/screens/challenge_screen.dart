@@ -90,16 +90,30 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
 
     if (code == null || code.isEmpty) return;
 
-    // كود NAH2026 = 1000 نقطة
-    if (code.toUpperCase() == 'NAH2026') {
-      await userService.addPoints(1000);
-      if (!mounted) return;
-      showAuthMessage(context, appState.tr('couponSuccess'));
-      await _load();
-    } else {
-      if (!mounted) return;
-      showAuthMessage(context, appState.tr('couponInvalid'), error: true);
-    }
+final upper = code.toUpperCase();
+const validCodes = {'NAH2026'};
+
+if (!validCodes.contains(upper)) {
+  if (!mounted) return;
+  showAuthMessage(context, appState.tr('couponInvalid'), error: true);
+  return;
+}
+
+// ✅ تحقق: هل استُخدم هذا الكود مسبقاً؟
+final alreadyUsed = await userService.hasUsedCoupon(upper);
+if (alreadyUsed) {
+  if (!mounted) return;
+  showAuthMessage(context, appState.tr('couponAlreadyUsed'),
+      error: true);
+  return;
+}
+
+// ✅ للمرة الأولى: منح النقاط + تسجيل الاستخدام
+await userService.addPoints(1000);
+await userService.markCouponUsed(upper);
+if (!mounted) return;
+showAuthMessage(context, appState.tr('couponSuccess'));
+await _load();
   }
 
   @override
