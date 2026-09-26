@@ -63,7 +63,8 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
           style: const TextStyle(color: AppColors.cream),
           decoration: InputDecoration(
             hintText: appState.tr('enterCouponCode'),
-            hintStyle: TextStyle(color: AppColors.cream.withValues(alpha: 0.4)),
+            hintStyle:
+                TextStyle(color: AppColors.cream.withValues(alpha: 0.4)),
             filled: true,
             fillColor: Colors.black.withValues(alpha: 0.25),
             border: OutlineInputBorder(
@@ -114,6 +115,11 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
     await _load();
   }
 
+  Future<void> _openStore() async {
+    // TODO: شاشة المتجر (سنبنيها لاحقاً)
+    showAuthMessage(context, appState.tr('comingSoon'));
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -122,9 +128,11 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
         return ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
+            // ============ العنوان + النقاط + زر المتجر ============
             Row(
               children: [
-                const AssetIcon(path: 'assets/icons/challenge.png', size: 34),
+                const AssetIcon(
+                    path: 'assets/icons/challenge.png', size: 34),
                 const SizedBox(width: 12),
                 Text(
                   appState.tr('challenges'),
@@ -162,10 +170,12 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
               ],
             ),
             const SizedBox(height: 20),
+
+            // ============ تحدي اليوم ============
             if (_loading)
               const Center(
-                  child:
-                      CircularProgressIndicator(color: AppColors.gold))
+                  child: CircularProgressIndicator(
+                      color: AppColors.gold))
             else
               GlassCard(
                 child: Column(
@@ -211,6 +221,54 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                 ),
               ),
             const SizedBox(height: 16),
+
+            // ============ المتجر ============
+            GlassCard(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: _openStore,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const AssetIcon(
+                          path: 'assets/icons/store.png', size: 34),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              appState.tr('store'),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.softGold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              appState.tr('storeDesc'),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.cream
+                                    .withValues(alpha: 0.65),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded,
+                          color:
+                              AppColors.softGold.withValues(alpha: 0.7)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ============ استبدال الكوبون ============
             GlassCard(
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
@@ -239,15 +297,16 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                               appState.tr('redeemCouponDesc'),
                               style: TextStyle(
                                 fontSize: 13,
-                                color:
-                                    AppColors.cream.withValues(alpha: 0.65),
+                                color: AppColors.cream
+                                    .withValues(alpha: 0.65),
                               ),
                             ),
                           ],
                         ),
                       ),
                       Icon(Icons.chevron_right_rounded,
-                          color: AppColors.softGold.withValues(alpha: 0.7)),
+                          color:
+                              AppColors.softGold.withValues(alpha: 0.7)),
                     ],
                   ),
                 ),
