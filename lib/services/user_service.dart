@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-/// خدمة موحدة لكل بيانات المستخدم: الملف الشخصي، النقاط، المستويات،
-/// المخزون (الخلفيات/الأصوات/الثيمات)، الإعدادات والتقدم.
 class UserService {
   UserService._();
   static final UserService instance = UserService._();
@@ -22,9 +20,7 @@ class UserService {
     final doc = _doc;
     if (doc == null) return {};
     final snap = await doc.get();
-    return Map<String, dynamic>.from(
-      (snap.data()?['profile'] as Map?) ?? {},
-    );
+    return Map<String, dynamic>.from((snap.data()?['profile'] as Map?) ?? {});
   }
 
   Future<void> saveProfile({
@@ -41,9 +37,7 @@ class UserService {
     if (isPublic != null) data['isPublic'] = isPublic;
     if (country != null) data['country'] = country;
     if (data.isEmpty) return;
-    await doc.set({
-      'profile': data,
-    }, SetOptions(merge: true));
+    await doc.set({'profile': data}, SetOptions(merge: true));
   }
 
   // =========================== STATS / POINTS ===========================
@@ -51,18 +45,14 @@ class UserService {
     final doc = _doc;
     if (doc == null) return {};
     final snap = await doc.get();
-    return Map<String, dynamic>.from(
-      (snap.data()?['stats'] as Map?) ?? {},
-    );
+    return Map<String, dynamic>.from((snap.data()?['stats'] as Map?) ?? {});
   }
 
-  static int levelFromPoints(int points) {
-    return (points / 100).clamp(0, double.infinity).toInt();
-  }
+  static int levelFromPoints(int points) =>
+      (points / 100).clamp(0, double.infinity).toInt();
 
-  static int pointsForNextLevel(int currentLevel) {
-    return 100 * currentLevel * currentLevel;
-  }
+  static int pointsForNextLevel(int currentLevel) =>
+      100 * currentLevel * currentLevel;
 
   Future<void> addPoints(int amount) async {
     final doc = _doc;
@@ -70,6 +60,26 @@ class UserService {
     await doc.set({
       'stats': {'points': FieldValue.increment(amount)}
     }, SetOptions(merge: true));
+    await _recomputeLevel();
+  }
+
+  /// زيادة قيم متعددة في stats (مثلاً +1 لعدد التحديات، +3 للإجابات الصحيحة).
+  Future<void> incrementStats(Map<String, int> increments) async {
+    final doc = _doc;
+    if (doc == null || increments.isEmpty) return;
+    final data = <String, dynamic>{};
+    increments.forEach((key, value) {
+      data[key] = FieldValue.increment(value);
+    });
+    await doc.set({'stats': data}, SetOptions(merge: true));
+    await _recomputeLevel();
+  }
+
+  /// تعيين قيم stats مباشرة (مثل streak).
+  Future<void> setStats(Map<String, dynamic> values) async {
+    final doc = _doc;
+    if (doc == null || values.isEmpty) return;
+    await doc.set({'stats': values}, SetOptions(merge: true));
     await _recomputeLevel();
   }
 
@@ -87,22 +97,12 @@ class UserService {
     }
   }
 
-  Future<void> incrementStreak() async {
-    final doc = _doc;
-    if (doc == null) return;
-    await doc.set({
-      'stats': {'streak': FieldValue.increment(1)}
-    }, SetOptions(merge: true));
-  }
-
   // =========================== INVENTORY ===========================
   Future<Map<String, dynamic>> loadInventory() async {
     final doc = _doc;
     if (doc == null) return {};
     final snap = await doc.get();
-    return Map<String, dynamic>.from(
-      (snap.data()?['inventory'] as Map?) ?? {},
-    );
+    return Map<String, dynamic>.from((snap.data()?['inventory'] as Map?) ?? {});
   }
 
   Future<void> unlockItem(String type, String id) async {
@@ -128,17 +128,13 @@ class UserService {
     final doc = _doc;
     if (doc == null) return {};
     final snap = await doc.get();
-    return Map<String, dynamic>.from(
-      (snap.data()?['settings'] as Map?) ?? {},
-    );
+    return Map<String, dynamic>.from((snap.data()?['settings'] as Map?) ?? {});
   }
 
   Future<void> saveSettings(Map<String, dynamic> data) async {
     final doc = _doc;
     if (doc == null || data.isEmpty) return;
-    await doc.set({
-      'settings': data,
-    }, SetOptions(merge: true));
+    await doc.set({'settings': data}, SetOptions(merge: true));
   }
 
   // =========================== PROGRESS ===========================
@@ -159,7 +155,6 @@ class UserService {
   }
 
   // =========================== COUPONS ===========================
-  /// هل استخدم المستخدم هذا الكود مسبقاً؟
   Future<bool> hasUsedCoupon(String code) async {
     final doc = _doc;
     if (doc == null) return false;
@@ -169,7 +164,6 @@ class UserService {
     return used.contains(code);
   }
 
-  /// سجّل استخدام الكود (لتفادي إعادة استخدامه).
   Future<void> markCouponUsed(String code) async {
     final doc = _doc;
     if (doc == null) return;
