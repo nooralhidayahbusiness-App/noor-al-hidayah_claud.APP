@@ -15,40 +15,6 @@ class UserService {
     final uid = _uid;
     if (uid == null) return null;
     return _db.collection('users').doc(uid);
-// =========================== COUPONS ===========================
-/// هل استخدم المستخدم هذا الكود مسبقاً؟
-Future<bool> hasUsedCoupon(String code) async {
-  final doc = _doc;
-  if (doc == null) return false;
-  final snap = await doc.get();
-  final stats = (snap.data()?['stats'] as Map?) ?? {};
-  final used = (stats['redeemedCoupons'] as List?) ?? [];
-  return used.contains(code);
-}
-
-/// سجّل استخدام الكود.
-Future<void> markCouponUsed(String code) async {
-  final doc = _doc;
-  if (doc == null) return;
-  await doc.set({
-    'stats': {
-      'redeemedCoupons': FieldValue.arrayUnion([code]),
-    }
-  }, SetOptions(merge: true));
-}
-
-// =========================== VERIFICATION ===========================
-Future<void> setUserVerified({bool faceScan = false}) async {
-  final doc = _doc;
-  if (doc == null) return;
-  await doc.set({
-    'profile': {
-      'verified': true,
-      'verifiedType': 'user',
-      'faceScanDone': faceScan,
-    }
-  }, SetOptions(merge: true));
-}
   }
 
   // =========================== PROFILE ===========================
@@ -90,14 +56,10 @@ Future<void> setUserVerified({bool faceScan = false}) async {
     );
   }
 
-  /// يحسب المستوى من النقاط: كل مستوى يحتاج 100 * (مستواه) نقطة.
   static int levelFromPoints(int points) {
-    // level 1: 0-99، level 2: 100-399، level 3: 400-899، level 4: 900-1599...
-    // الصيغة: level = floor(sqrt(points / 100)) + 1
     return (points / 100).clamp(0, double.infinity).toInt();
   }
 
-  /// يحسب عدد النقاط المطلوبة للمستوى القادم.
   static int pointsForNextLevel(int currentLevel) {
     return 100 * currentLevel * currentLevel;
   }
@@ -108,7 +70,6 @@ Future<void> setUserVerified({bool faceScan = false}) async {
     await doc.set({
       'stats': {'points': FieldValue.increment(amount)}
     }, SetOptions(merge: true));
-    // تحديث المستوى تلقائياً
     await _recomputeLevel();
   }
 
@@ -145,7 +106,6 @@ Future<void> setUserVerified({bool faceScan = false}) async {
   }
 
   Future<void> unlockItem(String type, String id) async {
-    // type = backgrounds | voices | themes
     final doc = _doc;
     if (doc == null) return;
     await doc.set({
@@ -156,7 +116,6 @@ Future<void> setUserVerified({bool faceScan = false}) async {
   }
 
   Future<void> setActive(String type, String id) async {
-    // type = activeBackground | activeVoice | activeTheme
     final doc = _doc;
     if (doc == null) return;
     await doc.set({
@@ -196,6 +155,41 @@ Future<void> setUserVerified({bool faceScan = false}) async {
     if (doc == null || data.isEmpty) return;
     await doc.set({
       'progress': {section: data}
+    }, SetOptions(merge: true));
+  }
+
+  // =========================== COUPONS ===========================
+  /// هل استخدم المستخدم هذا الكود مسبقاً؟
+  Future<bool> hasUsedCoupon(String code) async {
+    final doc = _doc;
+    if (doc == null) return false;
+    final snap = await doc.get();
+    final stats = (snap.data()?['stats'] as Map?) ?? {};
+    final used = (stats['redeemedCoupons'] as List?) ?? [];
+    return used.contains(code);
+  }
+
+  /// سجّل استخدام الكود (لتفادي إعادة استخدامه).
+  Future<void> markCouponUsed(String code) async {
+    final doc = _doc;
+    if (doc == null) return;
+    await doc.set({
+      'stats': {
+        'redeemedCoupons': FieldValue.arrayUnion([code]),
+      }
+    }, SetOptions(merge: true));
+  }
+
+  // =========================== VERIFICATION ===========================
+  Future<void> setUserVerified({bool faceScan = false}) async {
+    final doc = _doc;
+    if (doc == null) return;
+    await doc.set({
+      'profile': {
+        'verified': true,
+        'verifiedType': 'user',
+        'faceScanDone': faceScan,
+      }
     }, SetOptions(merge: true));
   }
 }
