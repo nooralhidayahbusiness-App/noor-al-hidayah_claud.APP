@@ -36,9 +36,9 @@ class AuthService {
         }, SetOptions(merge: true));
       }
     } on FirebaseAuthException catch (e) {
-      throw AuthException(_mapError(e.code));
-    } catch (_) {
-      throw const AuthException('authErrGeneric');
+      throw AuthException('DEBUG: ${e.code} | ${e.message}');
+    } catch (e) {
+      throw AuthException('DEBUG-OTHER: $e');
     }
   }
 
