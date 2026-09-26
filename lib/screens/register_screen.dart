@@ -4,6 +4,7 @@ import '../core/app_flow.dart';
 import '../core/app_state.dart';
 import '../core/navigation.dart';
 import '../core/validators.dart';
+import '../services/auth_service.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/dev_skip.dart';
 import 'login_screen.dart';
@@ -35,11 +36,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
     setState(() => _loading = true);
-    await Future<void>.delayed(const Duration(milliseconds: 1400));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    await goAfterAuth(context);
+    try {
+      // ✅ استدعاء Firebase لإنشاء الحساب في Auth و Firestore
+      await authService.register(_email.text, _password.text);
+      if (!mounted) return;
+      await goAfterAuth(context);
+    } on AuthException catch (e) {
+      if (mounted) {
+        showAuthMessage(context, appState.tr(e.key), error: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        showAuthMessage(context, 'حدث خطأ غير متوقع: $e', error: true);
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -50,12 +64,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return AuthScaffold(
           title: appState.tr('createAccount'),
           subtitle: appState.tr('createAccountSub'),
-          footer: DevSkipFooter(link: AuthSwitchLink(
-            question: appState.tr('haveAccountQ'),
-            action: appState.tr('login'),
-            onTap: () => Navigator.of(context)
-                .pushReplacement(fadeRoute(const LoginScreen())),
-          )),
+          footer: DevSkipFooter(
+            link: AuthSwitchLink(
+              question: appState.tr('haveAccountQ'),
+              action: appState.tr('login'),
+              onTap: () => Navigator.of(context)
+                  .pushReplacement(fadeRoute(const LoginScreen())),
+            ),
+          ),
           child: Form(
             key: _formKey,
             child: Column(
