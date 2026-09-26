@@ -15,6 +15,40 @@ class UserService {
     final uid = _uid;
     if (uid == null) return null;
     return _db.collection('users').doc(uid);
+// =========================== COUPONS ===========================
+/// هل استخدم المستخدم هذا الكود مسبقاً؟
+Future<bool> hasUsedCoupon(String code) async {
+  final doc = _doc;
+  if (doc == null) return false;
+  final snap = await doc.get();
+  final stats = (snap.data()?['stats'] as Map?) ?? {};
+  final used = (stats['redeemedCoupons'] as List?) ?? [];
+  return used.contains(code);
+}
+
+/// سجّل استخدام الكود.
+Future<void> markCouponUsed(String code) async {
+  final doc = _doc;
+  if (doc == null) return;
+  await doc.set({
+    'stats': {
+      'redeemedCoupons': FieldValue.arrayUnion([code]),
+    }
+  }, SetOptions(merge: true));
+}
+
+// =========================== VERIFICATION ===========================
+Future<void> setUserVerified({bool faceScan = false}) async {
+  final doc = _doc;
+  if (doc == null) return;
+  await doc.set({
+    'profile': {
+      'verified': true,
+      'verifiedType': 'user',
+      'faceScanDone': faceScan,
+    }
+  }, SetOptions(merge: true));
+}
   }
 
   // =========================== PROFILE ===========================
