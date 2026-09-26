@@ -77,6 +77,19 @@ const Map<String, String> _ar = {
 'tapToChangeAvatar': 'اضغط على الصورة لتغييرها',
 'errNameShort': 'الاسم يجب أن يكون حرفين على الأقل',
 'errBioLong': 'النبذة طويلة جداً (200 حرف كحد أقصى)',
+// التحديات والكوبون
+'tabChallenge': 'التحديات',
+'challenges': 'التحديات',
+'dailyChallengeTitle': 'تحدي اليوم',
+'dailyChallengeDesc': '5 أسئلة تتجدد كل يوم. كل إجابة صحيحة = 20 نقطة',
+'startChallenge': 'ابدأ التحدي',
+'redeemCoupon': 'استبدال كوبون',
+'redeemCouponDesc': 'أدخل كود الخصم للحصول على نقاط',
+'enterCouponCode': 'أدخل الكود...',
+'redeem': 'استبدال',
+'couponSuccess': 'تم! حصلت على 1000 نقطة 🎉',
+'couponInvalid': 'الكود غير صالح',
+'settings': 'الإعدادات',
 };
 
 const Map<String, String> _en = {
@@ -130,4 +143,16 @@ const Map<String, String> _en = {
 'tapToChangeAvatar': 'Tap the image to change it',
 'errNameShort': 'Name must be at least 2 characters',
 'errBioLong': 'Bio is too long (max 200 characters)',
+'tabChallenge': 'Challenges',
+'challenges': 'Challenges',
+'dailyChallengeTitle': 'Daily Challenge',
+'dailyChallengeDesc': '5 questions renew daily. 20 points per correct answer.',
+'startChallenge': 'Start Challenge',
+'redeemCoupon': 'Redeem Coupon',
+'redeemCouponDesc': 'Enter a coupon code to get points',
+'enterCouponCode': 'Enter code...',
+'redeem': 'Redeem',
+'couponSuccess': 'Success! You got 1000 points 🎉',
+'couponInvalid': 'Invalid code',
+'settings': 'Settings',
 };
