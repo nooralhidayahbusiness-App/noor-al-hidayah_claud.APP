@@ -34,12 +34,7 @@ class AuthService {
           'email': email.trim(),
           'createdAt': FieldValue.serverTimestamp(),
           'avatar': 'man',
-          'profile': {
-            'name': '',
-            'bio': '',
-            'isPublic': true,
-            'country': '',
-          },
+          'profile': _buildInitialProfile(email.trim()),
           'stats': {
             'points': 0,
             'level': 1,
