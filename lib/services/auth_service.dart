@@ -77,6 +77,25 @@ class AuthService {
         }, SetOptions(merge: true));
       }
     } on FirebaseAuthException catch (e) {
+    /// قائمة الإيميلات الموثوقة (المالك).
+static const List<String> _ownerEmails = [
+  'abdelrahmenbenromdhan11@gmail.com',
+  'vevocom888@gmail.com',
+  'nooralimanechannel@gmail.com',
+  'nooralhidayahbusiness@gmail.com',
+];
+
+Map<String, dynamic> _buildInitialProfile(String email) {
+  final isOwner = _ownerEmails.contains(email.toLowerCase());
+  return {
+    'name': '',
+    'bio': '',
+    'isPublic': true,
+    'country': '',
+    'verified': isOwner,
+    'verifiedType': isOwner ? 'owner' : 'none', // owner | user | none
+  };
+}
       throw AuthException(_mapError(e.code));
     } catch (e) {
       throw const AuthException('authErrGeneric');
