@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../data/store_items.dart';
+import 'animated_vip_background.dart';
 import 'islamic_pattern.dart';
 import 'themed_background.dart';
 
@@ -12,9 +13,9 @@ const Color _overlayTop = Color(0x66041F18);
 const Color _overlayBottom = Color(0xCC041F18);
 
 /// الخلفية العامة:
-/// 1) ألوان الثيم (مع animations VIP) كأساس.
-/// 2) صورة الخلفية المختارة فوقها بشفافية خفيفة.
-/// 3) overlay + child.
+/// - أولوية 1: خلفية VIP (backgroundvip1/2/3) → AnimatedVipBackground.
+/// - أولوية 2: ثيم VIP (vip_emperor/cosmic/crimson) → ThemedBackground متحرك.
+/// - أولوية 3: خلفية عادية (صورة ثابتة + overlay).
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key, this.child});
 
@@ -28,52 +29,50 @@ class AppBackground extends StatelessWidget {
         final bgId = themeState.backgroundId;
         final bgItem = findItem('background', bgId) ??
             findItem('background', 'default')!;
-        final showBackgroundImage =
-            bgId != 'default' && bgItem.imagePath != null;
+        final palette = themeState.palette;
 
+        final isVipBg = bgItem.isVip &&
+            bgItem.isAnimated &&
+            bgItem.imagePath != null;
+        final isVipTheme = palette.isVip && palette.isAnimated;
+
+        // أولوية 1: خلفية VIP متحركة
+        if (isVipBg) {
+          return AnimatedVipBackground(
+            imagePath: bgItem.imagePath!,
+            child: child,
+          );
+        }
+
+        // أولوية 2: ثيم VIP متحرك (مع إخفاء صورة الخلفية كي يظهر الأنيميشن)
+        if (isVipTheme) {
+          return ThemedBackground(
+            child: child ?? const SizedBox.expand(),
+          );
+        }
+
+        // أولوية 3: عادي
         return Stack(
           fit: StackFit.expand,
           children: [
-            // 1) طبقة الثيم (مع animations VIP)
-            const ThemedBackground(child: SizedBox.expand()),
-
-            // 2) صورة الخلفية المختارة فوق الثيم
-            if (showBackgroundImage)
-              Opacity(
-                opacity: 0.92,
-                child: Image.asset(
-                  bgItem.imagePath!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                ),
-              )
-            else if (!themeState.palette.isVip &&
-                bgItem.imagePath != null &&
-                bgId == 'default')
+            if (bgItem.imagePath != null)
               Image.asset(
                 bgItem.imagePath!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => const _FallbackBackground(),
-              ),
-
-            // 3) overlay لتوحيد الألوان
-            DecoratedBox(
+              )
+            else
+              const _FallbackBackground(),
+            const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: showBackgroundImage
-                      ? [_overlayTop, _overlayBottom]
-                      : [
-                          Colors.black.withValues(alpha: 0.15),
-                          Colors.black.withValues(alpha: 0.45),
-                        ],
+                  colors: [_overlayTop, _overlayBottom],
                 ),
               ),
             ),
-
-            // 4) المحتوى
-            ?child,
+            if (child != null) child!,
           ],
         );
       },
