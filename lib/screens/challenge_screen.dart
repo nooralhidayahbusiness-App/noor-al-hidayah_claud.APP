@@ -191,19 +191,30 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       return;
     }
 
-    final alreadyUsed = await userService.hasUsedCoupon(upper);
-    if (alreadyUsed) {
-      if (!mounted) return;
-      showAuthMessage(context, appState.tr('couponAlreadyUsed'),
-          error: true);
-      return;
-    }
+    // ✅ حسابات المالك: الكوبون غير محدود
+final isOwner = authService.isOwner;
 
-    await userService.addPoints(1000);
-    await userService.markCouponUsed(upper);
+if (!isOwner) {
+  // المستخدم العادي: مرة واحدة فقط
+  final alreadyUsed = await userService.hasUsedCoupon(upper);
+  if (alreadyUsed) {
     if (!mounted) return;
-    showAuthMessage(context, appState.tr('couponSuccess'));
-    await _load();
+    showAuthMessage(context, appState.tr('couponAlreadyUsed'),
+        error: true);
+    return;
+  }
+}
+
+await userService.addPoints(1000);
+if (!isOwner) {
+  await userService.markCouponUsed(upper);
+}
+if (!mounted) return;
+showAuthMessage(
+  context,
+  isOwner ? 'تم! +1000 نقطة (غير محدود) 🎉' : appState.tr('couponSuccess'),
+);
+await _load();
   }
 
   Future<void> _openStore() async {
