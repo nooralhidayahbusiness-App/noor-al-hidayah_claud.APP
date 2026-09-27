@@ -29,7 +29,12 @@ class AuthService {
 
   DocumentReference<Map<String, dynamic>> _userDoc(String uid) =>
       _db.collection('users').doc(uid);
-
+/// هل الإيميل الحالي من إيميلات المالك؟
+bool get isOwner {
+  final email = _auth.currentUser?.email?.toLowerCase();
+  if (email == null) return false;
+  return _ownerEmails.contains(email);
+}
   Map<String, dynamic> _buildInitialProfile(String email) {
     final isOwner = _ownerEmails.contains(email.toLowerCase());
     return {
