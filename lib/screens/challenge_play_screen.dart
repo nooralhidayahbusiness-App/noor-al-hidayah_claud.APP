@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../data/questions.dart';
-import 'challenge_result_screen.dart';
 
 class ChallengePlayScreen extends StatefulWidget {
   const ChallengePlayScreen({super.key, required this.questions});
@@ -47,7 +46,7 @@ class _ChallengePlayScreenState extends State<ChallengePlayScreen> {
       if (!mounted) return;
       if (_secondsLeft <= 1) {
         t.cancel();
-        _selectOption(-1); // انتهى الوقت
+        _selectOption(-1);
       } else {
         setState(() => _secondsLeft--);
       }
@@ -66,7 +65,8 @@ class _ChallengePlayScreenState extends State<ChallengePlayScreen> {
     Future.delayed(const Duration(milliseconds: 1400), () {
       if (!mounted) return;
       if (_currentIndex + 1 >= widget.questions.length) {
-        _finish();
+        // ✅ نُعيد النتيجة للشاشة السابقة بدل pushReplacement
+        Navigator.of(context).pop(_score);
       } else {
         setState(() {
           _currentIndex++;
@@ -76,17 +76,6 @@ class _ChallengePlayScreenState extends State<ChallengePlayScreen> {
         _startTimer();
       }
     });
-  }
-
-  void _finish() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => ChallengeResultScreen(
-          correct: _score,
-          total: widget.questions.length,
-        ),
-      ),
-    );
   }
 
   Color _optionColor(int index) {
@@ -122,7 +111,6 @@ class _ChallengePlayScreenState extends State<ChallengePlayScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // ===== الشريط العلوي =====
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 20, 0),
                 child: Row(
@@ -183,8 +171,6 @@ class _ChallengePlayScreenState extends State<ChallengePlayScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // ===== شريط التقدم =====
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: ClipRRect(
@@ -199,8 +185,6 @@ class _ChallengePlayScreenState extends State<ChallengePlayScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // ===== السؤال =====
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -323,7 +307,7 @@ class _OptionTile extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  String.fromCharCode(65 + index), // A, B, C, D
+                  String.fromCharCode(65 + index),
                   style: const TextStyle(
                     color: AppColors.gold,
                     fontWeight: FontWeight.w700,
@@ -342,8 +326,7 @@ class _OptionTile extends StatelessWidget {
                 ),
               ),
             ),
-            if (icon != null)
-              Icon(icon, color: Colors.white, size: 24),
+            if (icon != null) Icon(icon, color: Colors.white, size: 24),
           ],
         ),
       ),
