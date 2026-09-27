@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/themed_colors.dart';
+import '../core/theme_state.dart';
 import 'glow_sparks.dart';
 
 Offset _polar(Offset c, double r, double angle) {
