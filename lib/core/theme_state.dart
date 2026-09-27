@@ -2,9 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/auth_service.dart';
+import 'theme_palette.dart';
 
-/// الحالة العامة للتطبيق: الخلفية، القارئ، المؤذن، الثيم.
-/// تُحفظ محلياً + في Firestore.
 class ThemeState extends ChangeNotifier {
   static const _bgKey = 'active_background';
   static const _voiceKey = 'active_voice';
@@ -17,11 +16,11 @@ class ThemeState extends ChangeNotifier {
   String themeId = 'default';
   bool _loaded = false;
 
+  ThemePalette get palette => paletteFor(themeId);
+
   Future<void> load() async {
     if (_loaded) return;
     _loaded = true;
-
-    // 1) من Firestore
     try {
       if (authService.isSignedIn) {
         final data = await authService.loadUserData();
@@ -38,8 +37,6 @@ class ThemeState extends ChangeNotifier {
     } catch (e) {
       debugPrint('ThemeState.load remote error: $e');
     }
-
-    // 2) من الجهاز
     final prefs = await SharedPreferences.getInstance();
     backgroundId = prefs.getString(_bgKey) ?? 'default';
     reciterId = prefs.getString(_voiceKey) ?? 'default';
