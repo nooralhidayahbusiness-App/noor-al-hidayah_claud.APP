@@ -65,13 +65,13 @@ const Map<String, ThemePalette> kThemePalettes = {
 
   // ==================== VIP THEMES ====================
   'vip_emperor': ThemePalette(
-    id: 'vip_emperor',
-    accent: Color(0xFF000000),
-    accentDark: Color(0xFF000000),
-    accentLight: Color(0xFF1A1208),
-    isVip: true,
-    isAnimated: true,
-  ),
+  id: 'vip_emperor',
+  accent: Color(0xFF1A0E00),
+  accentDark: Color(0xFF000000),
+  accentLight: Color(0xFF3D2200),
+  isVip: true,
+  isAnimated: true,
+),
   'vip_cosmic': ThemePalette(
     id: 'vip_cosmic',
     accent: Color(0xFF020617),
