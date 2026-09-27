@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'store_screen.dart';
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../data/questions.dart';
@@ -206,7 +206,10 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
   }
 
   Future<void> _openStore() async {
-    showAuthMessage(context, appState.tr('comingSoon'));
+  await Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => const StoreScreen()),
+  );
+  await _load();
   }
 
   @override
