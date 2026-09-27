@@ -195,7 +195,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.82,
+        childAspectRatio: 0.78,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -232,16 +232,13 @@ class _PurchaseTile extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: item.gradient,
-          ),
           border: Border.all(
             color: active
                 ? AppColors.gold
-                : AppColors.gold.withValues(alpha: 0.3),
-            width: active ? 2.5 : 1.2,
+                : (item.isVip
+                    ? const Color(0xFFFFD700).withValues(alpha: 0.5)
+                    : AppColors.gold.withValues(alpha: 0.3)),
+            width: active ? 2.5 : 1.5,
           ),
           boxShadow: active
               ? [
@@ -253,63 +250,112 @@ class _PurchaseTile extends StatelessWidget {
                 ]
               : null,
         ),
-        child: Stack(
-          children: [
-            if (active)
-              const Positioned(
-                top: 8,
-                right: 8,
-                child: Icon(Icons.check_circle_rounded,
-                    color: AppColors.gold, size: 22),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(17),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (item.imagePath != null)
+                Image.asset(
+                  item.imagePath!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => _gradientBg(),
+                )
+              else
+                _gradientBg(),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.1),
+                      Colors.black.withValues(alpha: 0.75),
+                    ],
+                  ),
+                ),
               ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(),
-                  Container(
-                    width: 56,
-                    height: 56,
+              if (item.isVip)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withValues(alpha: 0.35),
-                      border: Border.all(
-                        color: AppColors.gold.withValues(alpha: 0.6),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'VIP',
+                      style: TextStyle(
+                        color: Color(0xFF2A1500),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    child: Icon(item.icon, color: AppColors.gold, size: 30),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    nameAr ? item.nameAr : item.nameEn,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.cream,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
+                ),
+              if (active)
+                const Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Icon(Icons.check_circle_rounded,
+                      color: AppColors.gold, size: 22),
+                ),
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 12,
+                child: Column(
+                  children: [
+                    Icon(item.icon, color: AppColors.gold, size: 24),
+                    const SizedBox(height: 6),
+                    Text(
+                      nameAr ? item.nameAr : item.nameEn,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                        shadows: [
+                          Shadow(color: Colors.black87, blurRadius: 6),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    appState.tr(active ? 'active' : 'tapToActivate'),
-                    style: TextStyle(
-                      color: active
-                          ? AppColors.gold
-                          : AppColors.cream.withValues(alpha: 0.6),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 4),
+                    Text(
+                      appState.tr(active ? 'active' : 'tapToActivate'),
+                      style: TextStyle(
+                        color: active
+                            ? AppColors.gold
+                            : AppColors.cream.withValues(alpha: 0.7),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _gradientBg() => DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: item.gradient,
+          ),
+        ),
+      );
 }
