@@ -8,6 +8,7 @@ import '../../core/fonts.dart';
 import '../../core/navigation.dart';
 import '../../core/prayer_state.dart';
 import '../../core/profile_state.dart';
+import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/ai_teacher_card.dart';
@@ -37,10 +38,15 @@ class HomeTab extends StatelessWidget {
         void soon() => showAuthMessage(context, appState.tr('comingSoon'));
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          padding: EdgeInsets.fromLTRB(
+            R.s(context, 16),
+            R.s(context, 4),
+            R.s(context, 16),
+            R.s(context, 20),
+          ),
           children: [
             _Greeting(date: date, label: label),
-            const SizedBox(height: 18),
+            SizedBox(height: R.s(context, 12)),
             if (data != null)
               const NextPrayerCard()
             else if (prayerState.status == PrayerStatus.error)
@@ -49,32 +55,32 @@ class HomeTab extends StatelessWidget {
                 onChange: () => openLocationPicker(context),
               )
             else
-              const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(
+              Padding(
+                padding: EdgeInsets.all(R.s(context, 24)),
+                child: const Center(
                   child: CircularProgressIndicator(color: AppColors.gold),
                 ),
               ),
-            const SizedBox(height: 18),
+            SizedBox(height: R.s(context, 12)),
             AiTeacherCard(
               onTap: () =>
                   showAuthMessage(context, appState.tr('teacherSoon')),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: R.s(context, 18)),
             Text(
               appState.tr('quickAccess'),
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize: R.f(context, 15),
                 fontWeight: FontWeight.w700,
                 color: AppColors.softGold,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: R.s(context, 8)),
             GridView.extent(
-              maxCrossAxisExtent: 130,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.72,
+              maxCrossAxisExtent: R.s(context, 105),
+              mainAxisSpacing: R.s(context, 8),
+              crossAxisSpacing: R.s(context, 8),
+              childAspectRatio: 0.70,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: [
@@ -116,7 +122,8 @@ class HomeTab extends StatelessWidget {
                 ),
                 _QuickTile(
                   label: appState.tr('hadiths'),
-                  onTap: () => Navigator.of(context).push(fadeRoute(const HadithPage())),
+                  onTap: () => Navigator.of(context)
+                      .push(fadeRoute(const HadithPage())),
                   symbol: const SymbolImage(
                     'assets/images/muhammad.png',
                     fallback: Icons.format_quote_rounded,
@@ -185,7 +192,7 @@ class HomeTab extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: R.s(context, 18)),
             const DailyContentSection(),
           ],
         );
@@ -207,21 +214,22 @@ class _Avatar extends StatelessWidget {
           'woman' => 'assets/images/hijab.png',
           _ => null,
         };
-        const placeholder = Icon(
+        final placeholder = Icon(
           Icons.person_rounded,
           color: AppColors.gold,
-          size: 40,
+          size: R.s(context, 24),
         );
         return GestureDetector(
           onTap: () => showAvatarPicker(context),
           child: OrnamentMedallion(
-            size: 104,
+            size: R.s(context, 62),
             child: path == null
                 ? placeholder
                 : Image.asset(
                     path,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => placeholder,
+                    errorBuilder: (context, error, stackTrace) =>
+                        placeholder,
                   ),
           ),
         );
@@ -242,13 +250,13 @@ class _Greeting extends StatelessWidget {
     return Column(
       children: [
         const _Avatar(),
-        const SizedBox(height: 12),
+        SizedBox(height: R.s(context, 8)),
         Text(
           greeting,
           textAlign: TextAlign.center,
           style: brandStyle(
             greeting,
-            fontSize: 36,
+            fontSize: R.f(context, 24),
             color: AppColors.softGold,
             shadows: [
               Shadow(
@@ -264,33 +272,33 @@ class _Greeting extends StatelessWidget {
           ),
         ),
         if (date.isNotEmpty) ...[
-          const SizedBox(height: 6),
+          SizedBox(height: R.s(context, 3)),
           Text(
             date,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: R.f(context, 11),
               color: AppColors.cream.withValues(alpha: 0.8),
             ),
           ),
         ],
         if (label.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          SizedBox(height: R.s(context, 4)),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on_rounded,
                 color: AppColors.gold,
-                size: 18,
+                size: R.s(context, 12),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 3),
               Flexible(
                 child: Text(
                   label,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontSize: R.f(context, 11.5),
                     fontWeight: FontWeight.w600,
                     color: AppColors.softGold,
                   ),
@@ -319,7 +327,8 @@ class _QuickTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final size = math.min(constraints.maxWidth - 8, 112.0);
+        final maxSize = R.s(context, 78);
+        final size = math.min(constraints.maxWidth - 6, maxSize);
         return Material(
           color: Colors.transparent,
           child: InkWell(
@@ -331,18 +340,18 @@ class _QuickTile extends StatelessWidget {
                 OrnamentMedallion(
                   size: size,
                   child: Padding(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(3),
                     child: symbol,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: R.s(context, 4)),
                 Text(
                   label,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: R.f(context, 10.5),
                     fontWeight: FontWeight.w600,
                     color: AppColors.cream,
                   ),
