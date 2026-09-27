@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../widgets/themed_background.dart';
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../core/theme_palette.dart';
@@ -206,7 +206,7 @@ class _StoreScreenState extends State<StoreScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Scaffold
       body: ThemedBackground(
   child: SafeArea(
           child: Column(
