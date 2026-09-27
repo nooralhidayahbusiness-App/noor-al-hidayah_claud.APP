@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/theme.dart';
+import '../core/theme_palette.dart';
 import '../core/theme_state.dart';
 import '../data/store_items.dart';
 import '../services/user_service.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/theme_preview.dart';
 import 'my_purchases_screen.dart';
 
 class StoreScreen extends StatefulWidget {
@@ -388,7 +390,6 @@ class _StoreTile extends StatelessWidget {
                         color: const Color(0xFFFFD700)
                             .withValues(alpha: 0.25),
                         blurRadius: 12,
-                        spreadRadius: 0,
                       )
                     ]
                   : null),
@@ -398,8 +399,10 @@ class _StoreTile extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // الخلفية (صورة أو gradient)
-              if (item.imagePath != null)
+              // الخلفية: معاينة ثيم أو صورة أو gradient
+              if (item.type == 'theme')
+                ThemePreview(palette: paletteFor(item.id))
+              else if (item.imagePath != null)
                 Image.asset(
                   item.imagePath!,
                   fit: BoxFit.cover,
@@ -408,19 +411,20 @@ class _StoreTile extends StatelessWidget {
               else
                 _gradientBg(),
 
-              // تعتيم لتحسين وضوح النص
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.1),
-                      Colors.black.withValues(alpha: 0.75),
-                    ],
+              // تعتيم لتحسين وضوح النص (فقط للصور)
+              if (item.type != 'theme')
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.1),
+                        Colors.black.withValues(alpha: 0.75),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
               // شارات VIP
               if (item.isVip)
@@ -437,7 +441,6 @@ class _StoreTile extends StatelessWidget {
                   ),
                 ),
 
-              // علامة التفعيل
               if (active)
                 const Positioned(
                   top: 8,
@@ -446,7 +449,6 @@ class _StoreTile extends StatelessWidget {
                       color: AppColors.gold, size: 22),
                 ),
 
-              // السعر / حالة
               Positioned(
                 top: item.isVip ? null : 8,
                 bottom: 8,
@@ -454,15 +456,13 @@ class _StoreTile extends StatelessWidget {
                 child: _buildBadge(),
               ),
 
-              // الاسم والأيقونة
               Positioned(
                 left: 10,
                 right: 10,
                 bottom: 40,
                 child: Column(
                   children: [
-                    Icon(item.icon,
-                        color: AppColors.gold, size: 26),
+                    Icon(item.icon, color: AppColors.gold, size: 26),
                     const SizedBox(height: 6),
                     Text(
                       nameAr ? item.nameAr : item.nameEn,
@@ -475,10 +475,7 @@ class _StoreTile extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         height: 1.3,
                         shadows: [
-                          Shadow(
-                            color: Colors.black87,
-                            blurRadius: 6,
-                          ),
+                          Shadow(color: Colors.black87, blurRadius: 6),
                         ],
                       ),
                     ),
@@ -520,11 +517,9 @@ class _StoreTile extends StatelessWidget {
         ),
       );
     }
-
     if (active) {
       return Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: AppColors.gold,
           borderRadius: BorderRadius.circular(10),
@@ -539,16 +534,14 @@ class _StoreTile extends StatelessWidget {
         ),
       );
     }
-
     if (owned) {
       return Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-              color: AppColors.gold.withValues(alpha: 0.6)),
+          border:
+              Border.all(color: AppColors.gold.withValues(alpha: 0.6)),
         ),
         child: Text(
           appState.tr('tapToActivate'),
@@ -560,7 +553,6 @@ class _StoreTile extends StatelessWidget {
         ),
       );
     }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -635,9 +627,9 @@ class _AnimatedBadge extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Row(
+      child: const Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(Icons.auto_awesome_rounded,
               color: Color(0xFFFFD700), size: 10),
           SizedBox(width: 3),
