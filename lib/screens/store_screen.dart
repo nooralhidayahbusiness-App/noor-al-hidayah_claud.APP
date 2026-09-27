@@ -207,15 +207,8 @@ class _StoreScreenState extends State<StoreScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.deepGreen, Color(0xFF0A1F17)],
-          ),
-        ),
-        child: SafeArea(
+      body: ThemedBackground(
+  child: SafeArea(
           child: Column(
             children: [
               Padding(
