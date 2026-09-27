@@ -52,9 +52,9 @@ class _HomeShellState extends State<HomeShell> {
                 children: [
                   Padding(
                     padding: EdgeInsetsDirectional.fromSTEB(
-                      R.s(context, 6),
-                      R.s(context, 6),
-                      R.s(context, 16),
+                      R.s(context, 8),
+                      R.s(context, 8),
+                      R.s(context, 20),
                       0,
                     ),
                     child: Row(
@@ -63,7 +63,7 @@ class _HomeShellState extends State<HomeShell> {
                           onPressed: () => openLocationPicker(context),
                           tooltip: appState.tr('changeLocation'),
                           color: AppColors.softGold,
-                          iconSize: R.s(context, 22),
+                          iconSize: R.s(context, 26),
                           icon: const Icon(
                               Icons.edit_location_alt_outlined),
                         ),
@@ -76,13 +76,13 @@ class _HomeShellState extends State<HomeShell> {
                             );
                           },
                           tooltip: appState.tr('settings'),
-                          iconSize: R.s(context, 22),
+                          iconSize: R.s(context, 26),
                           icon: const AssetIcon(
                             path: 'assets/icons/Setting.png',
-                            size: 22,
+                            size: 26,
                           ),
                         ),
-                        const SizedBox(width: 2),
+                        const SizedBox(width: 4),
                         const AuthLanguageButton(),
                       ],
                     ),
@@ -124,9 +124,9 @@ class _BottomBar extends StatelessWidget {
       listenable: themeState,
       builder: (context, _) {
         final accent = themeState.palette.accentLight;
-        final barHeight = R.s(context, 56);
-        final iconSize = R.s(context, 22);
-        final labelSize = R.f(context, 9.5);
+        final barHeight = R.s(context, 68);
+        final iconSize = R.s(context, 25);
+        final labelSize = R.f(context, 10.5);
 
         return DecoratedBox(
           decoration: BoxDecoration(
@@ -185,12 +185,12 @@ class _BottomBar extends StatelessWidget {
                 NavigationDestination(
                   icon: AssetIcon(
                     path: 'assets/icons/challenge.png',
-                    size: R.s(context, 22),
+                    size: R.s(context, 25),
                     opacity: 0.75,
                   ),
                   selectedIcon: AssetIcon(
                     path: 'assets/icons/challenge.png',
-                    size: R.s(context, 22),
+                    size: R.s(context, 25),
                   ),
                   label: appState.tr('tabChallenge'),
                 ),
@@ -202,12 +202,12 @@ class _BottomBar extends StatelessWidget {
                 NavigationDestination(
                   icon: AssetIcon(
                     path: 'assets/icons/more.png',
-                    size: R.s(context, 22),
+                    size: R.s(context, 25),
                     opacity: 0.75,
                   ),
                   selectedIcon: AssetIcon(
                     path: 'assets/icons/more.png',
-                    size: R.s(context, 22),
+                    size: R.s(context, 25),
                   ),
                   label: appState.tr('tabMore'),
                 ),
