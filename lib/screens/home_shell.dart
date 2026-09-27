@@ -4,7 +4,9 @@ import '../core/app_flow.dart';
 import '../core/app_state.dart';
 import '../core/prayer_state.dart';
 import '../core/profile_state.dart';
+import '../core/reciter_prefs.dart';
 import '../core/theme.dart';
+import '../core/theme_state.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/auth_widgets.dart';
@@ -15,7 +17,6 @@ import 'tabs/more_tab.dart';
 import 'tabs/quran_browser_tab.dart';
 import 'tabs/soon_tabs.dart';
 
-/// Main app frame: top bar, six tabs and the bottom navigation bar.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -31,6 +32,8 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     prayerState.start();
     profileState.load();
+    reciterPrefs.load();
+    themeState.load();
   }
 
   void _select(int index) => setState(() => _index = index);
@@ -61,7 +64,6 @@ class _HomeShellState extends State<HomeShell> {
                         const Spacer(),
                         IconButton(
                           onPressed: () {
-                            // TODO: شاشة الإعدادات (سنبنيها لاحقاً)
                             showAuthMessage(
                               context,
                               appState.tr('comingSoon'),
