@@ -36,20 +36,20 @@ class AppBackground extends StatelessWidget {
             bgItem.imagePath != null;
         final isVipTheme = palette.isVip && palette.isAnimated;
 
-        // أولوية 1: خلفية VIP متحركة
-        if (isVipBg) {
-          return AnimatedVipBackground(
-            imagePath: bgItem.imagePath!,
-            child: child,
-          );
-        }
+        // أولوية 1: ثيم VIP متحرك (يتفوق دائماً)
+if (isVipTheme) {
+  return ThemedBackground(
+    child: child ?? const SizedBox.expand(),
+  );
+}
 
-        // أولوية 2: ثيم VIP متحرك (مع إخفاء صورة الخلفية كي يظهر الأنيميشن)
-        if (isVipTheme) {
-          return ThemedBackground(
-            child: child ?? const SizedBox.expand(),
-          );
-        }
+// أولوية 2: خلفية VIP متحركة
+if (isVipBg) {
+  return AnimatedVipBackground(
+    imagePath: bgItem.imagePath!,
+    child: child,
+  );
+}
 
         // أولوية 3: عادي
         return Stack(
