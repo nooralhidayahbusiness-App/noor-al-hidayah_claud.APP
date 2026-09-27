@@ -63,7 +63,6 @@ class UserService {
     await _recomputeLevel();
   }
 
-  /// زيادة قيم متعددة في stats (مثلاً +1 لعدد التحديات، +3 للإجابات الصحيحة).
   Future<void> incrementStats(Map<String, int> increments) async {
     final doc = _doc;
     if (doc == null || increments.isEmpty) return;
@@ -75,7 +74,6 @@ class UserService {
     await _recomputeLevel();
   }
 
-  /// تعيين قيم stats مباشرة (مثل streak).
   Future<void> setStats(Map<String, dynamic> values) async {
     final doc = _doc;
     if (doc == null || values.isEmpty) return;
@@ -103,6 +101,27 @@ class UserService {
     if (doc == null) return {};
     final snap = await doc.get();
     return Map<String, dynamic>.from((snap.data()?['inventory'] as Map?) ?? {});
+  }
+
+  /// ترحيل المخزون: يضيف الحقول الناقصة (adhans, activeAdhan).
+  Future<void> migrateInventory() async {
+    final doc = _doc;
+    if (doc == null) return;
+    final snap = await doc.get();
+    final inv = (snap.data()?['inventory'] as Map?) ?? {};
+    final updates = <String, dynamic>{};
+    if (!inv.containsKey('adhans')) updates['adhans'] = ['default'];
+    if (!inv.containsKey('activeAdhan')) updates['activeAdhan'] = 'default';
+    if (!inv.containsKey('backgrounds')) updates['backgrounds'] = ['default'];
+    if (!inv.containsKey('activeBackground')) {
+      updates['activeBackground'] = 'default';
+    }
+    if (!inv.containsKey('voices')) updates['voices'] = ['default'];
+    if (!inv.containsKey('activeVoice')) updates['activeVoice'] = 'default';
+    if (!inv.containsKey('themes')) updates['themes'] = ['default'];
+    if (!inv.containsKey('activeTheme')) updates['activeTheme'] = 'default';
+    if (updates.isEmpty) return;
+    await doc.set({'inventory': updates}, SetOptions(merge: true));
   }
 
   Future<void> unlockItem(String type, String id) async {
@@ -186,13 +205,13 @@ class UserService {
       }
     }, SetOptions(merge: true));
   }
-// =========================== GENERIC ===========================
-/// دالة عامة لحفظ أي بيانات في مستند المستخدم.
-Future<void> saveUserData(Map<String, dynamic> data) async {
-  final doc = _doc;
-  if (doc == null || data.isEmpty) return;
-  await doc.set(data, SetOptions(merge: true));
-}
+
+  // =========================== GENERIC ===========================
+  Future<void> saveUserData(Map<String, dynamic> data) async {
+    final doc = _doc;
+    if (doc == null || data.isEmpty) return;
+    await doc.set(data, SetOptions(merge: true));
+  }
 }
 
 final UserService userService = UserService.instance;
