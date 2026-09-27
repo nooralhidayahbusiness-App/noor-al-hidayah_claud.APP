@@ -9,6 +9,7 @@ import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
 import 'challenge_play_screen.dart';
 import 'challenge_result_screen.dart';
+import '../services/auth_service.dart';
 
 class ChallengeScreen extends StatefulWidget {
   const ChallengeScreen({super.key});
