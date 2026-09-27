@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import '../account_screen.dart';
+
 import '../../core/app_flow.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
+import '../../widgets/auth_widgets.dart';
 import '../../widgets/glass_card.dart';
+import '../account_screen.dart';
 
 class MoreTab extends StatelessWidget {
   const MoreTab({super.key});
@@ -41,26 +43,42 @@ class MoreTab extends StatelessWidget {
                     onTap: () => openLocationPicker(context),
                   ),
                   divider(),
-_MoreRow(
-  icon: Icons.person_outline_rounded,
-  title: appState.tr('account'),
-  chevron: chevron,
-  onTap: () => Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => const AccountScreen()),
-  ),
-),
+                  _MoreRow(
+                    icon: Icons.person_outline_rounded,
+                    title: appState.tr('account'),
+                    chevron: chevron,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const AccountScreen()),
+                    ),
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 28),
+
+            // ===== الشكر والإسناد =====
             Center(
-              child: Text(
-                appState.tr('credit'),
-                style: TextStyle(
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: AppColors.cream.withValues(alpha: 0.45),
-                ),
+              child: Column(
+                children: [
+                  Text(
+                    appState.tr('credit'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      letterSpacing: 1,
+                      color: AppColors.cream.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    appState.tr('iconsCredit'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.cream.withValues(alpha: 0.35),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
