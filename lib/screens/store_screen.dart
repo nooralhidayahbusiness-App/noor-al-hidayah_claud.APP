@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/themed_background.dart';
+
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../core/theme_palette.dart';
@@ -8,6 +8,7 @@ import '../data/store_items.dart';
 import '../services/user_service.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/themed_background.dart';
 import '../widgets/theme_preview.dart';
 import 'my_purchases_screen.dart';
 
@@ -127,10 +128,10 @@ class _StoreScreenState extends State<StoreScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.deepGreen,
+        backgroundColor: themeState.palette.accentLight,
         title: Text(
           appState.tr('confirmPurchase'),
-          style: const TextStyle(color: AppColors.softGold),
+          style: TextStyle(color: themeState.palette.softGold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -141,8 +142,8 @@ class _StoreScreenState extends State<StoreScreen>
                 Expanded(
                   child: Text(
                     appState.isArabic ? item.nameAr : item.nameEn,
-                    style: const TextStyle(
-                      color: AppColors.gold,
+                    style: TextStyle(
+                      color: themeState.palette.gold,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
@@ -154,13 +155,13 @@ class _StoreScreenState extends State<StoreScreen>
             const SizedBox(height: 10),
             Text(
               '${appState.tr('price')}: ${item.price} ${appState.tr('points')}',
-              style: const TextStyle(color: AppColors.cream),
+              style: TextStyle(color: themeState.palette.cream),
             ),
             const SizedBox(height: 6),
             Text(
               '${appState.tr('yourBalance')}: $_points',
               style: TextStyle(
-                color: AppColors.cream.withValues(alpha: 0.75),
+                color: themeState.palette.cream.withValues(alpha: 0.75),
                 fontSize: 13,
               ),
             ),
@@ -170,12 +171,12 @@ class _StoreScreenState extends State<StoreScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(appState.tr('cancel'),
-                style: const TextStyle(color: AppColors.softGold)),
+                style: TextStyle(color: themeState.palette.softGold)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(appState.tr('buy'),
-                style: const TextStyle(color: AppColors.gold)),
+                style: TextStyle(color: themeState.palette.gold)),
           ),
         ],
       ),
@@ -206,9 +207,9 @@ class _StoreScreenState extends State<StoreScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold
+    return Scaffold(
       body: ThemedBackground(
-  child: SafeArea(
+        child: SafeArea(
           child: Column(
             children: [
               Padding(
@@ -392,7 +393,6 @@ class _StoreTile extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // الخلفية: معاينة ثيم أو صورة أو gradient
               if (item.type == 'theme')
                 ThemePreview(palette: paletteFor(item.id))
               else if (item.imagePath != null)
@@ -404,7 +404,6 @@ class _StoreTile extends StatelessWidget {
               else
                 _gradientBg(),
 
-              // تعتيم لتحسين وضوح النص (فقط للصور)
               if (item.type != 'theme')
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -419,7 +418,6 @@ class _StoreTile extends StatelessWidget {
                   ),
                 ),
 
-              // شارات VIP
               if (item.isVip)
                 const Positioned(
                   top: 8,
@@ -520,7 +518,7 @@ class _StoreTile extends StatelessWidget {
         child: Text(
           appState.tr('active'),
           style: const TextStyle(
-            color: AppColors.deepGreen,
+            color: Color(0xFF041F18),
             fontWeight: FontWeight.w700,
             fontSize: 11,
           ),
