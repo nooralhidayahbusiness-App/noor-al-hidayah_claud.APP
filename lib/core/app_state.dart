@@ -127,6 +127,8 @@ const Map<String, String> _ar = {
 'notEnoughPoints': 'نقاطك غير كافية',
 'myPurchases': 'مشترياتي',
 'noPurchases': 'لا توجد مشتريات بعد',
+'credits': 'شكر وتقدير',
+'iconsCredit': 'بعض الأيقونات من Flaticon.com',
 };
 
 const Map<String, String> _en = {
@@ -229,4 +231,6 @@ const Map<String, String> _en = {
 'notEnoughPoints': 'Not enough points',
 'myPurchases': 'My Purchases',
 'noPurchases': 'No purchases yet',
+'credits': 'Credits',
+'iconsCredit': 'Some icons from Flaticon.com',
 };
