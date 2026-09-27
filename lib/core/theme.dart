@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme_palette.dart';
+
 class AppColors {
   AppColors._();
 
@@ -11,19 +13,21 @@ class AppColors {
   static const Color cream = Color(0xFFFFF8E7);
 }
 
-ThemeData buildAppTheme() {
+ThemeData buildThemedAppTheme(ThemePalette palette) {
   final scheme = ColorScheme.fromSeed(
-    seedColor: AppColors.emerald,
+    seedColor: palette.accentLight,
     brightness: Brightness.dark,
   ).copyWith(
-    primary: AppColors.gold,
-    onPrimary: AppColors.deepGreen,
-    surface: AppColors.deepGreen,
+    primary: palette.gold,
+    onPrimary: palette.accent,
+    surface: palette.accent,
   );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
-    scaffoldBackgroundColor: AppColors.deepGreen,
+    scaffoldBackgroundColor: palette.accent,
   );
 }
+
+ThemeData buildAppTheme() => buildThemedAppTheme(paletteFor('default'));
