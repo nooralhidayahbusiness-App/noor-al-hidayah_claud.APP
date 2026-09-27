@@ -3,12 +3,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../core/themed_colors.dart';
 import '../core/theme.dart';
 import 'glow_sparks.dart';
 
-/// Frosted-glass card used everywhere: gold border, gold corner ornaments,
-/// a small gold ornament on top, and a glowing light with rising sparks.
-/// Every new card built with this widget gets all of these automatically.
+/// Frosted-glass card used everywhere — theme-aware.
 class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
@@ -46,12 +45,12 @@ class GlassCard extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.deepGreen.withValues(alpha: 0.72),
-                  AppColors.deepGreen.withValues(alpha: 0.86),
+                  ThemedColors.accent.withValues(alpha: 0.55),
+                  ThemedColors.accentDark.withValues(alpha: 0.78),
                 ],
               ),
               border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.35),
+                color: ThemedColors.gold.withValues(alpha: 0.35),
               ),
             ),
             child: CustomPaint(
@@ -89,7 +88,6 @@ Offset _polar(Offset c, double r, double angle) {
   return Offset(c.dx + r * math.cos(angle), c.dy + r * math.sin(angle));
 }
 
-/// Quarter rosettes in the four corners of a card.
 class _CornerOrnamentsPainter extends CustomPainter {
   const _CornerOrnamentsPainter();
 
@@ -111,16 +109,16 @@ class _CornerOrnamentsPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3
       ..strokeJoin = StrokeJoin.round
-      ..color = AppColors.deepGreen.withValues(alpha: 0.85);
+      ..color = ThemedColors.accentDark.withValues(alpha: 0.85);
     final line = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
       ..strokeJoin = StrokeJoin.round
-      ..color = AppColors.gold.withValues(alpha: 0.75);
+      ..color = ThemedColors.gold.withValues(alpha: 0.75);
     final ring = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
-      ..color = AppColors.gold.withValues(alpha: 0.6);
+      ..color = ThemedColors.gold.withValues(alpha: 0.6);
 
     canvas.drawCircle(c, r * 0.98, ring);
 
