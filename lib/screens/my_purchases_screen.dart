@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/theme.dart';
+import '../core/theme_palette.dart';
 import '../core/theme_state.dart';
 import '../data/store_items.dart';
 import '../services/user_service.dart';
+import '../widgets/theme_preview.dart';
 
 class MyPurchasesScreen extends StatefulWidget {
   const MyPurchasesScreen({super.key});
@@ -125,7 +127,8 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
                 tabAlignment: TabAlignment.center,
                 indicatorColor: AppColors.gold,
                 labelColor: AppColors.gold,
-                unselectedLabelColor: AppColors.cream.withValues(alpha: 0.6),
+                unselectedLabelColor:
+                    AppColors.cream.withValues(alpha: 0.6),
                 indicatorWeight: 3,
                 labelStyle: const TextStyle(
                   fontWeight: FontWeight.w700,
@@ -141,8 +144,8 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
               Expanded(
                 child: _loading
                     ? const Center(
-                        child:
-                            CircularProgressIndicator(color: AppColors.gold))
+                        child: CircularProgressIndicator(
+                            color: AppColors.gold))
                     : TabBarView(
                         controller: _tabs,
                         children: [
@@ -255,7 +258,9 @@ class _PurchaseTile extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (item.imagePath != null)
+              if (item.type == 'theme')
+                ThemePreview(palette: paletteFor(item.id))
+              else if (item.imagePath != null)
                 Image.asset(
                   item.imagePath!,
                   fit: BoxFit.cover,
@@ -263,18 +268,21 @@ class _PurchaseTile extends StatelessWidget {
                 )
               else
                 _gradientBg(),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.1),
-                      Colors.black.withValues(alpha: 0.75),
-                    ],
+
+              if (item.type != 'theme')
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.1),
+                        Colors.black.withValues(alpha: 0.75),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+
               if (item.isVip)
                 Positioned(
                   top: 8,
@@ -298,6 +306,7 @@ class _PurchaseTile extends StatelessWidget {
                     ),
                   ),
                 ),
+
               if (active)
                 const Positioned(
                   top: 8,
@@ -305,6 +314,7 @@ class _PurchaseTile extends StatelessWidget {
                   child: Icon(Icons.check_circle_rounded,
                       color: AppColors.gold, size: 22),
                 ),
+
               Positioned(
                 left: 10,
                 right: 10,
