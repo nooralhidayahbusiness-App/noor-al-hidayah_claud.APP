@@ -82,7 +82,6 @@ class _StoreScreenState extends State<StoreScreen>
   bool _isActive(StoreItem item) =>
       (_inventory[_activeKey(item.type)] as String?) == item.id;
 
-  /// يفعّل العنصر في النظام (theme_state) عشان يُطبّق فوراً.
   Future<void> _activate(StoreItem item) async {
     switch (item.type) {
       case 'background':
@@ -103,7 +102,6 @@ class _StoreScreenState extends State<StoreScreen>
   Future<void> _onItemTap(StoreItem item) async {
     if (_busyId != null) return;
 
-    // مفعّل مسبقاً
     if (_isOwned(item)) {
       if (_isActive(item)) return;
       setState(() => _busyId = item.id);
@@ -119,7 +117,6 @@ class _StoreScreenState extends State<StoreScreen>
       return;
     }
 
-    // شراء
     if (_points < item.price) {
       showAuthMessage(context, appState.tr('notEnoughPoints'), error: true);
       return;
@@ -137,13 +134,20 @@ class _StoreScreenState extends State<StoreScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              appState.isArabic ? item.nameAr : item.nameEn,
-              style: const TextStyle(
-                color: AppColors.gold,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    appState.isArabic ? item.nameAr : item.nameEn,
+                    style: const TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (item.isVip) const _VipBadge(),
+              ],
             ),
             const SizedBox(height: 10),
             Text(
@@ -212,7 +216,6 @@ class _StoreScreenState extends State<StoreScreen>
         child: SafeArea(
           child: Column(
             children: [
-              // ===== الهيدر =====
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 20, 0),
                 child: Row(
@@ -242,8 +245,6 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               ),
               const SizedBox(height: 12),
-
-              // ===== رصيد النقاط =====
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: GlassCard(
@@ -274,8 +275,6 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               ),
               const SizedBox(height: 12),
-
-              // ===== التبويبات =====
               TabBar(
                 controller: _tabs,
                 isScrollable: true,
@@ -296,8 +295,6 @@ class _StoreScreenState extends State<StoreScreen>
                   Tab(text: appState.tr('tabThemes')),
                 ],
               ),
-
-              // ===== المحتوى =====
               Expanded(
                 child: _loading
                     ? const Center(
@@ -326,7 +323,7 @@ class _StoreScreenState extends State<StoreScreen>
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.82,
+        childAspectRatio: 0.78,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -369,16 +366,13 @@ class _StoreTile extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: item.gradient,
-          ),
           border: Border.all(
             color: active
                 ? AppColors.gold
-                : AppColors.gold.withValues(alpha: 0.3),
-            width: active ? 2.5 : 1.2,
+                : (item.isVip
+                    ? const Color(0xFFFFD700)
+                    : AppColors.gold.withValues(alpha: 0.3)),
+            width: active ? 2.5 : (item.isVip ? 1.8 : 1.2),
           ),
           boxShadow: active
               ? [
@@ -388,59 +382,125 @@ class _StoreTile extends StatelessWidget {
                     spreadRadius: 1,
                   )
                 ]
-              : null,
+              : (item.isVip
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFFFD700)
+                            .withValues(alpha: 0.25),
+                        blurRadius: 12,
+                        spreadRadius: 0,
+                      )
+                    ]
+                  : null),
         ),
-        child: Stack(
-          children: [
-            Positioned(top: 8, right: 8, child: _buildBadge()),
-            if (active)
-              const Positioned(
-                top: 8,
-                left: 8,
-                child: Icon(Icons.check_circle_rounded,
-                    color: AppColors.gold, size: 22),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(17),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // الخلفية (صورة أو gradient)
+              if (item.imagePath != null)
+                Image.asset(
+                  item.imagePath!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => _gradientBg(),
+                )
+              else
+                _gradientBg(),
+
+              // تعتيم لتحسين وضوح النص
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.1),
+                      Colors.black.withValues(alpha: 0.75),
+                    ],
+                  ),
+                ),
               ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(),
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withValues(alpha: 0.35),
-                      border: Border.all(
-                        color: AppColors.gold.withValues(alpha: 0.6),
+
+              // شارات VIP
+              if (item.isVip)
+                const Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _VipBadge(),
+                      SizedBox(height: 4),
+                      _AnimatedBadge(),
+                    ],
+                  ),
+                ),
+
+              // علامة التفعيل
+              if (active)
+                const Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Icon(Icons.check_circle_rounded,
+                      color: AppColors.gold, size: 22),
+                ),
+
+              // السعر / حالة
+              Positioned(
+                top: item.isVip ? null : 8,
+                bottom: 8,
+                right: 8,
+                child: _buildBadge(),
+              ),
+
+              // الاسم والأيقونة
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 40,
+                child: Column(
+                  children: [
+                    Icon(item.icon,
+                        color: AppColors.gold, size: 26),
+                    const SizedBox(height: 6),
+                    Text(
+                      nameAr ? item.nameAr : item.nameEn,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black87,
+                            blurRadius: 6,
+                          ),
+                        ],
                       ),
                     ),
-                    child: Icon(item.icon,
-                        color: AppColors.gold, size: 30),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    nameAr ? item.nameAr : item.nameEn,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.cream,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
-                    ),
-                  ),
-                  const Spacer(),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _gradientBg() => DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: item.gradient,
+          ),
+        ),
+      );
 
   Widget _buildBadge() {
     if (busy) {
@@ -485,10 +545,10 @@ class _StoreTile extends StatelessWidget {
         padding:
             const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.4),
+          color: Colors.black.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-              color: AppColors.gold.withValues(alpha: 0.5)),
+              color: AppColors.gold.withValues(alpha: 0.6)),
         ),
         child: Text(
           appState.tr('tapToActivate'),
@@ -504,7 +564,7 @@ class _StoreTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
+        color: Colors.black.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.gold),
       ),
@@ -520,6 +580,74 @@ class _StoreTile extends StatelessWidget {
               color: AppColors.gold,
               fontWeight: FontWeight.w700,
               fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VipBadge extends StatelessWidget {
+  const _VipBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFD700).withValues(alpha: 0.6),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: const Text(
+        'VIP',
+        style: TextStyle(
+          color: Color(0xFF2A1500),
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedBadge extends StatelessWidget {
+  const _AnimatedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFFFD700),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(Icons.auto_awesome_rounded,
+              color: Color(0xFFFFD700), size: 10),
+          SizedBox(width: 3),
+          Text(
+            'ANIMATION',
+            style: TextStyle(
+              color: Color(0xFFFFD700),
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
             ),
           ),
         ],
