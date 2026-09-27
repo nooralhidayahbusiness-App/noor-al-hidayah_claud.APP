@@ -3,10 +3,10 @@
 تطبيق إسلامي شامل يجمع مواقيت الصلاة، القرآن الكريم، الأذكار، الأدعية، التحديات اليومية، ومتجر النقاط في تجربة واحدة هادئة وفاخرة.
 
 **المالك:** Abdel Rahmen Ben Romdhan  
-**البريد:** abdelrahmenbenromdhan11@gmail.com / vevocom888@gmail.com  
+**البريد:** vevocom888@gmail.com  
 **GitHub:** nooralhidayahbusiness-App/noor-al-hidayah_claud.APP  
 **آخر تحديث:** 2026-09-27  
-**الإصدار:** Beta 0.2
+**الإصدار:** Beta 0.3
 
 ---
 
@@ -14,12 +14,13 @@
 
 ### الهدف
 تطبيق إسلامي كامل مع:
-- حسابات مستخدمين مشتركة بين الموقع والتطبيق (Firebase).
+- حسابات مشتركة بين الموقع والتطبيق (Firebase).
 - مزامنة بيانات المستخدم بين الأجهزة.
 - نظام نقاط ومستويات وتحديات يومية.
 - متجر لشراء الخلفيات والأصوات والألوان بالنقاط.
+- ثيمات ديناميكية مع ألوان + خلفيات + أنيميشن.
 - شعار توثيق للمستخدمين المميزين.
-- خلفيات VIP متحركة بـ animations.
+- خلفيات وثيمات VIP متحركة بـ animations.
 - دعم متعدد اللغات.
 - إشعارات ذكية (أذان، آية يومية، تحديات).
 
@@ -35,27 +36,33 @@
 
 ## 🎨 نظام التصميم
 
-### الألوان (`lib/core/theme.dart`)
-
+### الألوان الافتراضية (`lib/core/theme.dart`)
 - `deepGreen` — `#041F18` — الخلفية الأساسية
 - `green` — `#0B3D2E` — أخضر ثانوي
 - `emerald` — `#14664C` — زمردي
-- `gold` — `#D4AF37` — الذهبي الأساسي
-- `softGold` — `#F1DC9A` — ذهبي فاتح
-- `cream` — `#FFF8E7` — الكريمي للنصوص
+- `gold` — `#D4AF37` — الذهبي الأساسي (ثابت)
+- `softGold` — `#F1DC9A` — ذهبي فاتح (ثابت)
+- `cream` — `#FFF8E7` — الكريمي للنصوص (ثابت)
+
+### نظام الثيمات الديناميكية
+- **`ThemePalette`**: لوحة ألوان (accent، accentDark، accentLight، gold، softGold، cream).
+- **`themeState`**: يحمل الثيم المختار + الخلفية + القارئ + المؤذن.
+- **`ThemedColors`**: ألوان ديناميكية تُقرأ من themeState — تُستخدم بدلاً من `AppColors` في العناصر القابلة للتغيير.
+- **الثيم الافتراضي + 5 ثيمات عادية** (1000-2000 نقطة).
+- **3 ثيمات VIP** (2000 نقطة) مع animations (نجوم + shimmer + تدرجات متحركة).
 
 ### الخطوط
 - **العناوين:** خط عربي فاخر (Amiri / Noto Naskh).
-- **الآيات:** `GoogleFonts.amiriQuran` (حجم 26) أو `notoNaskhArabic` (24).
-- **النصوص العادية:** Cairo أو Noto Sans Arabic.
+- **الآيات:** `GoogleFonts.amiriQuran` (26) أو `notoNaskhArabic` (24).
+- **النصوص:** Cairo أو Noto Sans Arabic.
 
 ### الأسلوب البصري
 - خلفية خضراء داكنة مع نقشات إسلامية ذهبية.
-- تدرجات ذهبية على الأزرار والعناصر المهمة.
+- تدرجات ذهبية على الأزرار والعناصر.
 - توهج (Glow) حول العناصر النشطة.
 - بطاقات زجاجية (GlassCard) شفافة مع حدود ذهبية.
 - زخارف نجمية في الزوايا (نجوم ثمانية).
-- حركات ناعمة (AnimatedSwitcher, AnimatedOpacity, pulse).
+- حركات ناعمة (AnimatedSwitcher, AnimatedOpacity, pulse, rotation).
 
 ---
 
@@ -65,12 +72,14 @@
 lib/
 ├── core/
 │   ├── app_flow.dart
-│   ├── app_state.dart
+│   ├── app_state.dart                 # اللغة والترجمات
 │   ├── prayer_state.dart
 │   ├── profile_state.dart
-│   ├── theme.dart
-│   ├── theme_state.dart              (جديد: الحالة العامة)
-│   ├── reciter_prefs.dart            (معدّل: يزامن مع themeState)
+│   ├── theme.dart                     # الألوان الافتراضية + buildAppTheme
+│   ├── theme_palette.dart             ✅ جديد: تعريف 9 ثيمات (6 عادية + 3 VIP)
+│   ├── theme_state.dart               ✅ الحالة العامة للثيم
+│   ├── themed_colors.dart             ✅ جديد: ألوان ديناميكية
+│   ├── reciter_prefs.dart
 │   ├── fonts.dart
 │   ├── validators.dart
 │   ├── navigation.dart
@@ -79,8 +88,8 @@ lib/
 │   ├── firebase_options.dart
 │   └── strings_prayer.dart
 ├── data/
-│   ├── questions.dart                (~55 سؤال تحديات)
-│   └── store_items.dart              (عناصر المتجر)
+│   ├── questions.dart                 # ~55 سؤال تحديات
+│   └── store_items.dart               # 10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات
 ├── models/
 │   ├── quran.dart
 │   └── saved_location.dart
@@ -94,6 +103,7 @@ lib/
 │   └── share_service.dart
 ├── screens/
 │   ├── splash_screen.dart
+│   ├── welcome_screen.dart
 │   ├── login_screen.dart
 │   ├── register_screen.dart
 │   ├── location_screen.dart
@@ -112,15 +122,18 @@ lib/
 │       ├── more_tab.dart
 │       └── soon_tabs.dart
 └── widgets/
-    ├── app_branding.dart
-    ├── animated_vip_background.dart  (جديد: animations VIP)
+    ├── app_branding.dart              ✅ AppBackground ديناميكي
+    ├── animated_vip_background.dart   ✅ animations للخلفيات VIP
+    ├── themed_background.dart         ✅ جديد: طبقة الثيم + animations للثيمات VIP
+    ├── theme_preview.dart             ✅ معاينة مصغّرة للثيمات
     ├── asset_icon.dart
     ├── profile_avatar.dart
     ├── verified_badge.dart
+    ├── glass_card.dart                ✅ theme-aware
+    ├── star_badge.dart                ✅ theme-aware
+    ├── ornament_medallion.dart        ✅ theme-aware
     ├── auth_widgets.dart
-    ├── glass_card.dart
     ├── glow_sparks.dart
-    ├── star_badge.dart
     └── islamic_pattern.dart
 ```
 
@@ -166,7 +179,6 @@ users/{uid}/
 ```
 
 ### قواعد Firestore Rules
-
 ```
 rules_version = '2';
 service cloud.firestore {
@@ -228,31 +240,50 @@ service cloud.firestore {
 
 ### 6) المتجر
 - [x] 4 تبويبات: خلفيات، قراء، مؤذنون، ثيمات.
-- [x] 7 خلفيات عادية (منها المجانية).
+- [x] 10 خلفيات (7 عادية + 3 VIP).
 - [x] 3 خلفيات VIP (2000 نقطة) مع animations.
-- [x] 6 قراء + القارئ الافتراضي.
+- [x] 7 قراء (المستخدم + 6 للشراء).
 - [x] 7 مؤذنين.
-- [x] 6 ثيمات.
-- [x] عرض الصور الحقيقية على البطاقات.
+- [x] 9 ثيمات (6 عادية + 3 VIP).
+- [x] 3 ثيمات VIP (2000 نقطة) مع animations.
+- [x] عرض الصور الحقيقية على بطاقات الخلفيات.
+- [x] عرض معاينة مصغّرة حية على بطاقات الثيمات.
 - [x] شارة VIP ذهبية + شارة ANIMATION.
 - [x] نظام شراء كامل + خصم النقاط.
 - [x] تفعيل فوري للعنصر بعد الشراء.
 - [x] "مشترياتي" لعرض وتبديل العناصر المملوكة.
 
-### 7) الخلفيات المتغيرة
+### 7) الخلفيات
 - [x] `themeState.backgroundId` يحفظ الاختيار (محلي + Firestore).
 - [x] `AppBackground` يقرأ ويطبق فوراً.
 - [x] الصور الفعلية للخلفيات في `assets/images/backgrounds/`.
-- [x] VIP animations: Zoom + Shimmer + نجوم متحركة + توهج نابض.
+- [x] 7 خلفيات عادية (default, blue, orange, brown, dark, purple, olive).
+- [x] 3 خلفيات VIP متحركة (vip1, vip2, vip3).
+- [x] AnimatedVipBackground: zoom + shimmer + نجوم + overlay.
 
-### 8) التصميم العام
+### 8) الثيمات الديناميكية
+- [x] `ThemePalette` مع 9 ثيمات.
+- [x] `themeState` يحفظ الثيم المختار (محلي + Firestore).
+- [x] `ThemedColors` ألوان ديناميكية.
+- [x] `MaterialApp` يعيد البناء عند تغيير الثيم.
+- [x] الشريط السفلي يتغير مع الثيم.
+- [x] GlassCard theme-aware.
+- [x] StarBadge theme-aware.
+- [x] OrnamentMedallion theme-aware.
+- [x] SymbolImage theme-aware.
+- [x] ThemedBackground (طبقة فوق الصورة).
+- [x] ThemePreview (معاينة حية على بطاقات الثيمات).
+- [x] 3 ثيمات VIP مع animations كاملة (نجوم + shimmer + تدرجات متحركة + توهج نابض).
+- [x] يعمل مع الخلفيات VIP بدون تعارض.
+
+### 9) التصميم العام
 - [x] ثيم داكن (أخضر + ذهبي).
 - [x] أيقونات مخصصة PNG (challenge, more, coupon, Setting, store).
 - [x] زر الإعدادات في الأعلى.
 - [x] ترجمات عربية وإنجليزية.
 - [x] ضبط الإيميلات الأربعة (owner).
 
-### 9) القرآن والأذكار
+### 10) القرآن والأذكار
 - [x] عرض القرآن كامل.
 - [x] تلاوة صوتية مع القارئ المُختار من المتجر.
 - [x] تفسير.
@@ -264,20 +295,23 @@ service cloud.firestore {
 
 ## ⏳ قيد التنفيذ / الخطوات القادمة
 
-### أ) تفعيل الثيمات الفعلية
-- [ ] عند شراء ثيم → الألوان الداخلية تتغير (ذهبي + اللون الجديد).
-- [ ] تطبيق على الأزرار، البطاقات، الحدود.
+### أ) التصغير المتجاوب (Responsive Sizes)
+- [ ] `lib/core/responsive.dart` — helper للأحجام المتجاوبة.
+- [ ] تعديل `welcome_screen.dart` (تصغير خفيف).
+- [ ] تعديل `auth_widgets.dart` (AppLogo، الأزرار).
+- [ ] تعديل `home_tab.dart` (الدوائر، البطاقات).
+- [ ] تعديل `account_screen.dart` (الصورة، البطاقات).
+- [ ] تعديل `challenge_screen.dart` (البطاقات).
 
-### ب) الوضع النهاري/الليلي
-- [ ] تبديل بين الوضعين.
-- [ ] النهاري: أبيض + ذهبي.
-- [ ] حفظ في Firestore.
-
-### ج) شاشة الإعدادات
+### ب) شاشة الإعدادات
 - [ ] زر Setting.png يفتح شاشة كاملة.
 - [ ] إعدادات الإشعارات (لكل صلاة).
 - [ ] تفعيل/تعطيل الأذان.
 - [ ] تذكير قبل الأذان (0/5/10 دقائق).
+
+### ج) الوضع النهاري/الليلي
+- [ ] تبديل بين الوضعين.
+- [ ] النهاري: أبيض + ذهبي.
 
 ### د) التوثيق
 - [ ] زر "وثّق حسابي" للمستخدم العادي.
@@ -327,19 +361,11 @@ service cloud.firestore {
 ### أصول الصور (assets/)
 
 **assets/icons/**
-- Setting.png
-- challenge.png
-- coupon.png
-- more.png
-- store.png
-- true.me.png
-- true.users.png
+- Setting.png, challenge.png, coupon.png, more.png, store.png
+- true.me.png, true.users.png
 
 **assets/images/**
-- Me.png
-- logo.png
-- avatar_man.png
-- avatar_woman.png
+- Me.png, logo.png, avatar_man.png, avatar_woman.png
 
 **assets/images/backgrounds/**
 - backgroundv2.png (default — الأخضر الذهبي)
@@ -353,8 +379,7 @@ service cloud.firestore {
 - backgroundvip2.png (vip_rose — الحديقة الوردية)
 - backgroundvip3.png (vip_divine — النور السماوي)
 
-### `pubspec.yaml` — قسم Assets (مهم)
-
+### `pubspec.yaml` — قسم Assets
 ```
 flutter:
   uses-material-design: true
@@ -365,7 +390,6 @@ flutter:
 ```
 
 ### Git Workflow (بعد كل ميزة ناجحة)
-
 ```
 flutter analyze           # يجب "No issues found!"
 bash tool/preview.sh      # اختبار
@@ -380,32 +404,30 @@ git push
   - المستخدمون العاديون: مرة واحدة لكل حساب.
 
 ### حسابات المالك (Owner)
-الإيميلات التالية تحصل تلقائياً على شعار `true.me.png` + صور مخصصة:
-
-- abdelrahmenbenromdhan11@gmail.com → Me.png
-- vevocom888@gmail.com → Me.png
-- nooralimanechannel@gmail.com → logo.png
-- nooralhidayahbusiness@gmail.com → logo.png
+- abdelrahmenbenromdhan11@gmail.com → Me.png + true.me
+- vevocom888@gmail.com → Me.png + true.me
+- nooralimanechannel@gmail.com → logo.png + true.me
+- nooralhidayahbusiness@gmail.com → logo.png + true.me
 
 ---
 
 ## 🎯 قواعد مهمة للمطور الجديد (أي AI)
 
-1. **قبل أي تعديل:** تأكد من عمل `flutter analyze` → "No issues found".
+1. **قبل أي تعديل:** تأكد من `flutter analyze` → "No issues found".
 2. **عند تعديل ملف:** انسخه كامل، لا تعدّل بالقطع.
-3. **التصميم:** اتبع نفس الألوان (ذهبي + أخضر داكن) والحركات (Glow, Rotation, Pulse).
-4. **الصور:** أي أيقونة جديدة توضع في `assets/icons/` أو `assets/images/`، ثم تُضاف في `pubspec.yaml`.
-5. **البيانات:** كل بيانات المستخدم تُحفظ في Firestore تحت `users/{uid}`.
-6. **المزامنة:** استخدم `UserService` و`AuthService` فقط للتعامل مع Firestore.
-7. **الترجمات:** كل نص جديد يُضاف في `app_state.dart` في `_ar` و`_en`.
-8. **الأخطاء:** استخدم `showAuthMessage(context, msg, error: true)`.
-9. **التنقل:** استخدم `Navigator.push(MaterialPageRoute(...))`.
-10. **اختبار:** بعد كل تعديل، شغّل `flutter analyze` + `bash tool/preview.sh`.
+3. **التصميم:** اتبع الألوان (ذهبي + الثيم الحالي) والحركات (Glow, Rotation, Pulse).
+4. **الصور:** أي أيقونة جديدة توضع في `assets/icons/` أو `assets/images/`، ثم `pubspec.yaml`.
+5. **البيانات:** كل بيانات المستخدم في Firestore تحت `users/{uid}`.
+6. **المزامنة:** استخدم `UserService` و`AuthService` فقط.
+7. **الترجمات:** كل نص جديد في `app_state.dart` في `_ar` و`_en`.
+8. **الألوان الديناميكية:** استخدم `ThemedColors` (وليس `AppColors`) للعناصر القابلة للتغيير.
+9. **التنقل:** `Navigator.push(MaterialPageRoute(...))`.
+10. **اختبار:** بعد كل تعديل، `flutter analyze` + `bash tool/preview.sh`.
 
 ### القاعدة الذهبية:
 بعد كل ميزة تنجح + `flutter analyze` = No issues + Test يشتغل:
 1. `git add . && git commit -m "..." && git push`
-2. حدّث `PROJECT.md` بالميزة الجديدة.
+2. حدّث `PROJECT.md`.
 3. انتقل للمرحلة التالية.
 
 ---
@@ -413,7 +435,7 @@ git push
 ## 📞 التواصل
 
 **المالك:** Abdel Rahmen Ben Romdhan  
-**البريد:** abdelrahmenbenromdhan11@gmail.com / vevocom888@gmail.com  
+**البريد:** vevocom888@gmail.com  
 **التطبيق:** نور الهداية — Noor Al-Hidayah  
 **الشعار:** By Abdel Rahmen Ben Romdhan
 
@@ -425,11 +447,11 @@ git push
 
 ### المبادئ الأساسية:
 
-1. **ملف واحد لكل ميزة** — كل ميزة جديدة تعني ملف واحد جديد على الأقل.
-2. **استبدال كامل** — عند تعديل ملف، يُنسخ المحتوى الجديد كامل ويستبدل القديم. لا تعديل بالقطع.
-3. **فحص قبل الحفظ** — لا نحفظ أي شي قبل `flutter analyze` = `No issues found!` + اختبار ناجح.
+1. **ملف واحد لكل ميزة** — كل ميزة جديدة = ملف جديد على الأقل.
+2. **استبدال كامل** — عند تعديل ملف، يُنسخ المحتوى الجديد كامل ويستبدل القديم.
+3. **فحص قبل الحفظ** — لا نحفظ قبل `flutter analyze` = `No issues found!` + اختبار ناجح.
 4. **`PROJECT.md` يُحدّث بعد كل ميزة** — قبل الانتقال للخطوة التالية.
-5. **الخطوات صغيرة** — كل رد يحتوي على خطوة واحدة واضحة، ثم اختبار، ثم الخطوة التالية.
+5. **الخطوات صغيرة** — كل رد فيه خطوة واحدة واضحة.
 
 ---
 
@@ -437,36 +459,31 @@ git push
 
 **الخطوة 1 — AI يشرح الميزة ويعطي الكود:**
 - يشرح ما الذي سيتغير.
-- يعطي الكود كامل للملفات الجديدة أو المعدلة.
+- يعطي الكود كامل.
 - يذكر بوضوح: "ملف جديد" أو "استبدل".
 
 **الخطوة 2 — المالك ينسخ الملفات في GitHub (استبدال كامل):**
-- **ملف جديد:** GitHub → Add file → Create new file → الصق الكود → Commit.
+- **ملف جديد:** GitHub → Add file → Create new file → الصق → Commit.
 - **ملف موجود:** اضغط الملف → القلم ✏️ → Select All → Delete → الصق الجديد → Commit.
 
 **الخطوة 3 — في Terminal:**
-- اكتب `git pull`.
-- اكتب `flutter analyze`.
-- يجب أن يظهر `No issues found!` — إذا ظهرت أخطاء، توقف وأرسلها للـ AI.
+- `git pull`
+- `flutter analyze` → يجب `No issues found!` — إذا ظهرت أخطاء، أرسلها للـ AI.
 
 **الخطوة 4 — اختبار التطبيق:**
-- اكتب `bash tool/preview.sh`.
-- افتح التطبيق.
-- جرب الميزة الجديدة.
-- تأكد أن كل شي يعمل.
+- `bash tool/preview.sh`
+- افتح التطبيق، جرب الميزة الجديدة.
 
-**الخطوة 5 — إذا نجح الاختبار، احفظ:**
+**الخطوة 5 — إذا نجح، احفظ:**
 - `git add .`
 - `git commit -m "Feature: [اسم الميزة]"`
 - `git push`
 
 **الخطوة 6 — حدّث `PROJECT.md`:**
-- أضف الميزة في قسم "المنجز حتى الآن" بصيغة `- [x]`.
-- احذفها من "قيد التنفيذ" إن كانت موجودة.
-- حدّث "آخر تحديث" بالتاريخ الجديد.
-- حدّث "الإصدار" (مثال: Beta 0.2 → Beta 0.3).
+- أضف الميزة في "المنجز حتى الآن" بصيغة `- [x]`.
+- احذفها من "قيد التنفيذ".
+- حدّث "آخر تحديث" + "الإصدار".
 - لا تحذف قسم "طريقة العمل".
-- احفظ → Commit.
 
 **الخطوة 7 — ابدأ الميزة التالية.**
 
@@ -474,87 +491,67 @@ git push
 
 ### كيف تُنشأ الملفات الجديدة؟
 
-**ملف Flutter جديد (Dart):**
-1. GitHub → انتقل للمجلد المطلوب (مثل `lib/screens/`).
-2. اضغط "Add file" → "Create new file".
-3. اكتب اسم الملف (مثل `my_new_screen.dart`).
+**ملف Flutter جديد:**
+1. GitHub → انتقل للمجلد.
+2. Add file → Create new file.
+3. اكتب الاسم (مثل `my_new_screen.dart`).
 4. الصق الكود.
-5. اضغط "Commit changes".
-6. في Terminal: `git pull`.
+5. Commit → `git pull`.
 
-**ملف جديد في مجلد فرعي جديد:**
-- عند كتابة اسم الملف، اكتب المسار كامل: `newfolder/newfile.dart`.
-- GitHub ينشئ المجلد تلقائياً.
+**مجلد فرعي جديد:** اكتب المسار كامل: `newfolder/newfile.dart`.
 
-**صورة أو أصل جديد:**
-1. ارفعها عبر "Add file" → "Upload files".
-2. ضعها في المجلد الصحيح (`assets/icons/` أو `assets/images/`).
-3. حدّث `pubspec.yaml` إذا كان مجلداً جديداً.
-4. `git pull` + `flutter pub get`.
+**صورة جديدة:** Add file → Upload files → ضعها في المجلد الصحيح → حدّث `pubspec.yaml` → `git pull` + `flutter pub get`.
 
 ---
 
-### كيف يُستبدل محتوى ملف موجود؟
+### كيف يُستبدل محتوى ملف؟
 
 1. افتح الملف على GitHub.
-2. اضغط أيقونة القلم ✏️ (تعديل).
-3. اضغط مطولاً على الكود → اختر "Select All".
-4. اضغط حذف (Delete) — الملف يصير فاضي.
-5. الصق الكود الجديد كامل.
-6. اضغط "Commit changes".
-7. في Terminal: `git pull`.
-8. ثم: `flutter analyze`.
+2. القلم ✏️.
+3. Select All → Delete.
+4. الصق الكود الجديد.
+5. Commit changes.
+6. `git pull` → `flutter analyze`.
 
-> ⚠️ ملاحظة مهمة: لا تحاول تعديل أسطر محددة داخل الملف. دائماً استبدل الملف كامل — هذا يمنع الأخطاء ويضمن تطابق الكود مع ما أعطاه AI.
+> ⚠️ لا تحاول تعديل أسطر محددة. دائماً استبدل الملف كامل.
 
 ---
 
 ### كيف يُحدّث `PROJECT.md`؟
 
 بعد كل ميزة ناجحة:
-
 1. لا تحذف شي — فقط أضف.
-2. في قسم "المنجز حتى الآن":
-   - أضف `- [x]` للبند الجديد تحت القسم المناسب.
-3. في قسم "قيد التنفيذ":
-   - احذف البند المنتهي.
-4. في الأعلى: حدّث "آخر تحديث" بالتاريخ الجديد.
-5. في الأسفل: حدّث "الإصدار" (Beta 0.2 → Beta 0.3).
-6. ⚠️ لا تحذف قسم "طريقة العمل" أبداً.
-7. احفظ → Commit.
+2. في "المنجز": أضف `- [x]`.
+3. في "قيد التنفيذ": احذف البند المنتهي.
+4. حدّث "آخر تحديث" + "الإصدار".
+5. ⚠️ لا تحذف قسم "طريقة العمل".
+6. احفظ → Commit.
 
 ---
 
 ### القواعد الذهبية الثلاث:
 
 1. **لا حفظ بدون اختبار:** لا `git commit` قبل `flutter analyze` = `No issues found!`.
-2. **لا استبدال جزئي:** انسخ الملف كامل، استبدل بالكامل.
+2. **لا استبدال جزئي:** انسخ الملف كامل.
 3. **لا انتقال بدون تحديث:** لا بداية ميزة جديدة قبل تحديث `PROJECT.md`.
 
 ---
 
 ### إذا حصل خطأ:
 
-1. لا تكمل — أوقف واذهب للخطوة السابقة.
-2. انسخ رسالة الخطأ كاملة (من `flutter analyze` أو المتصفح).
-3. أرسلها للـ AI مع:
-   - صورة شاشة (إن أمكن).
-   - اسم الملف الذي فيه الخطأ.
-4. AI راح يصلح الخطأ ويعطيك كود جديد.
-5. أعد من الخطوة 2 (استبدال الملف).
+1. لا تكمل — أوقف.
+2. انسخ رسالة الخطأ كاملة.
+3. أرسلها للـ AI مع صورة الشاشة + اسم الملف.
+4. AI يصلح ويعطيك كود جديد.
+5. أعد من الخطوة 2.
 
 ---
 
-### نصائح إضافية:
+### نصائح:
 
-- احفظ نسخة احتياطية كل أسبوع:
-  ```
-  git tag v0.2-stable
-  git push --tags
-  ```
-- إذا تجرب شي خطير: أنشئ branch جديد (`git checkout -b experiment`)، وإذا نجح → ادمجه، وإذا فشل → احذفه.
-- لا تخف من `git reset`: تقدر ترجع لأي commit قديم إذا احتجت.
+- احفظ نسخة احتياطية: `git tag v0.3-stable && git push --tags`.
+- للتجارب الخطيرة: `git checkout -b experiment`.
 
 ---
 
-**آخر تحديث لهذا القسم:** 2026-09-27 — هذا القسم ثابت ولا يُحذف.
+**آخر تحديث لهذا القسم:** 2026-09-27 — ثابت ولا يُحذف.
