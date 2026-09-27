@@ -411,6 +411,21 @@ git push
 
 ---
 
+---
+
+## 🙏 شكر وتقدير (Credits & Attribution)
+
+### الأيقونات
+بعض الأيقونات المستخدمة في هذا التطبيق تم تحميلها من موقع [Flaticon](https://www.flaticon.com/).
+
+**صيغة الإسناد:**
+> Icon made by Flaticon from www.flaticon.com
+
+**المؤلفون (إذا كانوا معروفين):**
+- [اسم المؤلف 1] from Flaticon
+- [اسم المؤلف 2] from Flaticon
+
+**ملاحظة قانونية:** الإسناد مطلوب حسب ترخيص Flaticon للمستخدمين المجانيين.
 ## 🎯 قواعد مهمة للمطور الجديد (أي AI)
 
 1. **قبل أي تعديل:** تأكد من `flutter analyze` → "No issues found".
