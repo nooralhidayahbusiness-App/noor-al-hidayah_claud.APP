@@ -12,10 +12,7 @@ const bool kLogoHasName = false;
 const Color _overlayTop = Color(0x66041F18);
 const Color _overlayBottom = Color(0xCC041F18);
 
-/// الخلفية العامة:
-/// - أولوية 1: خلفية VIP (backgroundvip1/2/3) → AnimatedVipBackground.
-/// - أولوية 2: ثيم VIP (vip_emperor/cosmic/crimson) → ThemedBackground متحرك.
-/// - أولوية 3: خلفية عادية (صورة ثابتة + overlay).
+/// الخلفية العامة — الصورة + طبقة الثيم فوقها.
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key, this.child});
 
@@ -29,29 +26,19 @@ class AppBackground extends StatelessWidget {
         final bgId = themeState.backgroundId;
         final bgItem = findItem('background', bgId) ??
             findItem('background', 'default')!;
-        final palette = themeState.palette;
+        final isVipBg =
+            bgItem.isVip && bgItem.isAnimated && bgItem.imagePath != null;
 
-        final isVipBg = bgItem.isVip &&
-            bgItem.isAnimated &&
-            bgItem.imagePath != null;
-        final isVipTheme = palette.isVip && palette.isAnimated;
+        // خلفية VIP متحركة (صورة + zoom + نجوم)
+        if (isVipBg) {
+          return AnimatedVipBackground(
+            imagePath: bgItem.imagePath!,
+            overlay: const ThemedBackground(child: SizedBox.expand()),
+            child: child,
+          );
+        }
 
-        // أولوية 1: ثيم VIP متحرك (يتفوق دائماً)
-if (isVipTheme) {
-  return ThemedBackground(
-    child: child ?? const SizedBox.expand(),
-  );
-}
-
-// أولوية 2: خلفية VIP متحركة
-if (isVipBg) {
-  return AnimatedVipBackground(
-    imagePath: bgItem.imagePath!,
-    child: child,
-  );
-}
-
-        // أولوية 3: عادي
+        // عادي: صورة + طبقة الثيم الشفافة فوقها
         return Stack(
           fit: StackFit.expand,
           children: [
@@ -63,6 +50,8 @@ if (isVipBg) {
               )
             else
               const _FallbackBackground(),
+
+            // overlay أساسي للصور العادية
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -72,7 +61,11 @@ if (isVipBg) {
                 ),
               ),
             ),
-            ?child,
+
+            // طبقة الثيم (نجوم + shimmer للـ VIP)
+            const ThemedBackground(child: SizedBox.expand()),
+
+            if (child != null) child!,
           ],
         );
       },
@@ -98,7 +91,6 @@ class _FallbackBackground extends StatelessWidget {
   }
 }
 
-/// App logo with a soft golden glow.
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 150});
 
