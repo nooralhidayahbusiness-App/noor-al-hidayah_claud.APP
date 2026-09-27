@@ -125,6 +125,8 @@ const Map<String, String> _ar = {
 'purchaseSuccess': 'تم الشراء بنجاح 🎉',
 'itemActivated': 'تم التفعيل ✓',
 'notEnoughPoints': 'نقاطك غير كافية',
+'myPurchases': 'مشترياتي',
+'noPurchases': 'لا توجد مشتريات بعد',
 };
 
 const Map<String, String> _en = {
@@ -225,4 +227,6 @@ const Map<String, String> _en = {
 'purchaseSuccess': 'Purchased successfully 🎉',
 'itemActivated': 'Activated ✓',
 'notEnoughPoints': 'Not enough points',
+'myPurchases': 'My Purchases',
+'noPurchases': 'No purchases yet',
 };
