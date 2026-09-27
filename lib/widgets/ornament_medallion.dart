@@ -2,15 +2,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../core/theme.dart';
+import '../core/themed_colors.dart';
 import 'glow_sparks.dart';
 
 Offset _polar(Offset c, double r, double angle) {
   return Offset(c.dx + r * math.cos(angle), c.dy + r * math.sin(angle));
 }
 
-/// Round medallion: a plain circle with one gold 12-point star outline that
-/// rotates slowly around it, and the symbol image enlarged in the middle.
+/// Round medallion — theme-aware.
 class OrnamentMedallion extends StatefulWidget {
   const OrnamentMedallion({
     super.key,
@@ -46,32 +45,59 @@ class _OrnamentMedallionState extends State<OrnamentMedallion>
   Widget build(BuildContext context) {
     final size = widget.size;
     final inner = size * OrnamentMedallion._innerRatio;
-    final medallion = SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Static base: just the disc and one thin outer ring.
-          Positioned.fill(child: CustomPaint(painter: const _MedallionBasePainter())),
-          // Rotating ornament: a single gold star outline, nothing else.
-          RotationTransition(
-            turns: _rotation,
-            child: SizedBox.expand(
-              child: CustomPaint(painter: const _MedallionOrnamentPainter()),
-            ),
+
+    return ListenableBuilder(
+      listenable: themeState,
+      builder: (context, _) {
+        final bg = ThemedColors.accentDark;
+        final gold = ThemedColors.gold;
+
+        final medallion = SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _MedallionBasePainter(bg: bg, gold: gold),
+                ),
+              ),
+              RotationTransition(
+                turns: _rotation,
+                child: SizedBox.expand(
+                  child: CustomPaint(
+                    painter: _MedallionOrnamentPainter(
+                      bg: bg,
+                      gold: gold,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: inner,
+                height: inner,
+                child: ClipOval(child: widget.child),
+              ),
+            ],
           ),
-          SizedBox(width: inner, height: inner, child: ClipOval(child: widget.child)),
-        ],
-      ),
+        );
+        if (!widget.glow) return medallion;
+        return GlowSparks(
+          spread: size * 0.3,
+          sparks: 6,
+          child: medallion,
+        );
+      },
     );
-    if (!widget.glow) return medallion;
-    return GlowSparks(spread: size * 0.3, sparks: 6, child: medallion);
   }
 }
 
 class _MedallionBasePainter extends CustomPainter {
-  const _MedallionBasePainter();
+  _MedallionBasePainter({required this.bg, required this.gold});
+
+  final Color bg;
+  final Color gold;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -82,19 +108,30 @@ class _MedallionBasePainter extends CustomPainter {
       c,
       r,
       Paint()
-        ..shader = const RadialGradient(colors: [AppColors.green, AppColors.deepGreen])
-            .createShader(Rect.fromCircle(center: c, radius: r)),
+        ..shader = RadialGradient(
+          colors: [bg.withValues(alpha: 0.9), bg],
+        ).createShader(Rect.fromCircle(center: c, radius: r)),
     );
-    canvas.drawCircle(c, r * 0.97, Paint()..style = PaintingStyle.stroke..strokeWidth = 2..color = AppColors.gold);
+    canvas.drawCircle(
+      c,
+      r * 0.97,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = gold,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MedallionBasePainter old) =>
+      old.bg != bg || old.gold != gold;
 }
 
-/// The rotating part: only the outer 12-point star outline.
 class _MedallionOrnamentPainter extends CustomPainter {
-  const _MedallionOrnamentPainter();
+  _MedallionOrnamentPainter({required this.bg, required this.gold});
+
+  final Color bg;
+  final Color gold;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -105,12 +142,12 @@ class _MedallionOrnamentPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.4
       ..strokeJoin = StrokeJoin.round
-      ..color = AppColors.deepGreen.withValues(alpha: 0.9);
+      ..color = bg.withValues(alpha: 0.9);
     final line = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5
       ..strokeJoin = StrokeJoin.round
-      ..color = AppColors.gold;
+      ..color = gold;
 
     final star = Path();
     for (var i = 0; i < 24; i++) {
@@ -128,12 +165,18 @@ class _MedallionOrnamentPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MedallionOrnamentPainter old) =>
+      old.bg != bg || old.gold != gold;
 }
 
 /// A symbol image from assets, with a gold icon if the file is missing.
 class SymbolImage extends StatelessWidget {
-  const SymbolImage(this.path, {super.key, required this.fallback, this.tint = false});
+  const SymbolImage(
+    this.path, {
+    super.key,
+    required this.fallback,
+    this.tint = false,
+  });
 
   final String path;
   final IconData fallback;
@@ -141,12 +184,19 @@ class SymbolImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      path,
-      fit: BoxFit.contain,
-      color: tint ? AppColors.gold : null,
-      colorBlendMode: tint ? BlendMode.srcIn : null,
-      errorBuilder: (context, error, stackTrace) => Icon(fallback, color: AppColors.gold, size: 30),
+    return ListenableBuilder(
+      listenable: themeState,
+      builder: (context, _) {
+        final gold = ThemedColors.gold;
+        return Image.asset(
+          path,
+          fit: BoxFit.contain,
+          color: tint ? gold : null,
+          colorBlendMode: tint ? BlendMode.srcIn : null,
+          errorBuilder: (context, error, stackTrace) =>
+              Icon(fallback, color: gold, size: 30),
+        );
+      },
     );
   }
 }
