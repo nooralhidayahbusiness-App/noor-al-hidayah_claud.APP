@@ -2,32 +2,50 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/reciter.dart';
+import 'theme_state.dart';
 
-/// Chosen reciter and playback mode, saved on the device.
+/// القارئ المُختار — يقرأ قيمته من [themeState] ليتزامن مع المتجر.
 class ReciterPrefs extends ChangeNotifier {
   static const _idKey = 'reciter_selected';
   static const _autoKey = 'reciter_auto_advance';
 
-  String reciterId = kReciters.first.id;
-
-  /// true = "full surah" (keeps playing), false = "ayah by ayah" (pauses
-  /// after each verse and waits).
+  String _reciterId = kReciters.first.id;
   bool autoAdvance = true;
   bool _loaded = false;
 
-  Reciter get reciter => reciterById(reciterId);
+  String get reciterId => _reciterId;
+
+  Reciter get reciter {
+    try {
+      return reciterById(_reciterId);
+    } catch (_) {
+      return kReciters.first;
+    }
+  }
 
   Future<void> load() async {
     if (_loaded) return;
     _loaded = true;
     final prefs = await SharedPreferences.getInstance();
-    reciterId = prefs.getString(_idKey) ?? kReciters.first.id;
+    _reciterId = prefs.getString(_idKey) ?? kReciters.first.id;
     autoAdvance = prefs.getBool(_autoKey) ?? true;
+
+    // نستمع لـ themeState: أي تغيير للقارئ من المتجر ينعكس هنا.
+    themeState.addListener(_syncFromTheme);
+
     notifyListeners();
   }
 
+  void _syncFromTheme() {
+    final id = themeState.reciterId;
+    if (id == _reciterId) return;
+    _reciterId = id;
+    notifyListeners();
+    SharedPreferences.getInstance().then((p) => p.setString(_idKey, id));
+  }
+
   Future<void> setReciter(String id) async {
-    reciterId = id;
+    _reciterId = id;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_idKey, id);
