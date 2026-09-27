@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
+import '../widgets/themed_background.dart';
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../data/questions.dart';
@@ -100,15 +100,8 @@ class _ChallengePlayScreenState extends State<ChallengePlayScreen> {
     final progress = (_currentIndex + 1) / widget.questions.length;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.deepGreen, Color(0xFF0A1F17)],
-          ),
-        ),
-        child: SafeArea(
+      body: ThemedBackground(
+  child: SafeArea(
           child: Column(
             children: [
               Padding(
