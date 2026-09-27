@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/theme.dart';
+import '../core/theme_state.dart';
 import '../data/store_items.dart';
 import '../services/user_service.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
+import 'my_purchases_screen.dart';
 
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
@@ -16,8 +18,7 @@ class StoreScreen extends StatefulWidget {
 
 class _StoreScreenState extends State<StoreScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs =
-      TabController(length: 4, vsync: this);
+  late final TabController _tabs = TabController(length: 4, vsync: this);
 
   bool _loading = true;
   int _points = 0;
@@ -39,20 +40,9 @@ class _StoreScreenState extends State<StoreScreen>
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
+      await userService.migrateInventory();
       final stats = await userService.loadStats();
-      var inv = await userService.loadInventory();
-
-      // ترحيل: نضيف حقول المؤذن إذا ناقصة
-      if (!inv.containsKey('adhans')) {
-        await userService.saveUserData({
-          'inventory': {
-            'adhans': ['default'],
-            'activeAdhan': 'default',
-          }
-        });
-        inv = await userService.loadInventory();
-      }
-
+      final inv = await userService.loadInventory();
       if (mounted) {
         setState(() {
           _points = (stats['points'] as num?)?.toInt() ?? 0;
@@ -66,7 +56,7 @@ class _StoreScreenState extends State<StoreScreen>
 
   List<String> _ownedList(String type) {
     final key = _listKey(type);
-    final list = (_inventory[key] as List?) ?? [];
+    final list = (_inventory[key] as List?) ?? ['default'];
     return list.map((e) => e.toString()).toList();
   }
 
@@ -92,16 +82,37 @@ class _StoreScreenState extends State<StoreScreen>
   bool _isActive(StoreItem item) =>
       (_inventory[_activeKey(item.type)] as String?) == item.id;
 
+  /// يفعّل العنصر في النظام (theme_state) عشان يُطبّق فوراً.
+  Future<void> _activate(StoreItem item) async {
+    switch (item.type) {
+      case 'background':
+        await themeState.setBackground(item.id);
+        break;
+      case 'voice':
+        await themeState.setReciter(item.id);
+        break;
+      case 'adhan':
+        await themeState.setAdhan(item.id);
+        break;
+      case 'theme':
+        await themeState.setTheme(item.id);
+        break;
+    }
+  }
+
   Future<void> _onItemTap(StoreItem item) async {
     if (_busyId != null) return;
 
+    // مفعّل مسبقاً
     if (_isOwned(item)) {
       if (_isActive(item)) return;
       setState(() => _busyId = item.id);
       try {
-        await userService.setActive(_activeKey(item.type), item.id);
+        await _activate(item);
         await _load();
-        if (mounted) showAuthMessage(context, appState.tr('itemActivated'));
+        if (mounted) {
+          showAuthMessage(context, appState.tr('itemActivated'));
+        }
       } finally {
         if (mounted) setState(() => _busyId = null);
       }
@@ -170,12 +181,21 @@ class _StoreScreenState extends State<StoreScreen>
     try {
       await userService.addPoints(-item.price);
       await userService.unlockItem(_listKey(item.type), item.id);
-      await userService.setActive(_activeKey(item.type), item.id);
+      await _activate(item);
       await _load();
-      if (mounted) showAuthMessage(context, appState.tr('purchaseSuccess'));
+      if (mounted) {
+        showAuthMessage(context, appState.tr('purchaseSuccess'));
+      }
     } finally {
       if (mounted) setState(() => _busyId = null);
     }
+  }
+
+  Future<void> _openMyPurchases() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const MyPurchasesScreen()),
+    );
+    await _load();
   }
 
   @override
@@ -210,6 +230,13 @@ class _StoreScreenState extends State<StoreScreen>
                         fontWeight: FontWeight.w700,
                         color: AppColors.softGold,
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: appState.tr('myPurchases'),
+                      onPressed: _openMyPurchases,
+                      color: AppColors.softGold,
+                      icon: const Icon(Icons.shopping_bag_rounded),
                     ),
                   ],
                 ),
@@ -365,13 +392,7 @@ class _StoreTile extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // زر التفعيل / السعر
-            Positioned(
-              top: 8,
-              right: 8,
-              child: _buildBadge(),
-            ),
-            // علامة "مفعّل"
+            Positioned(top: 8, right: 8, child: _buildBadge()),
             if (active)
               const Positioned(
                 top: 8,
@@ -379,7 +400,6 @@ class _StoreTile extends StatelessWidget {
                 child: Icon(Icons.check_circle_rounded,
                     color: AppColors.gold, size: 22),
               ),
-            // المحتوى
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
