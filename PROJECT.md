@@ -3,8 +3,10 @@
 تطبيق إسلامي شامل يجمع مواقيت الصلاة، القرآن الكريم، الأذكار، الأدعية، التحديات اليومية، ومتجر النقاط في تجربة واحدة هادئة وفاخرة.
 
 **المالك:** Abdel Rahmen Ben Romdhan  
-**البريد:** vevocom888@gmail.com  
-**GitHub:** nooralhidayahbusiness-App/noor-al-hidayah_claud.APP
+**البريد:** abdelrahmenbenromdhan11@gmail.com / vevocom888@gmail.com  
+**GitHub:** nooralhidayahbusiness-App/noor-al-hidayah_claud.APP  
+**آخر تحديث:** 2026-09-27  
+**الإصدار:** Beta 0.2
 
 ---
 
@@ -17,53 +19,92 @@
 - نظام نقاط ومستويات وتحديات يومية.
 - متجر لشراء الخلفيات والأصوات والألوان بالنقاط.
 - شعار توثيق للمستخدمين المميزين.
+- خلفيات VIP متحركة بـ animations.
 - دعم متعدد اللغات.
 - إشعارات ذكية (أذان، آية يومية، تحديات).
 
 ### التقنيات
-- **Flutter** (الواجهة الأمامية).
-- **Firebase Authentication** (تسجيل ودخول).
-- **Firebase Firestore** (قاعدة بيانات سحابية).
-- **SharedPreferences** (تخزين محلي للمزامنة السريعة).
-- **Codespaces + GitHub** (بيئة التطوير).
-- **GitHub Pages** (نشر مبدئي للويب).
+- **Flutter** — الواجهة الأمامية.
+- **Firebase Authentication** — تسجيل ودخول.
+- **Firebase Firestore** — قاعدة بيانات سحابية.
+- **SharedPreferences** — تخزين محلي للمزامنة السريعة.
+- **Codespaces + GitHub** — بيئة التطوير.
+- **GitHub Pages** — نشر مبدئي للويب.
 
-### البنية المعمارية
+---
+
+## 🎨 نظام التصميم
+
+### الألوان (`lib/core/theme.dart`)
+
+- `deepGreen` — `#041F18` — الخلفية الأساسية
+- `green` — `#0B3D2E` — أخضر ثانوي
+- `emerald` — `#14664C` — زمردي
+- `gold` — `#D4AF37` — الذهبي الأساسي
+- `softGold` — `#F1DC9A` — ذهبي فاتح
+- `cream` — `#FFF8E7` — الكريمي للنصوص
+
+### الخطوط
+- **العناوين:** خط عربي فاخر (Amiri / Noto Naskh).
+- **الآيات:** `GoogleFonts.amiriQuran` (حجم 26) أو `notoNaskhArabic` (24).
+- **النصوص العادية:** Cairo أو Noto Sans Arabic.
+
+### الأسلوب البصري
+- خلفية خضراء داكنة مع نقشات إسلامية ذهبية.
+- تدرجات ذهبية على الأزرار والعناصر المهمة.
+- توهج (Glow) حول العناصر النشطة.
+- بطاقات زجاجية (GlassCard) شفافة مع حدود ذهبية.
+- زخارف نجمية في الزوايا (نجوم ثمانية).
+- حركات ناعمة (AnimatedSwitcher, AnimatedOpacity, pulse).
+
+---
+
+## 📂 بنية الملفات
+
 ```
 lib/
 ├── core/
-│   ├── app_flow.dart          → مسار التطبيق بعد الدخول
-│   ├── app_state.dart         → حالة اللغة والترجمات
-│   ├── prayer_state.dart      → مواقيت الصلاة
-│   ├── profile_state.dart     → صورة واسم المستخدم
-│   ├── theme.dart             → الألوان والتصميم
-│   ├── fonts.dart             → الخطوط
-│   ├── validators.dart        → التحقق من المدخلات
-│   ├── navigation.dart        → التنقل
-│   ├── quran_prefs.dart       → تفضيلات القرآن
-│   ├── reciter_prefs.dart     → تفضيلات القارئ
-│   ├── divine_names.dart      → أسماء الله الحسنى
-│   └── strings_prayer.dart    → نصوص الصلاة
+│   ├── app_flow.dart
+│   ├── app_state.dart
+│   ├── prayer_state.dart
+│   ├── profile_state.dart
+│   ├── theme.dart
+│   ├── theme_state.dart              (جديد: الحالة العامة)
+│   ├── reciter_prefs.dart            (معدّل: يزامن مع themeState)
+│   ├── fonts.dart
+│   ├── validators.dart
+│   ├── navigation.dart
+│   ├── quran_prefs.dart
+│   ├── divine_names.dart
+│   ├── firebase_options.dart
+│   └── strings_prayer.dart
+├── data/
+│   ├── questions.dart                (~55 سؤال تحديات)
+│   └── store_items.dart              (عناصر المتجر)
 ├── models/
 │   ├── quran.dart
 │   └── saved_location.dart
 ├── services/
-│   ├── auth_service.dart      → التسجيل والدخول + بنية Firestore
-│   ├── user_service.dart      → بيانات المستخدم الكاملة
-│   ├── storage_service.dart   → حفظ الموقع (محلي + سحابي)
-│   ├── location_service.dart  → خدمة الموقع الجغرافي
-│   ├── quran_audio_service.dart → تشغيل التلاوة
-│   ├── tafsir_service.dart    → التفسير
-│   └── share_service.dart     → مشاركة الآيات
+│   ├── auth_service.dart
+│   ├── user_service.dart
+│   ├── storage_service.dart
+│   ├── location_service.dart
+│   ├── quran_audio_service.dart
+│   ├── tafsir_service.dart
+│   └── share_service.dart
 ├── screens/
-│   ├── welcome_screen.dart    → شاشة البداية
-│   ├── login_screen.dart      → تسجيل الدخول
-│   ├── register_screen.dart   → إنشاء حساب
-│   ├── location_screen.dart   → اختيار الموقع
-│   ├── home_shell.dart        → الإطار الرئيسي
-│   ├── account_screen.dart    → الملف الشخصي
-│   ├── edit_profile_screen.dart → تعديل الملف
-│   ├── challenge_screen.dart  → التحديات والكوبون
+│   ├── splash_screen.dart
+│   ├── login_screen.dart
+│   ├── register_screen.dart
+│   ├── location_screen.dart
+│   ├── home_shell.dart
+│   ├── account_screen.dart
+│   ├── edit_profile_screen.dart
+│   ├── challenge_screen.dart
+│   ├── challenge_play_screen.dart
+│   ├── challenge_result_screen.dart
+│   ├── store_screen.dart
+│   ├── my_purchases_screen.dart
 │   └── tabs/
 │       ├── home_tab.dart
 │       ├── quran_browser_tab.dart
@@ -71,63 +112,17 @@ lib/
 │       ├── more_tab.dart
 │       └── soon_tabs.dart
 └── widgets/
-    ├── asset_icon.dart        → أيقونة من الصور
-    ├── profile_avatar.dart    → صورة بروفايل مع حلقة ذهبية
-    ├── verified_badge.dart    → شعار التوثيق
-    ├── auth_widgets.dart      → عناصر واجهات التسجيل
-    ├── glass_card.dart        → بطاقة شفافة
-    ├── glow_sparks.dart       → توهج الأزرار
-    ├── star_badge.dart        → شعار النجوم
-    └── app_branding.dart      → هوية التطبيق
+    ├── app_branding.dart
+    ├── animated_vip_background.dart  (جديد: animations VIP)
+    ├── asset_icon.dart
+    ├── profile_avatar.dart
+    ├── verified_badge.dart
+    ├── auth_widgets.dart
+    ├── glass_card.dart
+    ├── glow_sparks.dart
+    ├── star_badge.dart
+    └── islamic_pattern.dart
 ```
-
----
-
-## 🎨 نظام التصميم (Design System)
-
-### الألوان
-```dart
-class AppColors {
-  static const deepGreen = Color(0xFF0A1F17);   // الخلفية الأساسية
-  static const green     = Color(0xFF13382A);   // أخضر ثانوي
-  static const gold      = Color(0xFFD4AF37);   // الذهبي الأساسي
-  static const softGold  = Color(0xFFE8D9A0);   // ذهبي فاتح
-  static const cream     = Color(0xFFF5EFD8);   // الكريمي للنصوص
-  static const error     = Color(0xFFFF8A80);   // أحمر للخطأ
-}
-```
-
-### الخطوط
-- **العناوين:** خط عربي فاخر (Amiri / Noto Naskh).
-- **الآيات:** `GoogleFonts.amiriQuran` (حجم 26) أو `notoNaskhArabic` (حجم 24).
-- **النصوص العادية:** Cairo أو Noto Sans Arabic.
-
-### الأسلوب البصري
-- **خلفية خضراء داكنة** مع نقشات إسلامية ذهبية خفيفة.
-- **تدرجات ذهبية** على الأزرار والعناصر المهمة.
-- **توهج (Glow)** حول العناصر النشطة.
-- **بطاقات زجاجية (GlassCard)** شفافة مع حدود ذهبية.
-- **زخارف نجمية** في الزوايا (نجوم ثمانية).
-- **حركات ناعمة** (AnimatedSwitcher, AnimatedOpacity, pulse).
-
-### الأيقونات المخصصة (assets/icons/)
-- `challenge.png` — تبويب التحديات (ذهبي).
-- `coupon.png` — زر الكوبون (ذهبي).
-- `more.png` — تبويب المزيد (ذهبي).
-- `Setting.png` — زر الإعدادات (ذهبي).
-- `true.me.png` — شعار توثيق المالك (ذهبي، ملفوف).
-- `true.users.png` — شعار توثيق المستخدم (ذهبي).
-
-### الصور الشخصية (assets/images/)
-- `Me.png` — حسابات المالك (vevocom888 / abdelrahmenbenromdhan11).
-- `logo.png` — حسابات نور الهداية (nooralimanechannel / nooralhidayahbusiness).
-- `avatar_man.png` — المستخدم العادي (رجل).
-- `avatar_woman.png` — المستخدمة العادية (امرأة).
-
-### نمط الأيقونات في الشريط السفلي
-- 6 أيقونات: الرئيسية، القرآن، الأذكار، **التحديات**، المجتمع، المزيد.
-- الأيقونات المخصصة (challenge, more) بلون ذهبي مع شفافية 0.75 عند عدم التحديد.
-- النشطة ذهبية بالكامل.
 
 ---
 
@@ -135,70 +130,43 @@ class AppColors {
 
 ```
 users/{uid}/
-├── email: string
-├── createdAt: timestamp
-├── avatar: "man" | "woman"
-├── location_label: string
-├── location_lat: double
-├── location_lng: double
-├── location_address: string
+├── email, createdAt, avatar ("man" | "woman")
+├── location_label, location_lat, location_lng, location_address
 │
 ├── profile: {
-│   ├── name: string
-│   ├── bio: string
-│   ├── isPublic: bool
-│   ├── country: string
-│   ├── verified: bool
-│   ├── verifiedType: "owner" | "user" | "none"
-│   └── faceScanDone: bool
-│ }
+│     name, bio, isPublic, country,
+│     verified: bool,
+│     verifiedType: "owner" | "user" | "none",
+│     faceScanDone: bool
+│   }
 │
 ├── stats: {
-│   ├── points: int
-│   ├── level: int
-│   ├── streak: int
-│   ├── lastActiveDate: timestamp
-│   ├── challengesCompleted: int
-│   ├── totalCorrectAnswers: int
-│   ├── quranKhatmas: int
-│   ├── aiTeacherScore: int
-│   └── redeemedCoupons: [string]
-│ }
+│     points, level, streak, lastActiveDate,
+│     challengesCompleted, totalCorrectAnswers,
+│     quranKhatmas, aiTeacherScore, redeemedCoupons: [string]
+│   }
 │
 ├── inventory: {
-│   ├── backgrounds: [string]
-│   ├── voices: [string]
-│   ├── themes: [string]
-│   ├── activeBackground: string
-│   ├── activeVoice: string
-│   └── activeTheme: string
-│ }
+│     backgrounds: [string], voices: [string],
+│     adhans: [string], themes: [string],
+│     activeBackground, activeVoice, activeAdhan, activeTheme
+│   }
 │
 ├── settings: {
-│   ├── language: "ar" | "en" | "fr" | ...
-│   ├── theme: "dark" | "light"
-│   └── notifications: {
-│       ├── fajr: bool
-│       ├── dhuhr: bool
-│       ├── asr: bool
-│       ├── maghrib: bool
-│       ├── isha: bool
-│       ├── adhanEnabled: bool
-│       ├── adhanBeforeMinutes: int
-│       ├── dailyChallenge: bool
-│       ├── quranReminder: bool
-│       └── dailyVerse: bool
-│     }
-│ }
+│     language, theme,
+│     notifications: { fajr, dhuhr, asr, maghrib, isha,
+│                     adhanEnabled, adhanBeforeMinutes,
+│                     dailyChallenge, quranReminder, dailyVerse }
+│   }
 │
 └── progress: {
-    ├── challenges: {}
-    ├── quran: {}
-    └── aiTeacher: {}
-}
+      challenges: { lastPlayedDate, todayPoints, todayCorrect, totalCompleted },
+      quran: {}, aiTeacher: {}
+    }
 ```
 
 ### قواعد Firestore Rules
+
 ```
 rules_version = '2';
 service cloud.firestore {
@@ -215,16 +183,18 @@ service cloud.firestore {
 ## ✅ المنجز حتى الآن
 
 ### 1) الحسابات والمصادقة
-- [x] تسجيل حساب جديد → ينشئ في Firebase Auth + Firestore.
-- [x] تسجيل دخول → يقرأ من Firebase.
-- [x] قائمة الأخطاء مترجمة.
+- [x] تسجيل حساب → Firebase Auth + Firestore.
+- [x] تسجيل دخول → Firebase.
+- [x] قائمة أخطاء مترجمة.
 - [x] تسجيل خروج.
+- [x] `authService.isOwner` للتحقق من إيميلات المالك.
 
 ### 2) المزامنة
-- [x] صورة البروفايل (رجل/امرأة) — محلي + Firestore.
+- [x] صورة البروفايل — محلي + Firestore.
 - [x] الموقع الجغرافي — محلي + Firestore.
 - [x] بيانات الملف الشخصي — محلي + Firestore.
 - [x] الحسابات مشتركة مع الموقع.
+- [x] المزامنة بين الأجهزة.
 
 ### 3) الملف الشخصي
 - [x] شاشة "حسابي" كاملة.
@@ -232,78 +202,94 @@ service cloud.firestore {
 - [x] تغيير الصورة (رجل/امرأة).
 - [x] عرض النقاط، المستوى، streak.
 - [x] شريط تقدم المستوى.
-- [x] صورة بروفايل مع حلقة ذهبية دوّارة.
-- [x] توهج نابض حول الصورة.
+- [x] صورة بروفايل بحلقة ذهبية دوّارة + توهج نابض.
 - [x] شعار التوثيق (true.me / true.users).
+- [x] صور مخصصة (Me.png / logo.png) لحسابات المالك.
 
 ### 4) نظام النقاط
 - [x] بنية stats في Firestore.
-- [x] دالة addPoints.
-- [x] حساب المستوى تلقائياً.
-- [x] كود الكوبون NAH2026 = 1000 نقطة (مرة واحدة).
-- [x] منع استخدام الكوبون مرتين.
+- [x] `addPoints`, `incrementStats`, `setStats`.
+- [x] حساب المستوى تلقائياً (كل 100 نقطة = مستوى).
+- [x] كود الكوبون `NAH2026` = 1000 نقطة.
+- [x] منع استخدام الكوبون مرتين (للمستخدم العادي).
+- [x] الكوبون غير محدود لحسابات المالك الأربعة.
 
-### 5) التحديات (أساسي)
-- [x] تبويب التحديات في الشريط السفلي.
-- [x] شاشة التحدي + عرض النقاط.
-- [x] زر استبدال الكوبون.
-- [x] زر "ابدأ التحدي" (يعرض "قريباً").
+### 5) التحديات
+- [x] تبويب التحديات في الشريط السفلي (challenge.png).
+- [x] بنك أسئلة (~55 سؤال في `questions.dart`).
+- [x] اختيار 5 أسئلة عشوائية يومياً.
+- [x] 30 ثانية لكل سؤال، مؤقت أحمر عند آخر 10 ثواني.
+- [x] شاشة اللعب مع 4 خيارات.
+- [x] أخضر للإجابة الصحيحة، أحمر للخطأ.
+- [x] شاشة النتائج مع النقاط.
+- [x] 20 نقطة لكل إجابة صحيحة.
+- [x] منع إعادة التحدي في نفس اليوم.
+- [x] Streak تلقائي.
 
-### 6) التصميم
+### 6) المتجر
+- [x] 4 تبويبات: خلفيات، قراء، مؤذنون، ثيمات.
+- [x] 7 خلفيات عادية (منها المجانية).
+- [x] 3 خلفيات VIP (2000 نقطة) مع animations.
+- [x] 6 قراء + القارئ الافتراضي.
+- [x] 7 مؤذنين.
+- [x] 6 ثيمات.
+- [x] عرض الصور الحقيقية على البطاقات.
+- [x] شارة VIP ذهبية + شارة ANIMATION.
+- [x] نظام شراء كامل + خصم النقاط.
+- [x] تفعيل فوري للعنصر بعد الشراء.
+- [x] "مشترياتي" لعرض وتبديل العناصر المملوكة.
+
+### 7) الخلفيات المتغيرة
+- [x] `themeState.backgroundId` يحفظ الاختيار (محلي + Firestore).
+- [x] `AppBackground` يقرأ ويطبق فوراً.
+- [x] الصور الفعلية للخلفيات في `assets/images/backgrounds/`.
+- [x] VIP animations: Zoom + Shimmer + نجوم متحركة + توهج نابض.
+
+### 8) التصميم العام
 - [x] ثيم داكن (أخضر + ذهبي).
-- [x] أيقونات مخصصة PNG في الشريط السفلي.
+- [x] أيقونات مخصصة PNG (challenge, more, coupon, Setting, store).
 - [x] زر الإعدادات في الأعلى.
 - [x] ترجمات عربية وإنجليزية.
+- [x] ضبط الإيميلات الأربعة (owner).
 
-### 7) القرآن والأذكار
+### 9) القرآن والأذكار
 - [x] عرض القرآن كامل.
-- [x] تلاوة صوتية.
+- [x] تلاوة صوتية مع القارئ المُختار من المتجر.
 - [x] تفسير.
 - [x] نسخ ومشاركة الآيات.
 - [x] الأحاديث.
-- [x] الأذكار (تبويب موجود).
-- [x] مواقيت الصلاة (تعمل).
+- [x] مواقيت الصلاة (تعمل من الموقع المختار).
 
 ---
 
 ## ⏳ قيد التنفيذ / الخطوات القادمة
 
-### أ) التوثيق
-- [ ] زر "وثّق حسابي الآن" للمستخدم العادي.
-  - يضيف صورة شخصية حقيقية.
-  - فحص وجه (Face Scan).
-  - يحصل على true.users.png تلقائياً.
-- [ ] زر توثيق سري في "حسابي" يظهر فقط لأصحاب الإيميلات الأربعة (لترقية حساباتهم القديمة إلى owner).
+### أ) تفعيل الثيمات الفعلية
+- [ ] عند شراء ثيم → الألوان الداخلية تتغير (ذهبي + اللون الجديد).
+- [ ] تطبيق على الأزرار، البطاقات، الحدود.
 
-### ب) التحديات الكاملة
-- [ ] 5 أسئلة يومية (تتجدد تلقائياً كل يوم).
-- [ ] كل سؤال صحيح = 20 نقطة.
-- [ ] لا يمكن إعادة التحدي في نفس اليوم.
-- [ ] عرض "أكملت تحدي اليوم".
-- [ ] streak يتحدث تلقائياً عند إكمال التحدي اليومي.
+### ب) الوضع النهاري/الليلي
+- [ ] تبديل بين الوضعين.
+- [ ] النهاري: أبيض + ذهبي.
+- [ ] حفظ في Firestore.
 
-### ج) المتجر
-- [ ] شاشة متجر بنقاط.
-- [ ] خلفيات (default + premium).
-- [ ] أصوات شيوخ (قراء).
-- [ ] مؤذنون (10 أصوات).
-- [ ] ألوان ثيمات.
-- [ ] أسعار حسب الندرة.
-- [ ] "تملك / اشتر" + تفعيل.
-
-### د) المعلم الذكي (AI)
-- [ ] ربط مع خدمة AI (OpenAI/Anthropic/Gemini).
-- [ ] حفظ تقدم كل مستخدم.
-- [ ] مستويات.
-- [ ] تصحيح التلاوة.
-
-### هـ) الإعدادات الكاملة
-- [ ] شاشة إعدادات من زر Setting.png.
+### ج) شاشة الإعدادات
+- [ ] زر Setting.png يفتح شاشة كاملة.
 - [ ] إعدادات الإشعارات (لكل صلاة).
 - [ ] تفعيل/تعطيل الأذان.
 - [ ] تذكير قبل الأذان (0/5/10 دقائق).
-- [ ] الوضع الليلي/النهاري.
-- [ ] اختيار اللغة.
+
+### د) التوثيق
+- [ ] زر "وثّق حسابي" للمستخدم العادي.
+- [ ] رفع صورة + فحص وجه.
+- [ ] الحصول على true.users.png تلقائياً.
+
+### هـ) الإشعارات + الأذان
+- [ ] إشعارات محلية للأذان.
+- [ ] شاشة أذان كاملة.
+- [ ] 10 أصوات مؤذنين (موجودين في المتجر).
+- [ ] إشعار "التحدي اليومي تجدد".
+- [ ] آية ودعاء يومي.
 
 ### و) اللغات
 - [ ] العربية (موجود).
@@ -314,118 +300,92 @@ service cloud.firestore {
 - [ ] الإندونيسية.
 - [ ] المليزية.
 
-### ز) الإشعارات
-- [ ] إشعارات محلية (Local Notifications) للأذان.
-- [ ] إشعار "التحدي اليومي تجدد".
-- [ ] إشعار "أكمل ختمتك".
-- [ ] آية يومية على شاشة الهاتف.
-- [ ] دعاء يومي.
+### ز) المعلم الذكي (AI)
+- [ ] ربط مع خدمة AI.
+- [ ] حفظ تقدم كل مستخدم.
+- [ ] مستويات وتصحيح التلاوة.
 
-### ح) الأذان
-- [ ] شاشة أذان كاملة.
-- [ ] 10 أصوات مؤذنين.
-- [ ] تشغيل تلقائي عند دخول الوقت.
-
-### ط) شاشة المجتمع
-- [ ] نشر منشورات.
-- [ ] تفاعل (إعجاب، تعليق).
+### ح) شاشة المجتمع
+- [ ] نشر منشورات + تفاعل.
 - [ ] عرض شعار التوثيق بجانب اسم الناشر.
 
-### ي) محتوى
-- [ ] الأذكار الكاملة.
-- [ ] الأدعية.
-- [ ] القبلة (بوصلة).
-- [ ] التسبيح (عداد).
-- [ ] المساجد القريبة (خريطة).
-- [ ] خطة ختم القرآن (تتبع الصفحات).
-- [ ] حساب الزكاة.
-- [ ] المحرمات.
-- [ ] المكروهات.
-
----
-
-## 🌗 الوضع الليلي/النهاري
-
-### الوضع الليلي (الحالي - Default)
-- خلفية: أخضر داكن `#0A1F17`.
-- نصوص: كريمي `#F5EFD8`.
-- ذهبي: `#D4AF37`.
-
-### الوضع النهاري (قادم)
-- خلفية: أبيض `#FFFFFF`.
-- نصوص: رمادي داكن `#1A1A1A`.
-- ذهبي: `#D4AF37` (نفس الذهبي).
-- البطاقات: أبيض مع حدود ذهبية رقيقة.
-
-**التنفيذ المطلوب:** استخدام `ThemeData.dark()` و`ThemeData.light()` في `MaterialApp` وتخزين الاختيار في Firestore + SharedPreferences.
+### ط) محتوى
+- [ ] الأذكار، الأدعية، القبلة، التسبيح.
+- [ ] المساجد القريبة، خطة ختم القرآن.
+- [ ] حساب الزكاة، المحرمات، المكروهات.
 
 ---
 
 ## 📌 معلومات تقنية مهمة
 
 ### Firebase Config
-- **Project ID:** `noor-al-hidayah`
-- **Project Number:** `762471094332`
-- **Web App ID:** `1:762471094332:web:68fe063e9282d7441d8b39`
-- **Database location:** `nam5`
+- Project ID: `noor-al-hidayah`
+- Project Number: `762471094332`
+- Web App ID: `1:762471094332:web:68fe063e9282d7441d8b39`
+- Database location: `nam5`
 
-### ملفات مفقودة (تم حذفها أو لم تُنشأ)
-- `lib/firebase_options.dart` — تم حذفها، يعتمد على Firebase.initializeApp مع إعدادات مباشرة.
-- `assets/icons/` — موجود.
-- `assets/images/` — موجود.
+### أصول الصور (assets/)
 
-### Git Workflow
-```bash
-git pull
-flutter pub get
-flutter analyze
-bash tool/preview.sh
-```
+**assets/icons/**
+- Setting.png
+- challenge.png
+- coupon.png
+- more.png
+- store.png
+- true.me.png
+- true.users.png
 
-### رفع الصور
-- الصور في `assets/icons/` للأيقونات.
-- الصور في `assets/images/` للصور الشخصية.
-- بعد كل إضافة، يجب تحديث `pubspec.yaml`.
+**assets/images/**
+- Me.png
+- logo.png
+- avatar_man.png
+- avatar_woman.png
 
-### تلوين الصور (Script)
-لتلوين صورة سوداء إلى ذهبية:
-```bash
-python3 << 'PY'
-from PIL import Image
-GOLD = (212, 175, 55)
-def recolor(path, gold=GOLD, threshold=120):
-    img = Image.open(path).convert('RGBA')
-    px = img.load()
-    w, h = img.size
-    for y in range(h):
-        for x in range(w):
-            r, g, b, a = px[x, y]
-            if a > 0 and r < threshold and g < threshold and b < threshold:
-                px[x, y] = (gold[0], gold[1], gold[2], a)
-    img.save(path)
-recolor('assets/icons/example.png')
-PY
-```
+**assets/images/backgrounds/**
+- backgroundv2.png (default — الأخضر الذهبي)
+- background_blue.png (night — ليل هادئ)
+- background_orange.png (sunset — غروب ذهبي)
+- background_brown.png (mosque — المسجد الحرام)
+- background_dark.png (kaaba — الكعبة المشرفة)
+- background_purple.png (ramadan — رمضان كريم)
+- background_olive.png (floral — زخارف إسلامية)
+- backgroundvip1.png (vip_royal — المسجد الملكي)
+- backgroundvip2.png (vip_rose — الحديقة الوردية)
+- backgroundvip3.png (vip_divine — النور السماوي)
 
----
-
-## 🔑 حسابات المالك
-
-الإيميلات التالية تحصل تلقائياً على شعار `true.me.png` (owner) عند التسجيل:
+### `pubspec.yaml` — قسم Assets (مهم)
 
 ```
-abdelrahmenbenromdhan11@gmail.com
-vevocom888@gmail.com
-nooralimanechannel@gmail.com
-nooralhidayahbusiness@gmail.com
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+    - assets/images/
+    - assets/images/backgrounds/
 ```
 
-بالإضافة إلى صور بروفايل مخصصة:
-- `Me.png` → لأول إيميلين.
-- `logo.png` → للإيميلين الأخيرين.
+### Git Workflow (بعد كل ميزة ناجحة)
 
-**الكودات المفعّلة:**
-- `NAH2026` → 1000 نقطة (مرة واحدة لكل حساب).
+```
+flutter analyze           # يجب "No issues found!"
+bash tool/preview.sh      # اختبار
+git add .
+git commit -m "Feature: [اسم الميزة]"
+git push
+```
+
+### كودات المفعّلة
+- **NAH2026** → 1000 نقطة.
+  - حسابات المالك (4): غير محدود.
+  - المستخدمون العاديون: مرة واحدة لكل حساب.
+
+### حسابات المالك (Owner)
+الإيميلات التالية تحصل تلقائياً على شعار `true.me.png` + صور مخصصة:
+
+- abdelrahmenbenromdhan11@gmail.com → Me.png
+- vevocom888@gmail.com → Me.png
+- nooralimanechannel@gmail.com → logo.png
+- nooralhidayahbusiness@gmail.com → logo.png
 
 ---
 
@@ -442,16 +402,159 @@ nooralhidayahbusiness@gmail.com
 9. **التنقل:** استخدم `Navigator.push(MaterialPageRoute(...))`.
 10. **اختبار:** بعد كل تعديل، شغّل `flutter analyze` + `bash tool/preview.sh`.
 
+### القاعدة الذهبية:
+بعد كل ميزة تنجح + `flutter analyze` = No issues + Test يشتغل:
+1. `git add . && git commit -m "..." && git push`
+2. حدّث `PROJECT.md` بالميزة الجديدة.
+3. انتقل للمرحلة التالية.
+
 ---
 
 ## 📞 التواصل
 
 **المالك:** Abdel Rahmen Ben Romdhan  
-**البريد:** vevocom888@gmail.com  
-**التطبيق:** نور الهداية - Noor Al-Hidayah  
+**البريد:** abdelrahmenbenromdhan11@gmail.com / vevocom888@gmail.com  
+**التطبيق:** نور الهداية — Noor Al-Hidayah  
 **الشعار:** By Abdel Rahmen Ben Romdhan
 
 ---
 
-**آخر تحديث:** 2026-09-26  
-**الإصدار:** Beta 0.1
+## 🛠️ طريقة العمل بين المالك و AI (Workflow)
+
+> ⚠️ هذا القسم دائم — لا يُحذف أبداً عند تحديث `PROJECT.md`.
+
+### المبادئ الأساسية:
+
+1. **ملف واحد لكل ميزة** — كل ميزة جديدة تعني ملف واحد جديد على الأقل.
+2. **استبدال كامل** — عند تعديل ملف، يُنسخ المحتوى الجديد كامل ويستبدل القديم. لا تعديل بالقطع.
+3. **فحص قبل الحفظ** — لا نحفظ أي شي قبل `flutter analyze` = `No issues found!` + اختبار ناجح.
+4. **`PROJECT.md` يُحدّث بعد كل ميزة** — قبل الانتقال للخطوة التالية.
+5. **الخطوات صغيرة** — كل رد يحتوي على خطوة واحدة واضحة، ثم اختبار، ثم الخطوة التالية.
+
+---
+
+### دورة العمل لكل ميزة جديدة:
+
+**الخطوة 1 — AI يشرح الميزة ويعطي الكود:**
+- يشرح ما الذي سيتغير.
+- يعطي الكود كامل للملفات الجديدة أو المعدلة.
+- يذكر بوضوح: "ملف جديد" أو "استبدل".
+
+**الخطوة 2 — المالك ينسخ الملفات في GitHub (استبدال كامل):**
+- **ملف جديد:** GitHub → Add file → Create new file → الصق الكود → Commit.
+- **ملف موجود:** اضغط الملف → القلم ✏️ → Select All → Delete → الصق الجديد → Commit.
+
+**الخطوة 3 — في Terminal:**
+- اكتب `git pull`.
+- اكتب `flutter analyze`.
+- يجب أن يظهر `No issues found!` — إذا ظهرت أخطاء، توقف وأرسلها للـ AI.
+
+**الخطوة 4 — اختبار التطبيق:**
+- اكتب `bash tool/preview.sh`.
+- افتح التطبيق.
+- جرب الميزة الجديدة.
+- تأكد أن كل شي يعمل.
+
+**الخطوة 5 — إذا نجح الاختبار، احفظ:**
+- `git add .`
+- `git commit -m "Feature: [اسم الميزة]"`
+- `git push`
+
+**الخطوة 6 — حدّث `PROJECT.md`:**
+- أضف الميزة في قسم "المنجز حتى الآن" بصيغة `- [x]`.
+- احذفها من "قيد التنفيذ" إن كانت موجودة.
+- حدّث "آخر تحديث" بالتاريخ الجديد.
+- حدّث "الإصدار" (مثال: Beta 0.2 → Beta 0.3).
+- لا تحذف قسم "طريقة العمل".
+- احفظ → Commit.
+
+**الخطوة 7 — ابدأ الميزة التالية.**
+
+---
+
+### كيف تُنشأ الملفات الجديدة؟
+
+**ملف Flutter جديد (Dart):**
+1. GitHub → انتقل للمجلد المطلوب (مثل `lib/screens/`).
+2. اضغط "Add file" → "Create new file".
+3. اكتب اسم الملف (مثل `my_new_screen.dart`).
+4. الصق الكود.
+5. اضغط "Commit changes".
+6. في Terminal: `git pull`.
+
+**ملف جديد في مجلد فرعي جديد:**
+- عند كتابة اسم الملف، اكتب المسار كامل: `newfolder/newfile.dart`.
+- GitHub ينشئ المجلد تلقائياً.
+
+**صورة أو أصل جديد:**
+1. ارفعها عبر "Add file" → "Upload files".
+2. ضعها في المجلد الصحيح (`assets/icons/` أو `assets/images/`).
+3. حدّث `pubspec.yaml` إذا كان مجلداً جديداً.
+4. `git pull` + `flutter pub get`.
+
+---
+
+### كيف يُستبدل محتوى ملف موجود؟
+
+1. افتح الملف على GitHub.
+2. اضغط أيقونة القلم ✏️ (تعديل).
+3. اضغط مطولاً على الكود → اختر "Select All".
+4. اضغط حذف (Delete) — الملف يصير فاضي.
+5. الصق الكود الجديد كامل.
+6. اضغط "Commit changes".
+7. في Terminal: `git pull`.
+8. ثم: `flutter analyze`.
+
+> ⚠️ ملاحظة مهمة: لا تحاول تعديل أسطر محددة داخل الملف. دائماً استبدل الملف كامل — هذا يمنع الأخطاء ويضمن تطابق الكود مع ما أعطاه AI.
+
+---
+
+### كيف يُحدّث `PROJECT.md`؟
+
+بعد كل ميزة ناجحة:
+
+1. لا تحذف شي — فقط أضف.
+2. في قسم "المنجز حتى الآن":
+   - أضف `- [x]` للبند الجديد تحت القسم المناسب.
+3. في قسم "قيد التنفيذ":
+   - احذف البند المنتهي.
+4. في الأعلى: حدّث "آخر تحديث" بالتاريخ الجديد.
+5. في الأسفل: حدّث "الإصدار" (Beta 0.2 → Beta 0.3).
+6. ⚠️ لا تحذف قسم "طريقة العمل" أبداً.
+7. احفظ → Commit.
+
+---
+
+### القواعد الذهبية الثلاث:
+
+1. **لا حفظ بدون اختبار:** لا `git commit` قبل `flutter analyze` = `No issues found!`.
+2. **لا استبدال جزئي:** انسخ الملف كامل، استبدل بالكامل.
+3. **لا انتقال بدون تحديث:** لا بداية ميزة جديدة قبل تحديث `PROJECT.md`.
+
+---
+
+### إذا حصل خطأ:
+
+1. لا تكمل — أوقف واذهب للخطوة السابقة.
+2. انسخ رسالة الخطأ كاملة (من `flutter analyze` أو المتصفح).
+3. أرسلها للـ AI مع:
+   - صورة شاشة (إن أمكن).
+   - اسم الملف الذي فيه الخطأ.
+4. AI راح يصلح الخطأ ويعطيك كود جديد.
+5. أعد من الخطوة 2 (استبدال الملف).
+
+---
+
+### نصائح إضافية:
+
+- احفظ نسخة احتياطية كل أسبوع:
+  ```
+  git tag v0.2-stable
+  git push --tags
+  ```
+- إذا تجرب شي خطير: أنشئ branch جديد (`git checkout -b experiment`)، وإذا نجح → ادمجه، وإذا فشل → احذفه.
+- لا تخف من `git reset`: تقدر ترجع لأي commit قديم إذا احتجت.
+
+---
+
+**آخر تحديث لهذا القسم:** 2026-09-27 — هذا القسم ثابت ولا يُحذف.
