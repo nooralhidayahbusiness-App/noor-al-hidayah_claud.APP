@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../core/theme_palette.dart';
 import '../core/theme_state.dart';
 
-/// الخلفية العامة للتطبيق — تتغير مع الثيم المختار.
+/// الخلفية الشفافة للثيم — تعمل فوق صورة الخلفية.
 class ThemedBackground extends StatelessWidget {
   const ThemedBackground({super.key, required this.child});
 
@@ -18,40 +18,44 @@ class ThemedBackground extends StatelessWidget {
       builder: (context, _) {
         final palette = themeState.palette;
         if (palette.isVip && palette.isAnimated) {
-          return _AnimatedVipTheme(palette: palette, child: child);
+          return _AnimatedVipOverlay(palette: palette, child: child);
         }
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [palette.accent, palette.accentDark],
+        // ثيم عادي: طبقة شفافة بلون خفيف
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    palette.accent.withValues(alpha: 0.35),
+                    palette.accentDark.withValues(alpha: 0.55),
+                  ],
+                ),
+              ),
             ),
-          ),
-          child: child,
+            child,
+          ],
         );
       },
     );
   }
 }
 
-class _AnimatedVipTheme extends StatefulWidget {
-  const _AnimatedVipTheme({required this.palette, required this.child});
+class _AnimatedVipOverlay extends StatefulWidget {
+  const _AnimatedVipOverlay({required this.palette, required this.child});
 
   final ThemePalette palette;
   final Widget child;
 
   @override
-  State<_AnimatedVipTheme> createState() => _AnimatedVipThemeState();
+  State<_AnimatedVipOverlay> createState() => _AnimatedVipOverlayState();
 }
 
-class _AnimatedVipThemeState extends State<_AnimatedVipTheme>
+class _AnimatedVipOverlayState extends State<_AnimatedVipOverlay>
     with TickerProviderStateMixin {
-  late final AnimationController _shift = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 7),
-  )..repeat(reverse: true);
-
   late final AnimationController _shimmer = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 4),
@@ -69,7 +73,6 @@ class _AnimatedVipThemeState extends State<_AnimatedVipTheme>
 
   @override
   void dispose() {
-    _shift.dispose();
     _shimmer.dispose();
     _stars.dispose();
     _glow.dispose();
@@ -81,35 +84,21 @@ class _AnimatedVipThemeState extends State<_AnimatedVipTheme>
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 1) Animated gradient — يتنقل بين الألوان
-        AnimatedBuilder(
-          animation: _shift,
-          builder: (context, _) {
-            final t = _shift.value;
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment(-1 + t * 0.6, -1),
-                  end: Alignment(1 - t * 0.4, 1),
-                  colors: [
-                    widget.palette.accentDark,
-                    widget.palette.accentLight,
-                    widget.palette.accent,
-                    widget.palette.accentLight,
-                  ],
-                  stops: [
-                    0.0,
-                    0.3 + t * 0.15,
-                    0.5 + t * 0.1,
-                    1.0 - t * 0.15,
-                  ],
-                ),
-              ),
-            );
-          },
+        // 1) طبقة تلوين شفافة (يمكن للخلفية أن تظهر تحتها)
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                widget.palette.accent.withValues(alpha: 0.55),
+                widget.palette.accentDark.withValues(alpha: 0.75),
+              ],
+            ),
+          ),
         ),
 
-        // 2) النجوم المتحركة (أكبر وأوضح)
+        // 2) نجوم متحركة
         IgnorePointer(
           child: AnimatedBuilder(
             animation: _stars,
@@ -122,7 +111,7 @@ class _AnimatedVipThemeState extends State<_AnimatedVipTheme>
           ),
         ),
 
-        // 3) Shimmer ذهبي قوي
+        // 3) Shimmer ذهبي
         IgnorePointer(
           child: AnimatedBuilder(
             animation: _shimmer,
@@ -135,9 +124,9 @@ class _AnimatedVipThemeState extends State<_AnimatedVipTheme>
                     end: Alignment(-1 + 2 * t + 1, 0.5),
                     colors: [
                       Colors.transparent,
-                      widget.palette.gold.withValues(alpha: 0.08),
-                      widget.palette.gold.withValues(alpha: 0.30),
-                      widget.palette.gold.withValues(alpha: 0.08),
+                      widget.palette.gold.withValues(alpha: 0.05),
+                      widget.palette.gold.withValues(alpha: 0.20),
+                      widget.palette.gold.withValues(alpha: 0.05),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
@@ -148,7 +137,7 @@ class _AnimatedVipThemeState extends State<_AnimatedVipTheme>
           ),
         ),
 
-        // 4) توهج نابض في المنتصف
+        // 4) توهج نابض
         IgnorePointer(
           child: AnimatedBuilder(
             animation: _glow,
@@ -160,7 +149,7 @@ class _AnimatedVipThemeState extends State<_AnimatedVipTheme>
                     radius: 0.7 + _glow.value * 0.4,
                     colors: [
                       widget.palette.gold
-                          .withValues(alpha: 0.04 + 0.10 * _glow.value),
+                          .withValues(alpha: 0.03 + 0.08 * _glow.value),
                       Colors.transparent,
                     ],
                   ),
@@ -201,11 +190,9 @@ class _VipStarsPainter extends CustomPainter {
       final alpha =
           0.35 + 0.65 * (0.5 + 0.5 * math.sin(progress * 8 + phase));
 
-      // هالة
       paint.color = gold.withValues(alpha: alpha * 0.25);
       canvas.drawCircle(Offset(x, wrapped), radius * 2.5, paint);
 
-      // النجمة
       paint.color = gold.withValues(alpha: alpha);
       canvas.drawCircle(Offset(x, wrapped), radius, paint);
     }
