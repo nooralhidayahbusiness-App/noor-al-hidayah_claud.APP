@@ -8,6 +8,7 @@ import '../widgets/asset_icon.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
 import 'challenge_play_screen.dart';
+import 'challenge_result_screen.dart';
 
 class ChallengeScreen extends StatefulWidget {
   const ChallengeScreen({super.key});
@@ -67,7 +68,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       return;
     }
 
-    // اختيار 5 أسئلة عشوائية
     final pool = List<ChallengeQuestion>.from(allQuestions)..shuffle();
     final picked = pool.take(5).toList();
 
@@ -96,7 +96,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
     final oldCompleted =
         (oldProgress['totalCompleted'] as num?)?.toInt() ?? 0;
 
-    // حفظ التقدم
+    // 1) حفظ تقدم التحديات
     await userService.saveProgress('challenges', {
       'lastPlayedDate': _todayKey(),
       'todayPoints': gained,
@@ -104,13 +104,27 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       'totalCompleted': oldCompleted + 1,
     });
 
-    // إضافة النقاط + تحديث الإحصائيات
+    // 2) إضافة النقاط
     await userService.addPoints(gained);
+
+    // 3) تحديث الإحصائيات
     await userService.incrementStats({
       'challengesCompleted': 1,
       'totalCorrectAnswers': correct,
     });
     await userService.setStats({'streak': newStreak});
+
+    if (!mounted) return;
+
+    // 4) عرض شاشة النتائج
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChallengeResultScreen(
+          correct: correct,
+          total: picked.length,
+        ),
+      ),
+    );
 
     if (!mounted) return;
     await _load();
