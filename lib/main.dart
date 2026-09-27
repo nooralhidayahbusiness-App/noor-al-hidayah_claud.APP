@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'core/app_state.dart';
 import 'core/firebase_options.dart';
 import 'core/theme.dart';
+import 'core/theme_state.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
