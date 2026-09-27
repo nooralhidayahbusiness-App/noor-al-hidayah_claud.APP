@@ -113,90 +113,97 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: AppColors.gold.withValues(alpha: 0.3)),
-        ),
-      ),
-      child: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          height: 70,
-          backgroundColor: AppColors.deepGreen.withValues(alpha: 0.94),
-          surfaceTintColor: Colors.transparent,
-          indicatorColor: AppColors.gold.withValues(alpha: 0.18),
-          iconTheme: WidgetStateProperty.resolveWith(
-            (states) => IconThemeData(
-              color: states.contains(WidgetState.selected)
-                  ? AppColors.gold
-                  : AppColors.softGold.withValues(alpha: 0.7),
+    return ListenableBuilder(
+      listenable: themeState,
+      builder: (context, _) {
+        final accent = themeState.palette.accentLight;
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                  color: AppColors.gold.withValues(alpha: 0.3)),
             ),
           ),
-          labelTextStyle: WidgetStateProperty.resolveWith(
-            (states) => TextStyle(
-              fontSize: 11,
-              fontWeight: states.contains(WidgetState.selected)
-                  ? FontWeight.w700
-                  : FontWeight.w500,
-              color: states.contains(WidgetState.selected)
-                  ? AppColors.gold
-                  : AppColors.softGold.withValues(alpha: 0.7),
+          child: NavigationBarTheme(
+            data: NavigationBarThemeData(
+              height: 70,
+              backgroundColor: accent.withValues(alpha: 0.94),
+              surfaceTintColor: Colors.transparent,
+              indicatorColor: AppColors.gold.withValues(alpha: 0.18),
+              iconTheme: WidgetStateProperty.resolveWith(
+                (states) => IconThemeData(
+                  color: states.contains(WidgetState.selected)
+                      ? AppColors.gold
+                      : AppColors.softGold.withValues(alpha: 0.7),
+                ),
+              ),
+              labelTextStyle: WidgetStateProperty.resolveWith(
+                (states) => TextStyle(
+                  fontSize: 11,
+                  fontWeight: states.contains(WidgetState.selected)
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                  color: states.contains(WidgetState.selected)
+                      ? AppColors.gold
+                      : AppColors.softGold.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+            child: NavigationBar(
+              selectedIndex: index,
+              onDestinationSelected: onSelected,
+              labelBehavior:
+                  NavigationDestinationLabelBehavior.alwaysShow,
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(Icons.home_rounded),
+                  label: appState.tr('tabHome'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.menu_book_outlined),
+                  selectedIcon: const Icon(Icons.menu_book_rounded),
+                  label: appState.tr('tabQuran'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.auto_stories_outlined),
+                  selectedIcon: const Icon(Icons.auto_stories_rounded),
+                  label: appState.tr('tabAdhkar'),
+                ),
+                NavigationDestination(
+                  icon: const AssetIcon(
+                    path: 'assets/icons/challenge.png',
+                    size: 26,
+                    opacity: 0.75,
+                  ),
+                  selectedIcon: const AssetIcon(
+                    path: 'assets/icons/challenge.png',
+                    size: 26,
+                  ),
+                  label: appState.tr('tabChallenge'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.groups_outlined),
+                  selectedIcon: const Icon(Icons.groups_rounded),
+                  label: appState.tr('tabCommunity'),
+                ),
+                NavigationDestination(
+                  icon: const AssetIcon(
+                    path: 'assets/icons/more.png',
+                    size: 26,
+                    opacity: 0.75,
+                  ),
+                  selectedIcon: const AssetIcon(
+                    path: 'assets/icons/more.png',
+                    size: 26,
+                  ),
+                  label: appState.tr('tabMore'),
+                ),
+              ],
             ),
           ),
-        ),
-        child: NavigationBar(
-          selectedIndex: index,
-          onDestinationSelected: onSelected,
-          labelBehavior:
-              NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.home_outlined),
-              selectedIcon: const Icon(Icons.home_rounded),
-              label: appState.tr('tabHome'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.menu_book_outlined),
-              selectedIcon: const Icon(Icons.menu_book_rounded),
-              label: appState.tr('tabQuran'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.auto_stories_outlined),
-              selectedIcon: const Icon(Icons.auto_stories_rounded),
-              label: appState.tr('tabAdhkar'),
-            ),
-            NavigationDestination(
-              icon: const AssetIcon(
-                path: 'assets/icons/challenge.png',
-                size: 26,
-                opacity: 0.75,
-              ),
-              selectedIcon: const AssetIcon(
-                path: 'assets/icons/challenge.png',
-                size: 26,
-              ),
-              label: appState.tr('tabChallenge'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.groups_outlined),
-              selectedIcon: const Icon(Icons.groups_rounded),
-              label: appState.tr('tabCommunity'),
-            ),
-            NavigationDestination(
-              icon: const AssetIcon(
-                path: 'assets/icons/more.png',
-                size: 26,
-                opacity: 0.75,
-              ),
-              selectedIcon: const AssetIcon(
-                path: 'assets/icons/more.png',
-                size: 26,
-              ),
-              label: appState.tr('tabMore'),
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
