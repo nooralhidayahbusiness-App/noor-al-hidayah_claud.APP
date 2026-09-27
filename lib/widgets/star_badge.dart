@@ -3,9 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../core/theme.dart';
+import '../core/themed_colors.dart';
 
-/// Gold eight-point star with a number inside (surah and ayah numbers).
+/// Gold eight-point star with a number inside — theme-aware.
 class StarBadge extends StatelessWidget {
   const StarBadge({super.key, required this.number, this.size = 40});
 
@@ -18,14 +18,17 @@ class StarBadge extends StatelessWidget {
       width: size,
       height: size,
       child: CustomPaint(
-        painter: const _StarBadgePainter(),
+        painter: _StarBadgePainter(
+          bg: ThemedColors.accentDark,
+          gold: ThemedColors.gold,
+        ),
         child: Center(
           child: Text(
             '$number',
             style: GoogleFonts.cinzel(
               fontSize: size * (number >= 100 ? 0.27 : 0.34),
               fontWeight: FontWeight.w700,
-              color: AppColors.gold,
+              color: ThemedColors.gold,
             ),
           ),
         ),
@@ -35,7 +38,10 @@ class StarBadge extends StatelessWidget {
 }
 
 class _StarBadgePainter extends CustomPainter {
-  const _StarBadgePainter();
+  _StarBadgePainter({required this.bg, required this.gold});
+
+  final Color bg;
+  final Color gold;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -58,7 +64,7 @@ class _StarBadgePainter extends CustomPainter {
     path.close();
     canvas.drawPath(
       path,
-      Paint()..color = AppColors.deepGreen.withValues(alpha: 0.9),
+      Paint()..color = bg.withValues(alpha: 0.9),
     );
     canvas.drawPath(
       path,
@@ -66,7 +72,7 @@ class _StarBadgePainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.4
         ..strokeJoin = StrokeJoin.round
-        ..color = AppColors.gold,
+        ..color = gold,
     );
     canvas.drawCircle(
       c,
@@ -74,10 +80,11 @@ class _StarBadgePainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.8
-        ..color = AppColors.gold.withValues(alpha: 0.45),
+        ..color = gold.withValues(alpha: 0.45),
     );
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _StarBadgePainter old) =>
+      old.bg != bg || old.gold != gold;
 }
