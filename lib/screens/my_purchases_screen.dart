@@ -5,7 +5,6 @@ import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../data/store_items.dart';
 import '../services/user_service.dart';
-import '../widgets/glass_card.dart';
 
 class MyPurchasesScreen extends StatefulWidget {
   const MyPurchasesScreen({super.key});
