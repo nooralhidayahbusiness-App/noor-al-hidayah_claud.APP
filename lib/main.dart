@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'core/app_state.dart';
 import 'core/firebase_options.dart';
 import 'core/theme.dart';
+import 'core/theme_state.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -20,12 +21,12 @@ class NoorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: appState,
+      listenable: Listenable.merge([appState, themeState]),
       builder: (ctx, _) {
         return MaterialApp(
           title: 'نور الهداية',
           debugShowCheckedModeBanner: false,
-          theme: buildAppTheme(),
+          theme: buildThemedAppTheme(themeState.palette),
           builder: (context, child) => Directionality(
             textDirection: appState.direction,
             child: child!,
