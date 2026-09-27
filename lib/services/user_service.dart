@@ -186,6 +186,13 @@ class UserService {
       }
     }, SetOptions(merge: true));
   }
+// =========================== GENERIC ===========================
+/// دالة عامة لحفظ أي بيانات في مستند المستخدم.
+Future<void> saveUserData(Map<String, dynamic> data) async {
+  final doc = _doc;
+  if (doc == null || data.isEmpty) return;
+  await doc.set(data, SetOptions(merge: true));
+}
 }
 
 final UserService userService = UserService.instance;
