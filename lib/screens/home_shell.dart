@@ -5,6 +5,7 @@ import '../core/app_state.dart';
 import '../core/prayer_state.dart';
 import '../core/profile_state.dart';
 import '../core/reciter_prefs.dart';
+import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../widgets/app_branding.dart';
@@ -50,14 +51,19 @@ class _HomeShellState extends State<HomeShell> {
               child: Column(
                 children: [
                   Padding(
-                    padding:
-                        const EdgeInsetsDirectional.fromSTEB(8, 8, 20, 0),
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      R.s(context, 6),
+                      R.s(context, 6),
+                      R.s(context, 16),
+                      0,
+                    ),
                     child: Row(
                       children: [
                         IconButton(
                           onPressed: () => openLocationPicker(context),
                           tooltip: appState.tr('changeLocation'),
                           color: AppColors.softGold,
+                          iconSize: R.s(context, 22),
                           icon: const Icon(
                               Icons.edit_location_alt_outlined),
                         ),
@@ -70,12 +76,13 @@ class _HomeShellState extends State<HomeShell> {
                             );
                           },
                           tooltip: appState.tr('settings'),
+                          iconSize: R.s(context, 22),
                           icon: const AssetIcon(
                             path: 'assets/icons/Setting.png',
-                            size: 24,
+                            size: 22,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 2),
                         const AuthLanguageButton(),
                       ],
                     ),
@@ -117,6 +124,10 @@ class _BottomBar extends StatelessWidget {
       listenable: themeState,
       builder: (context, _) {
         final accent = themeState.palette.accentLight;
+        final barHeight = R.s(context, 56);
+        final iconSize = R.s(context, 22);
+        final labelSize = R.f(context, 9.5);
+
         return DecoratedBox(
           decoration: BoxDecoration(
             border: Border(
@@ -126,12 +137,13 @@ class _BottomBar extends StatelessWidget {
           ),
           child: NavigationBarTheme(
             data: NavigationBarThemeData(
-              height: 70,
+              height: barHeight,
               backgroundColor: accent.withValues(alpha: 0.94),
               surfaceTintColor: Colors.transparent,
               indicatorColor: AppColors.gold.withValues(alpha: 0.18),
               iconTheme: WidgetStateProperty.resolveWith(
                 (states) => IconThemeData(
+                  size: iconSize,
                   color: states.contains(WidgetState.selected)
                       ? AppColors.gold
                       : AppColors.softGold.withValues(alpha: 0.7),
@@ -139,7 +151,7 @@ class _BottomBar extends StatelessWidget {
               ),
               labelTextStyle: WidgetStateProperty.resolveWith(
                 (states) => TextStyle(
-                  fontSize: 11,
+                  fontSize: labelSize,
                   fontWeight: states.contains(WidgetState.selected)
                       ? FontWeight.w700
                       : FontWeight.w500,
@@ -171,14 +183,14 @@ class _BottomBar extends StatelessWidget {
                   label: appState.tr('tabAdhkar'),
                 ),
                 NavigationDestination(
-                  icon: const AssetIcon(
+                  icon: AssetIcon(
                     path: 'assets/icons/challenge.png',
-                    size: 26,
+                    size: R.s(context, 22),
                     opacity: 0.75,
                   ),
-                  selectedIcon: const AssetIcon(
+                  selectedIcon: AssetIcon(
                     path: 'assets/icons/challenge.png',
-                    size: 26,
+                    size: R.s(context, 22),
                   ),
                   label: appState.tr('tabChallenge'),
                 ),
@@ -188,14 +200,14 @@ class _BottomBar extends StatelessWidget {
                   label: appState.tr('tabCommunity'),
                 ),
                 NavigationDestination(
-                  icon: const AssetIcon(
+                  icon: AssetIcon(
                     path: 'assets/icons/more.png',
-                    size: 26,
+                    size: R.s(context, 22),
                     opacity: 0.75,
                   ),
-                  selectedIcon: const AssetIcon(
+                  selectedIcon: AssetIcon(
                     path: 'assets/icons/more.png',
-                    size: 26,
+                    size: R.s(context, 22),
                   ),
                   label: appState.tr('tabMore'),
                 ),
