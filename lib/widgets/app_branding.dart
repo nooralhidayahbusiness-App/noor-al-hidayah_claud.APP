@@ -65,7 +65,7 @@ class AppBackground extends StatelessWidget {
             // طبقة الثيم (نجوم + shimmer للـ VIP)
             const ThemedBackground(child: SizedBox.expand()),
 
-            if (child != null) child!,
+            ?child,
           ],
         );
       },
