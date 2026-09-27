@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 /// لوحة ألوان الثيم — الذهبي ثابت، لكن اللون الأساسي يتغير.
 class ThemePalette {
   final String id;
-  final Color accent;       // اللون الأساسي (كان deepGreen)
-  final Color accentDark;   // نسخة داكنة
-  final Color accentLight;  // نسخة فاتحة
+  final Color accent;
+  final Color accentDark;
+  final Color accentLight;
   final Color gold;
   final Color softGold;
   final Color cream;
+  final bool isVip;
+  final bool isAnimated;
 
   const ThemePalette({
     required this.id,
@@ -18,6 +20,8 @@ class ThemePalette {
     this.gold = const Color(0xFFD4AF37),
     this.softGold = const Color(0xFFF1DC9A),
     this.cream = const Color(0xFFFFF8E7),
+    this.isVip = false,
+    this.isAnimated = false,
   });
 }
 
@@ -57,6 +61,32 @@ const Map<String, ThemePalette> kThemePalettes = {
     accent: Color(0xFF042F28),
     accentDark: Color(0xFF021714),
     accentLight: Color(0xFF00695C),
+  ),
+
+  // ==================== VIP THEMES ====================
+  'vip_emperor': ThemePalette(
+    id: 'vip_emperor',
+    accent: Color(0xFF000000),
+    accentDark: Color(0xFF000000),
+    accentLight: Color(0xFF1A1208),
+    isVip: true,
+    isAnimated: true,
+  ),
+  'vip_cosmic': ThemePalette(
+    id: 'vip_cosmic',
+    accent: Color(0xFF020617),
+    accentDark: Color(0xFF000308),
+    accentLight: Color(0xFF0F172A),
+    isVip: true,
+    isAnimated: true,
+  ),
+  'vip_crimson': ThemePalette(
+    id: 'vip_crimson',
+    accent: Color(0xFF1A0004),
+    accentDark: Color(0xFF0D0002),
+    accentLight: Color(0xFF4A0A18),
+    isVip: true,
+    isAnimated: true,
   ),
 };
 
