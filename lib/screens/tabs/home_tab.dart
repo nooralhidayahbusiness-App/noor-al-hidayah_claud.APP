@@ -39,14 +39,14 @@ class HomeTab extends StatelessWidget {
 
         return ListView(
           padding: EdgeInsets.fromLTRB(
-            R.s(context, 14),
-            R.s(context, 2),
-            R.s(context, 14),
             R.s(context, 16),
+            R.s(context, 4),
+            R.s(context, 16),
+            R.s(context, 20),
           ),
           children: [
             _Greeting(date: date, label: label),
-            SizedBox(height: R.s(context, 8)),
+            SizedBox(height: R.s(context, 12)),
             if (data != null)
               const NextPrayerCard()
             else if (prayerState.status == PrayerStatus.error)
@@ -56,31 +56,31 @@ class HomeTab extends StatelessWidget {
               )
             else
               Padding(
-                padding: EdgeInsets.all(R.s(context, 18)),
+                padding: EdgeInsets.all(R.s(context, 24)),
                 child: const Center(
                   child: CircularProgressIndicator(color: AppColors.gold),
                 ),
               ),
-            SizedBox(height: R.s(context, 8)),
+            SizedBox(height: R.s(context, 12)),
             AiTeacherCard(
               onTap: () =>
                   showAuthMessage(context, appState.tr('teacherSoon')),
             ),
-            SizedBox(height: R.s(context, 14)),
+            SizedBox(height: R.s(context, 20)),
             Text(
               appState.tr('quickAccess'),
               style: TextStyle(
-                fontSize: R.f(context, 12.5),
+                fontSize: R.f(context, 15),
                 fontWeight: FontWeight.w700,
                 color: AppColors.softGold,
               ),
             ),
-            SizedBox(height: R.s(context, 6)),
+            SizedBox(height: R.s(context, 8)),
             GridView.extent(
-              maxCrossAxisExtent: R.s(context, 92),
-              mainAxisSpacing: R.s(context, 6),
-              crossAxisSpacing: R.s(context, 6),
-              childAspectRatio: 0.68,
+              maxCrossAxisExtent: R.s(context, 105),
+              mainAxisSpacing: R.s(context, 8),
+              crossAxisSpacing: R.s(context, 8),
+              childAspectRatio: 0.72,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: [
@@ -192,7 +192,7 @@ class HomeTab extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: R.s(context, 14)),
+            SizedBox(height: R.s(context, 18)),
             const DailyContentSection(),
           ],
         );
@@ -217,12 +217,12 @@ class _Avatar extends StatelessWidget {
         final placeholder = Icon(
           Icons.person_rounded,
           color: AppColors.gold,
-          size: R.s(context, 20),
+          size: R.s(context, 26),
         );
         return GestureDetector(
           onTap: () => showAvatarPicker(context),
           child: OrnamentMedallion(
-            size: R.s(context, 52),
+            size: R.s(context, 78),
             child: path == null
                 ? placeholder
                 : Image.asset(
@@ -250,13 +250,13 @@ class _Greeting extends StatelessWidget {
     return Column(
       children: [
         const _Avatar(),
-        SizedBox(height: R.s(context, 6)),
+        SizedBox(height: R.s(context, 8)),
         Text(
           greeting,
           textAlign: TextAlign.center,
           style: brandStyle(
             greeting,
-            fontSize: R.f(context, 20),
+            fontSize: R.f(context, 26),
             color: AppColors.softGold,
             shadows: [
               Shadow(
@@ -272,25 +272,25 @@ class _Greeting extends StatelessWidget {
           ),
         ),
         if (date.isNotEmpty) ...[
-          SizedBox(height: R.s(context, 2)),
+          SizedBox(height: R.s(context, 4)),
           Text(
             date,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: R.f(context, 9.5),
+              fontSize: R.f(context, 11.5),
               color: AppColors.cream.withValues(alpha: 0.8),
             ),
           ),
         ],
         if (label.isNotEmpty) ...[
-          SizedBox(height: R.s(context, 3)),
+          SizedBox(height: R.s(context, 4)),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.location_on_rounded,
                 color: AppColors.gold,
-                size: R.s(context, 10),
+                size: R.s(context, 13),
               ),
               const SizedBox(width: 3),
               Flexible(
@@ -298,7 +298,7 @@ class _Greeting extends StatelessWidget {
                   label,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: R.f(context, 9.5),
+                    fontSize: R.f(context, 12),
                     fontWeight: FontWeight.w600,
                     color: AppColors.softGold,
                   ),
@@ -327,8 +327,8 @@ class _QuickTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxSize = R.s(context, 68);
-        final size = math.min(constraints.maxWidth - 4, maxSize);
+        final maxSize = R.s(context, 84);
+        final size = math.min(constraints.maxWidth - 6, maxSize);
         return Material(
           color: Colors.transparent,
           child: InkWell(
@@ -340,18 +340,18 @@ class _QuickTile extends StatelessWidget {
                 OrnamentMedallion(
                   size: size,
                   child: Padding(
-                    padding: const EdgeInsets.all(2),
+                    padding: const EdgeInsets.all(3),
                     child: symbol,
                   ),
                 ),
-                SizedBox(height: R.s(context, 3)),
+                SizedBox(height: R.s(context, 4)),
                 Text(
                   label,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: R.f(context, 9),
+                    fontSize: R.f(context, 10.5),
                     fontWeight: FontWeight.w600,
                     color: AppColors.cream,
                   ),
