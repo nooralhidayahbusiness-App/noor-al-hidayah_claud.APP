@@ -6,6 +6,7 @@ import '../core/theme_palette.dart';
 import '../core/theme_state.dart';
 import '../data/store_items.dart';
 import '../services/user_service.dart';
+import '../widgets/themed_background.dart';
 import '../widgets/theme_preview.dart';
 
 class MyPurchasesScreen extends StatefulWidget {
@@ -88,14 +89,7 @@ class _MyPurchasesScreenState extends State<MyPurchasesScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.deepGreen, Color(0xFF0A1F17)],
-          ),
-        ),
+      body: ThemedBackground(
         child: SafeArea(
           child: Column(
             children: [
