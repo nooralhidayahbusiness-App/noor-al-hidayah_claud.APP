@@ -4,15 +4,19 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 
-/// خلفية VIP متحركة: zoom بطيء + shimmer ذهبي + توهج نابض + نجوم متحركة.
+/// خلفية VIP متحركة: zoom بطيء + نجوم + shimmer + طبقة الثيم فوقها.
 class AnimatedVipBackground extends StatefulWidget {
   const AnimatedVipBackground({
     super.key,
     required this.imagePath,
+    this.overlay,
     this.child,
   });
 
   final String imagePath;
+
+  /// طبقة إضافية تُرسم فوق الصورة (مثل ThemedBackground للـ VIP).
+  final Widget? overlay;
   final Widget? child;
 
   @override
@@ -32,11 +36,6 @@ class _AnimatedVipBackgroundState extends State<AnimatedVipBackground>
     duration: const Duration(seconds: 4),
   )..repeat();
 
-  late final AnimationController _glow = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 3),
-  )..repeat(reverse: true);
-
   late final AnimationController _stars = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 20),
@@ -46,7 +45,6 @@ class _AnimatedVipBackgroundState extends State<AnimatedVipBackground>
   void dispose() {
     _zoom.dispose();
     _shimmer.dispose();
-    _glow.dispose();
     _stars.dispose();
     super.dispose();
   }
@@ -71,7 +69,7 @@ class _AnimatedVipBackgroundState extends State<AnimatedVipBackground>
           },
         ),
 
-        // 2) طبقة تعتيم خفيفة
+        // 2) طبقة تعتيم
         const DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -86,15 +84,13 @@ class _AnimatedVipBackgroundState extends State<AnimatedVipBackground>
         IgnorePointer(
           child: AnimatedBuilder(
             animation: _stars,
-            builder: (context, _) {
-              return CustomPaint(
-                painter: _StarsPainter(_stars.value),
-              );
-            },
+            builder: (context, _) => CustomPaint(
+              painter: _StarsPainter(_stars.value),
+            ),
           ),
         ),
 
-        // 4) shimmer ذهبي يمر عبر الشاشة
+        // 4) shimmer
         IgnorePointer(
           child: AnimatedBuilder(
             animation: _shimmer,
@@ -120,30 +116,11 @@ class _AnimatedVipBackgroundState extends State<AnimatedVipBackground>
           ),
         ),
 
-        // 5) توهج نابض على الحواف
-        IgnorePointer(
-          child: AnimatedBuilder(
-            animation: _glow,
-            builder: (context, _) {
-              return Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.gold.withValues(
-                        alpha: 0.1 + 0.15 * _glow.value,
-                      ),
-                      blurRadius: 40 + 30 * _glow.value,
-                      spreadRadius: -20,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
+        // 5) طبقة الثيم فوق كل شي
+        if (widget.overlay != null) widget.overlay!,
 
         // 6) المحتوى
-        ?widget.child,
+        if (widget.child != null) widget.child!,
       ],
     );
   }
