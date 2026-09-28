@@ -5,7 +5,6 @@ import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../services/metals_service.dart';
-import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
 
