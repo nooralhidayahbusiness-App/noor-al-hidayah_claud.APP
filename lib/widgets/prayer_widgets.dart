@@ -10,7 +10,8 @@ import 'auth_widgets.dart';
 import 'glass_card.dart';
 import 'number_text.dart';
 
-/// Next prayer: adhan symbol, prayer name with its time, and the countdown.
+/// Next prayer: shimmering gold adhan icon, prayer name with its time,
+/// and the countdown.
 class NextPrayerCard extends StatelessWidget {
   const NextPrayerCard({super.key});
 
@@ -23,7 +24,7 @@ class NextPrayerCard extends StatelessWidget {
         if (next == null) return const SizedBox.shrink();
         final remaining = next.at.difference(prayerState.now.value);
         final name = appState.tr(next.key);
-        final iconSize = R.s(context, 92);
+        final iconSize = R.s(context, 118);
 
         return GlassCard(
           child: Column(
@@ -42,20 +43,7 @@ class NextPrayerCard extends StatelessWidget {
                   Expanded(
                     flex: 4,
                     child: Center(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Image.asset(
-                          'assets/icons/adhan.png',
-                          width: iconSize,
-                          height: iconSize,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Icon(
-                            Icons.access_time_rounded,
-                            size: iconSize,
-                            color: AppColors.gold,
-                          ),
-                        ),
-                      ),
+                      child: _ShimmerAdhanIcon(size: iconSize),
                     ),
                   ),
                   Expanded(
@@ -123,6 +111,69 @@ class NextPrayerCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// أيقونة الأذان بلون ذهبي مع لمعان يمرّ عبر الصورة.
+class _ShimmerAdhanIcon extends StatefulWidget {
+  const _ShimmerAdhanIcon({required this.size});
+
+  final double size;
+
+  @override
+  State<_ShimmerAdhanIcon> createState() => _ShimmerAdhanIconState();
+}
+
+class _ShimmerAdhanIconState extends State<_ShimmerAdhanIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmer = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _shimmer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _shimmer,
+      builder: (context, child) {
+        final t = _shimmer.value;
+        return ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (rect) {
+            return LinearGradient(
+              begin: Alignment(-1 - 2 * (1 - t), -0.4),
+              end: Alignment(-1 + 2 * t + 1, 0.4),
+              colors: const [
+                Color(0xFFB8860B), // ذهبي داكن
+                Color(0xFFD4AF37), // ذهبي
+                Color(0xFFFFF8E7), // كريمي لامع
+                Color(0xFFD4AF37),
+                Color(0xFFB8860B),
+              ],
+              stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+            ).createShader(rect);
+          },
+          child: child,
+        );
+      },
+      child: Image.asset(
+        'assets/icons/adhan.png',
+        width: widget.size,
+        height: widget.size,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Icon(
+          Icons.notifications_active_rounded,
+          size: widget.size,
+          color: AppColors.gold,
+        ),
+      ),
     );
   }
 }
