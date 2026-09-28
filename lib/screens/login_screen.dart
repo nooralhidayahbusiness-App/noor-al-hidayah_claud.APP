@@ -6,7 +6,6 @@ import '../core/navigation.dart';
 import '../core/validators.dart';
 import '../services/auth_service.dart';
 import '../widgets/auth_widgets.dart';
-import '../widgets/dev_skip.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -36,7 +35,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _loading = true);
     try {
-      // ✅ استدعاء Firebase لتسجيل الدخول
       await authService.login(_email.text, _password.text);
       if (!mounted) return;
       await goAfterAuth(context);
@@ -61,13 +59,11 @@ class _LoginScreenState extends State<LoginScreen> {
         return AuthScaffold(
           title: appState.tr('login'),
           subtitle: appState.tr('loginSub'),
-          footer: DevSkipFooter(
-            link: AuthSwitchLink(
-              question: appState.tr('noAccountQ'),
-              action: appState.tr('createAccount'),
-              onTap: () => Navigator.of(context)
-                  .pushReplacement(fadeRoute(const RegisterScreen())),
-            ),
+          footer: AuthSwitchLink(
+            question: appState.tr('noAccountQ'),
+            action: appState.tr('createAccount'),
+            onTap: () => Navigator.of(context)
+                .pushReplacement(fadeRoute(const RegisterScreen())),
           ),
           child: Form(
             key: _formKey,
