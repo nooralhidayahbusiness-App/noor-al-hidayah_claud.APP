@@ -50,7 +50,6 @@ dependencies:
   firebase_auth: ^6.7.0
   cloud_firestore: ^6.10.0
   wakelock_plus: ^1.2.8
-  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
