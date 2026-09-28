@@ -148,7 +148,6 @@ const Map<String, String> kLocationKeywordToCurrency = {
   'qatar': 'QAR', 'doha': 'QAR', 'قطر': 'QAR', 'الدوحة': 'QAR',
   'kuwait': 'KWD', 'الكويت': 'KWD',
   'bahrain': 'BHD', 'manama': 'BHD', 'البحرين': 'BHD',
-  'oman': 'OMR', 'muscat': 'OMR', 'مسقط': 'OMR',
   'yemen': 'YER', 'sanaa': 'YER', 'اليمن': 'YER',
   'iraq': 'IQD', 'baghdad': 'IQD', 'العراق': 'IQD',
 
