@@ -129,6 +129,13 @@ const Map<String, String> _ar = {
 'noPurchases': 'لا توجد مشتريات بعد',
 'credits': 'شكر وتقدير',
 'iconsCredit': 'بعض الأيقونات من Flaticon.com',
+'adhkar': 'الأذكار',
+'adhkarSubtitle': 'أذكار الصباح والمساء وبعد الصلاة والنوم',
+'items': 'ذكر',
+'done': 'مكتمل',
+'completed': 'تم ✓',
+'reset': 'إعادة',
+'tapToCount': 'اضغط للتسبيح • اضغط مطولاً للإعادة',
 };
 
 const Map<String, String> _en = {
@@ -233,4 +240,11 @@ const Map<String, String> _en = {
 'noPurchases': 'No purchases yet',
 'credits': 'Credits',
 'iconsCredit': 'Some icons from Flaticon.com',
+'adhkar': 'Adhkar',
+'adhkarSubtitle': 'Morning, evening, after prayer and sleep adhkar',
+'items': 'items',
+'done': 'Done',
+'completed': 'Done ✓',
+'reset': 'Reset',
+'tapToCount': 'Tap to count • Long press to reset',
 };
