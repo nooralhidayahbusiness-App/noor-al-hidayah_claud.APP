@@ -136,6 +136,16 @@ const Map<String, String> _ar = {
 'completed': 'تم ✓',
 'reset': 'إعادة',
 'tapToCount': 'اضغط للتسبيح • اضغط مطولاً للإعادة',
+// التسبيح
+'tasbeeh': 'التسبيح',
+'tasbeehToday': 'اليوم',
+'tasbeehTotal': 'الإجمالي',
+'tasbeehOpen': 'مفتوح',
+'tasbeehChooseDhikr': 'اختر الذكر',
+'tasbeehResetTitle': 'إعادة تعيين العداد؟',
+'tasbeehResetBody': 'سيتم إعادة العداد الحالي إلى صفر.',
+'tasbeehTapAnywhere': 'اضغط في أي مكان للعد',
+'tasbeehCompleted': 'أكملت الهدف ✓',
 };
 
 const Map<String, String> _en = {
@@ -247,4 +257,13 @@ const Map<String, String> _en = {
 'completed': 'Done ✓',
 'reset': 'Reset',
 'tapToCount': 'Tap to count • Long press to reset',
+'tasbeeh': 'Tasbeeh',
+'tasbeehToday': 'Today',
+'tasbeehTotal': 'Total',
+'tasbeehOpen': 'Open',
+'tasbeehChooseDhikr': 'Choose Dhikr',
+'tasbeehResetTitle': 'Reset counter?',
+'tasbeehResetBody': 'The current counter will be reset to zero.',
+'tasbeehTapAnywhere': 'Tap anywhere to count',
+'tasbeehCompleted': 'Target reached ✓',
 };
