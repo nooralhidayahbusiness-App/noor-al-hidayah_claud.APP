@@ -1,6 +1,6 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-28 | **الإصدار:** Beta 0.5
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-28 | **الإصدار:** Beta 0.6
 
 ---
 
@@ -11,7 +11,15 @@
 - **Codespaces + GitHub** للتطوير، **GitHub Pages** للنشر.
 
 ### المالك
-Abdel Rahmen Ben Romdhan — vevocom888@gmail.com
+**Abdel Rahmen Ben Romdhan**
+
+**الإيميلات الشخصية:**
+- abdelrahmenbenromdhan11@gmail.com
+- vevocom888@gmail.com
+
+**إيميلات العمل (Business):**
+- nooralhidayahbusiness@gmail.com
+- nooralimanechannel@gmail.com
 
 ---
 
@@ -33,6 +41,13 @@ Abdel Rahmen Ben Romdhan — vevocom888@gmail.com
 ### الخطوط
 - العناوين: Amiri / Noto Naskh | الآيات: amiriQuran (26) | النصوص: Cairo / Noto Sans Arabic.
 
+### الأسلوب البصري
+- خلفية خضراء داكنة مع نقشات إسلامية ذهبية.
+- تدرجات ذهبية على الأزرار.
+- توهج حول العناصر النشطة.
+- بطاقات زجاجية (GlassCard) شفافة theme-aware.
+- زخارف نجمية في الزوايا.
+
 ---
 
 ## 📂 بنية الملفات
@@ -42,11 +57,12 @@ lib/
 ├── core/
 │   ├── app_flow, app_state, prayer_state, profile_state
 │   ├── theme, theme_palette, theme_state, themed_colors
-│   ├── responsive               (R.s / R.f للأحجام المتجاوبة)
+│   ├── responsive               (R.s / R.f)
 │   ├── reciter_prefs, fonts, validators, navigation
 │   ├── quran_prefs, divine_names, firebase_options, strings_prayer
 ├── data/
 │   ├── questions                (~55 سؤال)
+│   ├── adhkar                   (7 أقسام، ~60 ذكر)
 │   └── store_items              (10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات)
 ├── models/
 │   ├── quran, saved_location
@@ -59,9 +75,10 @@ lib/
 │   ├── account, edit_profile
 │   ├── challenge, challenge_play, challenge_result
 │   ├── store, my_purchases
+│   ├── adhkar_screen, adhkar_detail_screen
 │   └── tabs/
 │       ├── home_tab, quran_browser_tab, community_tab, more_tab
-│       └── soon_tabs            (ComingSoonView + AdhkarTab + QuranTab)
+│       └── soon_tabs            (ComingSoonView + AdhkarTab)
 └── widgets/
     ├── app_branding, animated_vip_background, themed_background
     ├── theme_preview, asset_icon, profile_avatar, verified_badge
@@ -144,29 +161,36 @@ service cloud.firestore {
 
 ### 9) تصميم الصفحة الرئيسية
 - [x] بطاقة AI Teacher — "QURAN TEACHER" على سطر واحد
-- [x] بطاقة الصلاة — أيقونة `adhan.png` **ذهبية + أكبر (118) + لمعان** متحرك
+- [x] بطاقة الصلاة — أيقونة `adhan.png` ذهبية + أكبر (118) + لمعان متحرك
 
-### 10) القرآن + الأذكار
+### 10) القرآن
 - [x] القرآن كامل + تلاوة + تفسير + نسخ/مشاركة
 - [x] الأحاديث + مواقيت الصلاة
 
-### 11) الإسناد
+### 11) الأذكار (كامل)
+- [x] بنك أذكار (`lib/data/adhkar.dart`) — 7 أقسام (~60 ذكر).
+- [x] شاشة أذكار رئيسية (`adhkar_screen.dart`) — عرض الأقسام ببطاقات.
+- [x] شاشة تفاصيل (`adhkar_detail_screen.dart`) — عداد لكل ذكر + إعادة + فضل + مرجع.
+- [x] أقسام: الصباح، المساء، بعد الصلاة، النوم، الاستيقاظ، متفرقة.
+- [x] الضغط على البطاقة = زيادة العداد. الضغط المطول = إعادة.
+- [x] تتبع: `X / N` ثم "تم ✓".
+- [x] ربط تبويب "الأذكار" في الشريط السفلي بالشاشة الجديدة.
+
+### 12) الإسناد
 - [x] قسم Flaticon في تبويب المزيد
 
 ---
 
 ## ⏳ قيد التنفيذ
 
-### 🔥 الأولوية القادمة (شاشات الوصول السريع)
-- [ ] **الأذكار (Adhkar)** ← الحالي
+### 🔥 الأولوية القادمة (شاشات الوصول السريع — من السهل للصعب)
+- [ ] **التسبيح (Tasbeeh)** ← التالي
+- [ ] حساب الزكاة (Zakat)
 - [ ] الأدعية (Duas)
-- [ ] التسبيح (Tasbeeh)
+- [ ] خطة ختم القرآن (Khatm Plan)
+- [ ] المحرمات + المكروهات
 - [ ] القبلة (Qibla)
 - [ ] المساجد القريبة (Nearby Mosques)
-- [ ] خطة ختم القرآن (Khatm Plan)
-- [ ] حساب الزكاة (Zakat Calculator)
-- [ ] المحرمات (Haram)
-- [ ] المكروهات (Makruh)
 
 ### ب) شاشة الإعدادات
 - [ ] زر Setting.png
@@ -193,8 +217,8 @@ service cloud.firestore {
 - Web App: `1:762471094332:web:68fe063e9282d7441d8b39` | Location: `nam5`
 
 ### أصول الصور
-**assets/icons/**: Setting, challenge, coupon, more, store, community, true.me, true.users, **adhan**
-**assets/images/**: Me, logo, avatar_man, avatar_woman
+**assets/icons/**: Setting, challenge, coupon, more, store, community, true.me, true.users, **adhan**  
+**assets/images/**: Me, logo, avatar_man, avatar_woman  
 **assets/images/backgrounds/**: backgroundv2 (default), _blue, _orange, _brown, _dark, _purple, _olive, vip1, vip2, vip3
 
 ### pubspec.yaml
@@ -215,8 +239,15 @@ git add . && git commit -m "..." && git push
 ```
 
 ### كودات وأصحاب (Owner)
-- **NAH2026** → 1000 نقطة (غير محدود للمالك، مرة لكل مستخدم).
-- Owner emails: abdelrahmenbenromdhan11, vevocom888 → Me.png | nooralimanechannel, nooralhidayahbusiness → logo.png
+- **NAH2026** → 1000 نقطة (غير محدود لحسابات المالك، مرة واحدة لكل مستخدم آخر).
+
+**الإيميلات الشخصية (تستخدم Me.png + true.me.png):**
+- abdelrahmenbenromdhan11@gmail.com
+- vevocom888@gmail.com
+
+**إيميلات العمل (تستخدم logo.png + true.me.png):**
+- nooralhidayahbusiness@gmail.com
+- nooralimanechannel@gmail.com
 
 ---
 
@@ -244,7 +275,18 @@ git add . && git commit -m "..." && git push
 ---
 
 ## 📞 التواصل
-**المالك:** Abdel Rahmen Ben Romdhan | **البريد:** vevocom888@gmail.com | **الشعار:** By Abdel Rahmen Ben Romdhan
+
+**المالك:** Abdel Rahmen Ben Romdhan
+
+**الإيميلات الشخصية:**
+- abdelrahmenbenromdhan11@gmail.com
+- vevocom888@gmail.com
+
+**إيميلات العمل (Business):**
+- nooralhidayahbusiness@gmail.com
+- nooralimanechannel@gmail.com
+
+**الشعار:** By Abdel Rahmen Ben Romdhan
 
 ---
 
@@ -260,14 +302,14 @@ git add . && git commit -m "..." && git push
 5. خطوات صغيرة — كل رد فيه خطوة واحدة.
 
 ### دورة العمل
-**1.** AI يشرح + يعطي الكود (كامل، مع تحديد "ملف جديد" أو "استبدل").
+**1.** AI يشرح + يعطي الكود (كامل، مع تحديد "ملف جديد" أو "استبدل").  
 **2.** المالك ينسخ في GitHub:
    - ملف جديد: Add file → Create new file → الصق → Commit.
-   - ملف موجود: افتحه → القلم ✏️ → Select All → Delete → الصق → Commit.
-**3.** Terminal: `git pull` → `flutter analyze` (يجب "No issues found!").
-**4.** اختبار: `bash tool/preview.sh`.
-**5.** حفظ: `git add . && git commit -m "Feature: ..." && git push`.
-**6.** تحديث `PROJECT.md` (لا تحذف قسم طريقة العمل).
+   - ملف موجود: افتحه → القلم ✏️ → Select All → Delete → الصق → Commit.  
+**3.** Terminal: `git pull` → `flutter analyze` (يجب "No issues found!").  
+**4.** اختبار: `bash tool/preview.sh`.  
+**5.** حفظ: `git add . && git commit -m "Feature: ..." && git push`.  
+**6.** تحديث `PROJECT.md` (لا تحذف قسم طريقة العمل).  
 **7.** الميزة التالية.
 
 ### إنشاء ملفات جديدة
