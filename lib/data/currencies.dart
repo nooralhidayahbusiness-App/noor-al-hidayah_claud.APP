@@ -154,7 +154,7 @@ const Map<String, String> kLocationKeywordToCurrency = {
 
   // الشام ومصر
   'egypt': 'EGP', 'cairo': 'EGP', 'alexandria': 'EGP', 'مصر': 'EGP', 'القاهرة': 'EGP',
-  'jordan': 'JOD', 'amman': 'JOD', 'الأردن': 'JOD', 'عمان': 'JOD',
+  'jordan': 'JOD', 'amman': 'JOD', 'الأردن': 'JOD', 'عمّان': 'JOD',
   'lebanon': 'LBP', 'beirut': 'LBP', 'لبنان': 'LBP',
   'syria': 'SYP', 'damascus': 'SYP', 'سوريا': 'SYP',
   'palestine': 'ILS', 'gaza': 'ILS', 'فلسطين': 'ILS',
