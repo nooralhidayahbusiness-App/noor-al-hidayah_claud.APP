@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-
+import '../tasbeeh_screen.dart';
 import '../../core/app_flow.dart';
 import '../../core/app_state.dart';
 import '../../core/fonts.dart';
@@ -139,13 +139,14 @@ class HomeTab extends StatelessWidget {
                   ),
                 ),
                 _QuickTile(
-                  label: appState.tr('tasbeeh'),
-                  onTap: soon,
-                  symbol: const SymbolImage(
-                    'assets/images/tasbih.png',
-                    fallback: Icons.touch_app_rounded,
-                  ),
-                ),
+                 label: appState.tr('tasbeeh'),
+                 onTap: () => Navigator.of(context)
+                     .push(fadeRoute(const TasbeehScreen())),
+                 symbol: const SymbolImage(
+                   'assets/images/tasbih.png',
+                   fallback: Icons.touch_app_rounded,
+                 ),
+               ),
                 _QuickTile(
                   label: appState.tr('nearbyMosques'),
                   onTap: soon,
