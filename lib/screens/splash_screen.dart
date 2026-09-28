@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/fonts.dart';
-import '../core/prayer_state.dart';
 import '../core/profile_state.dart';
 import '../core/reciter_prefs.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../services/auth_service.dart';
+import '../services/storage_service.dart';
 import '../widgets/app_branding.dart';
 import 'home_shell.dart';
 import 'location_screen.dart';
@@ -54,11 +54,10 @@ class _SplashScreenState extends State<SplashScreen>
     _timer = Timer(const Duration(milliseconds: 2600), _goNext);
   }
 
-  /// القرار: هل المستخدم مسجّل؟ → الرئيسية. غير ذلك → شاشة الترحيب.
   Future<void> _goNext() async {
     if (!mounted) return;
 
-    // تهيئة بيانات المستخدم إن كان مسجلاً
+    // إذا كان المستخدم مسجّلاً: حمّل بياناته
     if (authService.isSignedIn) {
       try {
         await Future.wait([
@@ -71,22 +70,18 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    final Widget next;
+    Widget next;
     if (!authService.isSignedIn) {
       next = const WelcomeScreen();
     } else {
-      // هل عنده موقع محفوظ؟ → الرئيسية. غير ذلك → شاشة الموقع.
-      final prefs = await themeState.hashCode; // cheap await، الغرض تفريغ الحدث
-      // تحقق مباشر من SharedPreferences
-      final hasLocation = await _checkHasLocation();
-      next = hasLocation
-          ? const HomeShell()
-          : const LocationScreen();
-      // ignore: unnecessary_statements
-      prefs;
+      // فحص وجود موقع محفوظ
+      final hasLocation =
+          await StorageService().loadLocation() != null;
+      next = hasLocation ? const HomeShell() : const LocationScreen();
     }
 
     if (!mounted) return;
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 700),
@@ -96,15 +91,6 @@ class _SplashScreenState extends State<SplashScreen>
                 FadeTransition(opacity: animation, child: child),
       ),
     );
-  }
-
-  Future<bool> _checkHasLocation() async {
-    try {
-      final saved = await const _StorageCheck().hasSavedLocation();
-      return saved;
-    } catch (_) {
-      return false;
-    }
   }
 
   @override
@@ -177,91 +163,5 @@ class _SplashScreenState extends State<SplashScreen>
         );
       },
     );
-  }
-}
-
-/// فحص سريع: هل يوجد موقع محفوظ في SharedPreferences؟
-class _StorageCheck {
-  const _StorageCheck();
-
-  Future<bool> hasSavedLocation() async {
-    try {
-      // ignore: avoid_dynamic_calls
-      final prefs = await _getPrefs();
-      return prefs.getString('location_label') != null;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<dynamic> _getPrefs() async {
-    // استيراد مؤجل لتفادي الاستيراد غير المستخدم إن لم يكن ضرورياً
-    // ignore: avoid_dynamic_calls
-    return await _prefsInstance();
-  }
-}
-
-// استيراد SharedPreferences بشكل نظيف
-Future<dynamic> _prefsInstance() async {
-  // نستخدم StorageService الموجود
-  final svc = _storageServiceRef();
-  return await svc;
-}
-
-Future<dynamic> _storageServiceRef() async {
-  // نستدعي مباشرة من الخدمة الموجودة
-  // ignore: implementation_imports
-  return await _load();
-}
-
-Future<dynamic> _load() async {
-  // هذا الاستدعاء يستخدم StorageService غير مباشر
-  // نُرجعه من ملف storage_service
-  return _PrefsHolder.instance;
-}
-
-class _PrefsHolder {
-  static dynamic get instance => _PrefsHolderImpl();
-}
-
-class _PrefsHolderImpl {
-  // يوفّر واجهة `.getString` للتوافق
-  Future<String?> getString(String key) async {
-    final prefs = await _realPrefs();
-    return prefs.getString(key);
-  }
-
-  Future<dynamic> _realPrefs() async {
-    // نستخدم SharedPreferences مباشرة
-    // ignore: avoid_dynamic_calls
-    return await _sharedPrefs();
-  }
-
-  Future<dynamic> _sharedPrefs() async {
-    // نستدعي StorageService
-    return _storageService();
-  }
-}
-
-Future<dynamic> _storageService() async {
-  // من ملف storage_service.dart
-  // ignore: prefer_const_constructors
-  return _getStorageService();
-}
-
-Future<dynamic> _getStorageService() async {
-  // نبني نسخة من StorageService
-  // ignore: prefer_const_constructors
-  return _newStorageService();
-}
-
-dynamic _newStorageService() {
-  // ignore: prefer_const_constructors
-  return _StorageRef();
-}
-
-class _StorageRef {
-  Future<dynamic> loadLocation() async {
-    return null;
   }
 }
