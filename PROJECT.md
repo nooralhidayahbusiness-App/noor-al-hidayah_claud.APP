@@ -1,13 +1,13 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-28 | **الإصدار:** Beta 0.6
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-28 | **الإصدار:** Beta 0.7
 
 ---
 
 ## 📌 نظرة عامة
 
 ### التقنيات
-- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences**.
+- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API**.
 - **Codespaces + GitHub** للتطوير، **GitHub Pages** للنشر.
 
 ### المالك
@@ -41,13 +41,6 @@
 ### الخطوط
 - العناوين: Amiri / Noto Naskh | الآيات: amiriQuran (26) | النصوص: Cairo / Noto Sans Arabic.
 
-### الأسلوب البصري
-- خلفية خضراء داكنة مع نقشات إسلامية ذهبية.
-- تدرجات ذهبية على الأزرار.
-- توهج حول العناصر النشطة.
-- بطاقات زجاجية (GlassCard) شفافة theme-aware.
-- زخارف نجمية في الزوايا.
-
 ---
 
 ## 📂 بنية الملفات
@@ -63,22 +56,26 @@ lib/
 ├── data/
 │   ├── questions                (~55 سؤال)
 │   ├── adhkar                   (7 أقسام، ~60 ذكر)
+│   ├── currencies               (160+ عملة + كشف من الموقع)
 │   └── store_items              (10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات)
 ├── models/
 │   ├── quran, saved_location
 ├── services/
 │   ├── auth_service, user_service, storage_service
 │   ├── location_service, quran_audio_service, tafsir_service, share_service
+│   └── metals_service          (أسعار الذهب/الفضة/الصرف + cache)
 ├── screens/
-│   ├── splash, welcome, login, register, location
+│   ├── splash (Auto-login), welcome, login, register, location
 │   ├── home_shell               (شريط سفلي مخصص + SafeArea)
 │   ├── account, edit_profile
 │   ├── challenge, challenge_play, challenge_result
 │   ├── store, my_purchases
 │   ├── adhkar_screen, adhkar_detail_screen
+│   ├── tasbeeh_screen
+│   ├── zakat_screen
 │   └── tabs/
 │       ├── home_tab, quran_browser_tab, community_tab, more_tab
-│       └── soon_tabs            (ComingSoonView + AdhkarTab)
+│       └── soon_tabs
 └── widgets/
     ├── app_branding, animated_vip_background, themed_background
     ├── theme_preview, asset_icon, profile_avatar, verified_badge
@@ -101,7 +98,12 @@ users/{uid}/
 ├── inventory: { backgrounds, voices, adhans, themes,
 │                activeBackground, activeVoice, activeAdhan, activeTheme }
 ├── settings: { language, theme, notifications{...} }
-└── progress: { challenges{}, quran{}, aiTeacher{} }
+└── progress: {
+      challenges: { lastPlayedDate, todayPoints, todayCorrect, totalCompleted }
+      tasbeeh:    { totalCount, todayCount, lastDate, target, lastDhikr }
+      quran:      {}
+      aiTeacher:  {}
+    }
 ```
 
 ### Firestore Rules
@@ -120,16 +122,18 @@ service cloud.firestore {
 
 ## ✅ المنجز
 
-### 1) الحسابات
+### 1) الحسابات + Auto-login
 - [x] تسجيل/دخول/خروج Firebase
 - [x] `authService.isOwner`
 - [x] مزامنة كاملة (صورة/موقع/بيانات)
+- [x] Auto-login: يحفظ الجلسة + يتخطى Welcome و Login.
+- [x] فحص الموقع → HomeShell أو LocationScreen.
 
 ### 2) الملف الشخصي
 - [x] شاشة "حسابي" + تعديل
 - [x] حلقة ذهبية دوّارة + توهج
 - [x] شعار التوثيق (true.me / true.users)
-- [x] صور مخصصة لحسابات المالك
+- [x] صور مخصصة (Me.png / logo.png) لحسابات المالك
 - [x] الاسم الطويل لا يخرج من البطاقة
 
 ### 3) النقاط والمستويات
@@ -152,61 +156,63 @@ service cloud.firestore {
 - [x] GlassCard/StarBadge/OrnamentMedallion/SymbolImage theme-aware
 
 ### 7) الأحجام المتجاوبة
-- [x] welcome / home_tab / home_shell / account / AI card / prayer card
+- [x] welcome / home_tab / home_shell / account / AI card / prayer card / tasbeeh / zakat
 
 ### 8) الشريط السفلي
 - [x] SafeArea (لا يلمس أزرار الهاتف)
-- [x] شريط مخصص: الكتابة مباشرة تحت الأيقونة
+- [x] شريط مخصص: الكتابة تحت الأيقونة مباشرة
 - [x] أيقونات: challenge.png + community.png + more.png
 
-### 9) تصميم الصفحة الرئيسية
-- [x] بطاقة AI Teacher — "QURAN TEACHER" على سطر واحد
-- [x] بطاقة الصلاة — أيقونة `adhan.png` ذهبية + أكبر (118) + لمعان متحرك
+### 9) الصفحة الرئيسية
+- [x] بطاقة AI Teacher — سطر واحد
+- [x] بطاقة الصلاة — `adhan.png` ذهبية + لمعان متحرك
 
-### 10) القرآن
-- [x] القرآن كامل + تلاوة + تفسير + نسخ/مشاركة
-- [x] الأحاديث + مواقيت الصلاة
+### 10) الأذكار
+- [x] بنك أذكار (`lib/data/adhkar.dart`) — 7 أقسام (~60 ذكر)
+- [x] شاشة رئيسية + شاشة تفاصيل بعدّاد
+- [x] الضغط = عد، ضغط مطول = إعادة
 
-### 11) الأذكار (كامل)
-- [x] بنك أذكار (`lib/data/adhkar.dart`) — 7 أقسام (~60 ذكر).
-- [x] شاشة أذكار رئيسية (`adhkar_screen.dart`) — عرض الأقسام ببطاقات.
-- [x] شاشة تفاصيل (`adhkar_detail_screen.dart`) — عداد لكل ذكر + إعادة + فضل + مرجع.
-- [x] أقسام: الصباح، المساء، بعد الصلاة، النوم، الاستيقاظ، متفرقة.
-- [x] الضغط على البطاقة = زيادة العداد. الضغط المطول = إعادة.
-- [x] تتبع: `X / N` ثم "تم ✓".
-- [x] ربط تبويب "الأذكار" في الشريط السفلي بالشاشة الجديدة.
+### 11) التسبيح
+- [x] شاشة كاملة مع عدّاد دائري + نبض عند كل ضغطة + haptic
+- [x] اختيار الذكر (7 خيارات)
+- [x] الهدف (33/100/مفتوح)
+- [x] حفظ في Firestore: `progress.tasbeeh` (total + today + target)
+- [x] Wakelock — الشاشة لا تنام
 
-### 12) الإسناد
+### 12) حساب الزكاة (كامل)
+- [x] 5 أنواع: المال + الذهب + الفضة + الزروع + الأنعام
+- [x] 160+ عملة (`lib/data/currencies.dart`)
+- [x] كشف العملة تلقائياً من الموقع
+- [x] أسعار حية للذهب/الفضة (goldprice.org) + أسعار الصرف (open.er-api.com)
+- [x] Cache لمدة 30 دقيقة
+- [x] عيارات الذهب (24/22/21/18/14)
+- [x] زكاة الأنعام (غنم/بقر/إبل) بأنصبتها الشرعية
+- [x] تنبيه: حاسبة تقديرية فقط، ليست مكان صدقة
+
+### 13) الإسناد
 - [x] قسم Flaticon في تبويب المزيد
 
 ---
 
 ## ⏳ قيد التنفيذ
 
-### 🔥 الأولوية القادمة (شاشات الوصول السريع — من السهل للصعب)
-- [ ] **التسبيح (Tasbeeh)** ← التالي
-- [ ] حساب الزكاة (Zakat)
-- [ ] الأدعية (Duas)
-- [ ] خطة ختم القرآن (Khatm Plan)
-- [ ] المحرمات + المكروهات
-- [ ] القبلة (Qibla)
-- [ ] المساجد القريبة (Nearby Mosques)
+### 🔥 الأولوية القادمة (من السهل للصعب)
+1. [ ] **الأدعية (Duas)** ← التالي
+2. [ ] **خطة ختم القرآن (Khatm Plan)**
+3. [ ] **المحرمات + المكروهات**
+4. [ ] **القبلة (Qibla)**
+5. [ ] **المساجد القريبة (Nearby Mosques)**
 
-### ب) شاشة الإعدادات
-- [ ] زر Setting.png
+### لاحقاً
+- [ ] شاشة الإعدادات الكاملة (زر Setting.png)
 - [ ] إشعارات لكل صلاة + تشغيل الأذان + تذكير قبل الأذان
-
-### ج) الوضع النهاري/الليلي
-
-### د) زر "وثّق حسابي" للمستخدم العادي
-
-### هـ) الإشعارات + شاشة الأذان (10 مؤذنين)
-
-### و) اللغات: الفرنسية، الأوردو، النيبالية، الإندونيسية، المليزية
-
-### ز) المعلم الذكي (AI) كامل
-
-### ح) شاشة المجتمع (نشر + تفاعل)
+- [ ] الوضع النهاري/الليلي
+- [ ] زر "وثّق حسابي" للمستخدم العادي
+- [ ] شاشة الأذان (10 مؤذنين)
+- [ ] اللغات: الفرنسية، الأوردو، النيبالية، الإندونيسية، المليزية
+- [ ] المعلم الذكي (AI) كامل
+- [ ] شاشة المجتمع (نشر + تفاعل)
+- [ ] شاشة "الصدقة" منفصلة (محتوى، بدون روابط)
 
 ---
 
@@ -216,8 +222,12 @@ service cloud.firestore {
 - Project ID: `noor-al-hidayah` | Number: `762471094332`
 - Web App: `1:762471094332:web:68fe063e9282d7441d8b39` | Location: `nam5`
 
+### APIs خارجية (مجانية، بدون مفتاح)
+- **أسعار الذهب/الفضة:** `https://data-asg.goldprice.org/dbXRates/USD`
+- **أسعار الصرف:** `https://open.er-api.com/v6/USD`
+
 ### أصول الصور
-**assets/icons/**: Setting, challenge, coupon, more, store, community, true.me, true.users, **adhan**  
+**assets/icons/**: Setting, challenge, coupon, more, store, community, true.me, true.users, adhan  
 **assets/images/**: Me, logo, avatar_man, avatar_woman  
 **assets/images/backgrounds/**: backgroundv2 (default), _blue, _orange, _brown, _dark, _purple, _olive, vip1, vip2, vip3
 
@@ -230,6 +240,7 @@ flutter:
     - assets/images/
     - assets/images/backgrounds/
 ```
+Dependencies المهمة: `firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`.
 
 ### Git Workflow
 ```
@@ -239,7 +250,7 @@ git add . && git commit -m "..." && git push
 ```
 
 ### كودات وأصحاب (Owner)
-- **NAH2026** → 1000 نقطة (غير محدود لحسابات المالك، مرة واحدة لكل مستخدم آخر).
+- **NAH2026** → 1000 نقطة (غير محدود لحسابات المالك، مرة لكل مستخدم آخر).
 
 **الإيميلات الشخصية (تستخدم Me.png + true.me.png):**
 - abdelrahmenbenromdhan11@gmail.com
@@ -267,7 +278,8 @@ git add . && git commit -m "..." && git push
 6. `UserService` + `AuthService` للـ Firestore.
 7. الترجمات في `app_state.dart` (`_ar` + `_en`).
 8. الصور في `assets/` → تحديث `pubspec.yaml`.
-9. اختبار: `flutter analyze` + `bash tool/preview.sh`.
+9. ⚠️ **الأحرف العربية في المحرر:** تجنّب تكرار الكلمات العربية في `currencies.dart` (مشكلة ترميز).
+10. اختبار: `flutter analyze` + `bash tool/preview.sh`.
 
 ### القاعدة الذهبية:
 بعد كل ميزة ناجحة: `git add . && git commit && git push` + تحديث `PROJECT.md`.
@@ -299,22 +311,22 @@ git add . && git commit -m "..." && git push
 2. **استبدال كامل** — انسخ الملف كامل واستبدل القديم.
 3. لا حفظ قبل `flutter analyze` = `No issues found!` + اختبار.
 4. `PROJECT.md` يُحدّث بعد كل ميزة.
-5. خطوات صغيرة — كل رد فيه خطوة واحدة.
+5. خطوات صغيرة.
 
 ### دورة العمل
-**1.** AI يشرح + يعطي الكود (كامل، مع تحديد "ملف جديد" أو "استبدل").  
+**1.** AI يشرح + يعطي الكود (كامل، "ملف جديد" أو "استبدل").  
 **2.** المالك ينسخ في GitHub:
    - ملف جديد: Add file → Create new file → الصق → Commit.
    - ملف موجود: افتحه → القلم ✏️ → Select All → Delete → الصق → Commit.  
 **3.** Terminal: `git pull` → `flutter analyze` (يجب "No issues found!").  
 **4.** اختبار: `bash tool/preview.sh`.  
 **5.** حفظ: `git add . && git commit -m "Feature: ..." && git push`.  
-**6.** تحديث `PROJECT.md` (لا تحذف قسم طريقة العمل).  
+**6.** تحديث `PROJECT.md`.  
 **7.** الميزة التالية.
 
 ### إنشاء ملفات جديدة
-- **ملف Flutter:** GitHub → المجلد → Add file → Create new file → اكتب الاسم (أو `folder/file.dart`) → الصق → Commit.
-- **صورة:** Add file → Upload files → المجلد الصحيح → حدّث `pubspec.yaml`.
+- **ملف Flutter:** GitHub → المجلد → Add file → Create new file → اكتب الاسم → الصق → Commit.
+- **صورة:** Add file → Upload files → المجلد → حدّث `pubspec.yaml`.
 
 ### تحديث `PROJECT.md`
 1. أضف `- [x]` في "المنجز".
@@ -322,14 +334,15 @@ git add . && git commit -m "..." && git push
 3. حدّث "آخر تحديث" + "الإصدار".
 4. ⚠️ لا تحذف قسم Workflow.
 
-### حل مشكلة Codespaces
+### حل مشكلة Codespaces (نفاد الذاكرة)
+عند `Dart compiler exited unexpectedly`:
 ```
 pkill -f flutter ; pkill -f dart
 flutter clean
 flutter pub get
 flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8095 --web-renderer html
 ```
-إذا فشل: Command Palette → **"Codespaces: Rebuild Container"**.
+إذا فشل: **Stop Codespace** → **Open in browser** → تشغيل عادي.
 
 ### القواعد الذهبية
 1. لا حفظ بدون اختبار.
