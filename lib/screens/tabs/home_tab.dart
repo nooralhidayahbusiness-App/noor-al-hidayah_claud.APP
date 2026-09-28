@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-
+import '../zakat_screen.dart';
 import 'package:flutter/material.dart';
 import '../tasbeeh_screen.dart';
 import '../../core/app_flow.dart';
@@ -166,13 +166,14 @@ class HomeTab extends StatelessWidget {
                 ),
                 _QuickTile(
                   label: appState.tr('zakat'),
-                  onTap: soon,
+                  onTap: () => Navigator.of(context)
+                      .push(fadeRoute(const ZakatScreen())),
                   symbol: const SymbolImage(
                     'assets/images/zakat.png',
                     fallback: Icons.favorite_rounded,
                     tint: true,
+                    ),
                   ),
-                ),
                 _QuickTile(
                   label: appState.tr('haram'),
                   onTap: soon,
