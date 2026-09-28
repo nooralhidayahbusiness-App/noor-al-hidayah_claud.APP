@@ -104,8 +104,10 @@ class _HomeShellState extends State<HomeShell> {
               ),
             ),
           ),
-          bottomNavigationBar:
-              _BottomBar(index: _index, onSelected: _select),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: _BottomBar(index: _index, onSelected: _select),
+          ),
         );
       },
     );
