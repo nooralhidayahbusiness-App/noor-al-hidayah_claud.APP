@@ -751,7 +751,7 @@ class _MoneyTabState extends State<_MoneyTab> {
         ),
         SizedBox(height: R.s(context, 6)),
         Text(
-          '${appState.tr('zakatMoneyNisabHint')} · ${_goldPerG.toStringAsFixed(2)} $ _symbol/g',
+          '${appState.tr('zakatMoneyNisabHint')} · ${_goldPerG.toStringAsFixed(2)} $_symbol/g',
           style: TextStyle(
             fontSize: R.f(context, 10),
             color: AppColors.cream.withValues(alpha: 0.6),
