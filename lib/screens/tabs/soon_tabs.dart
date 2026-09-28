@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/fonts.dart';
 import '../../core/theme.dart';
+import '../../screens/adhkar_screen.dart';
 import '../../widgets/glass_card.dart';
 
 class QuranTab extends StatelessWidget {
@@ -24,11 +25,7 @@ class AdhkarTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ComingSoonView(
-      icon: Icons.auto_stories_rounded,
-      titleKey: 'tabAdhkar',
-      messageKey: 'adhkarSoon',
-    );
+    return const AdhkarScreen();
   }
 }
 
@@ -67,7 +64,8 @@ class ComingSoonView extends StatelessWidget {
                       path,
                       height: 120,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => iconWidget,
+                      errorBuilder: (context, error, stackTrace) =>
+                          iconWidget,
                     )
                   else
                     iconWidget,
