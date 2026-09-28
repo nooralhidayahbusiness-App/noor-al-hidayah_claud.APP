@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/app_state.dart';
+import '../core/prayer_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
+import '../data/currencies.dart';
 import '../services/metals_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
@@ -20,17 +23,41 @@ class _ZakatScreenState extends State<ZakatScreen>
   late final TabController _tabs = TabController(length: 5, vsync: this);
   bool _loadingPrices = true;
   bool _priceFetchFailed = false;
+  String _currencyCode = 'USD';
 
   @override
   void initState() {
     super.initState();
-    _loadPrices();
+    _init();
   }
 
   @override
   void dispose() {
     _tabs.dispose();
     super.dispose();
+  }
+
+  Future<void> _init() async {
+    await _loadSavedCurrency();
+    await _loadPrices();
+  }
+
+  Future<void> _loadSavedCurrency() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('zakat_currency');
+    if (saved != null) {
+      _currencyCode = saved;
+      return;
+    }
+    // كشف تلقائي من الموقع
+    final label = prayerState.location?.label ?? '';
+    final detected = detectCurrencyFromLocation(label);
+    if (detected != null) {
+      _currencyCode = detected;
+    } else {
+      _currencyCode = 'USD';
+    }
+    await prefs.setString('zakat_currency', _currencyCode);
   }
 
   Future<void> _loadPrices() async {
@@ -46,6 +73,32 @@ class _ZakatScreenState extends State<ZakatScreen>
       });
     }
   }
+
+  Future<void> _changeCurrency(String code) async {
+    setState(() => _currencyCode = code);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('zakat_currency', code);
+  }
+
+  void _openCurrencyPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CurrencyPickerSheet(
+        selected: _currencyCode,
+        onSelect: (code) {
+          _changeCurrency(code);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  Currency get _currency =>
+      currencyByCode(_currencyCode) ??
+      const Currency(
+          code: 'USD', symbol: '\$', nameAr: 'دولار', nameEn: 'Dollar');
 
   @override
   Widget build(BuildContext context) {
@@ -84,29 +137,26 @@ class _ZakatScreenState extends State<ZakatScreen>
                 ),
               ),
 
-              // ===== تنبيه: حاسبة فقط =====
+              // ===== تنبيه =====
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: R.s(context, 16),
-                  vertical: R.s(context, 6),
+                  vertical: R.s(context, 4),
                 ),
                 child: GlassCard(
                   ornament: false,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        color: AppColors.gold,
-                        size: R.s(context, 18),
-                      ),
+                      Icon(Icons.info_outline_rounded,
+                          color: AppColors.gold, size: R.s(context, 16)),
                       SizedBox(width: R.s(context, 8)),
                       Expanded(
                         child: Text(
                           appState.tr('zakatDisclaimer'),
                           style: TextStyle(
-                            fontSize: R.f(context, 10.5),
-                            height: 1.5,
+                            fontSize: R.f(context, 10),
+                            height: 1.4,
                             color: AppColors.cream.withValues(alpha: 0.9),
                           ),
                         ),
@@ -116,6 +166,65 @@ class _ZakatScreenState extends State<ZakatScreen>
                 ),
               ),
 
+              // ===== زر العملة + الأسعار =====
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: R.s(context, 16)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: _openCurrencyPicker,
+                        child: GlassCard(
+                          ornament: false,
+                          child: Row(
+                            children: [
+                              Icon(Icons.attach_money_rounded,
+                                  color: AppColors.gold,
+                                  size: R.s(context, 16)),
+                              SizedBox(width: R.s(context, 6)),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${_currency.code} ${_currency.symbol}',
+                                      style: TextStyle(
+                                        fontSize: R.f(context, 12),
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.softGold,
+                                      ),
+                                    ),
+                                    Text(
+                                      appState.isArabic
+                                          ? _currency.nameAr
+                                          : _currency.nameEn,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: R.f(context, 9.5),
+                                        color: AppColors.cream
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(Icons.unfold_more_rounded,
+                                  color: AppColors.softGold
+                                      .withValues(alpha: 0.7),
+                                  size: R.s(context, 18)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: R.s(context, 6)),
+
               // ===== حالة الأسعار =====
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: R.s(context, 16)),
@@ -123,6 +232,7 @@ class _ZakatScreenState extends State<ZakatScreen>
                   loading: _loadingPrices,
                   failed: _priceFetchFailed,
                   onRetry: _loadPrices,
+                  code: _currencyCode,
                 ),
               ),
 
@@ -155,12 +265,12 @@ class _ZakatScreenState extends State<ZakatScreen>
               Expanded(
                 child: TabBarView(
                   controller: _tabs,
-                  children: const [
-                    _MoneyTab(),
-                    _GoldTab(),
-                    _SilverTab(),
-                    _CropsTab(),
-                    _LivestockTab(),
+                  children: [
+                    _MoneyTab(currencyCode: _currencyCode),
+                    _GoldTab(currencyCode: _currencyCode),
+                    _SilverTab(currencyCode: _currencyCode),
+                    const _CropsTab(),
+                    const _LivestockTab(),
                   ],
                 ),
               ),
@@ -172,17 +282,199 @@ class _ZakatScreenState extends State<ZakatScreen>
   }
 }
 
+// ==================== اختيار العملة ====================
+class _CurrencyPickerSheet extends StatefulWidget {
+  const _CurrencyPickerSheet({
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final String selected;
+  final ValueChanged<String> onSelect;
+
+  @override
+  State<_CurrencyPickerSheet> createState() => _CurrencyPickerSheetState();
+}
+
+class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
+  final _search = TextEditingController();
+  List<Currency> _filtered = kCurrencies;
+
+  @override
+  void initState() {
+    super.initState();
+    _search.addListener(_filter);
+  }
+
+  void _filter() {
+    final q = _search.text.trim().toLowerCase();
+    setState(() {
+      if (q.isEmpty) {
+        _filtered = kCurrencies;
+      } else {
+        _filtered = kCurrencies.where((c) {
+          return c.code.toLowerCase().contains(q) ||
+              c.nameEn.toLowerCase().contains(q) ||
+              c.nameAr.contains(q);
+        }).toList();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.deepGreen,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.all(R.s(context, 14)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          SizedBox(height: R.s(context, 10)),
+          Text(
+            appState.tr('zakatChooseCurrency'),
+            style: TextStyle(
+              fontSize: R.f(context, 14),
+              fontWeight: FontWeight.w700,
+              color: AppColors.softGold,
+            ),
+          ),
+          SizedBox(height: R.s(context, 10)),
+          TextField(
+            controller: _search,
+            style: TextStyle(
+              color: AppColors.cream,
+              fontSize: R.f(context, 13),
+            ),
+            decoration: InputDecoration(
+              hintText: appState.tr('zakatSearchCurrency'),
+              hintStyle: TextStyle(
+                color: AppColors.cream.withValues(alpha: 0.5),
+              ),
+              prefixIcon: const Icon(Icons.search_rounded,
+                  color: AppColors.gold),
+              filled: true,
+              fillColor: Colors.black.withValues(alpha: 0.25),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: R.s(context, 10)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color: AppColors.gold.withValues(alpha: 0.4)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.gold),
+              ),
+            ),
+          ),
+          SizedBox(height: R.s(context, 8)),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: ListView.builder(
+              itemCount: _filtered.length,
+              itemBuilder: (context, i) {
+                final c = _filtered[i];
+                final isSel = c.code == widget.selected;
+                return Padding(
+                  padding: EdgeInsets.only(bottom: R.s(context, 4)),
+                  child: GestureDetector(
+                    onTap: () => widget.onSelect(c.code),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: R.s(context, 10),
+                        vertical: R.s(context, 8),
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSel
+                            ? AppColors.gold.withValues(alpha: 0.2)
+                            : Colors.black.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSel
+                              ? AppColors.gold
+                              : AppColors.gold.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: R.s(context, 42),
+                            alignment: Alignment.center,
+                            child: Text(
+                              c.code,
+                              style: TextStyle(
+                                fontSize: R.f(context, 12),
+                                fontWeight: FontWeight.w800,
+                                color: isSel
+                                    ? AppColors.gold
+                                    : AppColors.cream,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: R.s(context, 6)),
+                          Expanded(
+                            child: Text(
+                              appState.isArabic ? c.nameAr : c.nameEn,
+                              style: TextStyle(
+                                fontSize: R.f(context, 12),
+                                color: isSel
+                                    ? AppColors.gold
+                                    : AppColors.cream,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            c.symbol,
+                            style: TextStyle(
+                              fontSize: R.f(context, 12),
+                              color: AppColors.softGold
+                                  .withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ==================== حالة الأسعار ====================
 class _PriceStatus extends StatelessWidget {
   const _PriceStatus({
     required this.loading,
     required this.failed,
     required this.onRetry,
+    required this.code,
   });
 
   final bool loading;
   final bool failed;
   final VoidCallback onRetry;
+  final String code;
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +494,7 @@ class _PriceStatus extends StatelessWidget {
           Text(
             appState.tr('zakatFetchingPrices'),
             style: TextStyle(
-              fontSize: R.f(context, 10.5),
+              fontSize: R.f(context, 10),
               color: AppColors.cream.withValues(alpha: 0.7),
             ),
           ),
@@ -216,12 +508,12 @@ class _PriceStatus extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.refresh_rounded,
-                color: AppColors.gold, size: R.s(context, 14)),
+                color: AppColors.gold, size: R.s(context, 13)),
             SizedBox(width: R.s(context, 4)),
             Text(
               appState.tr('zakatPriceFailed'),
               style: TextStyle(
-                fontSize: R.f(context, 10.5),
+                fontSize: R.f(context, 10),
                 color: AppColors.gold,
               ),
             ),
@@ -229,20 +521,18 @@ class _PriceStatus extends StatelessWidget {
         ),
       );
     }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.check_circle_rounded,
-            color: AppColors.gold, size: R.s(context, 12)),
-        SizedBox(width: R.s(context, 4)),
-        Text(
-          '${appState.tr('zakatPriceLive')} · ${MetalsService.goldPerGramUsd.toStringAsFixed(2)} \$/g',
-          style: TextStyle(
-            fontSize: R.f(context, 10),
-            color: AppColors.cream.withValues(alpha: 0.6),
-          ),
-        ),
-      ],
+    final goldPerG = MetalsService.goldPerGram(code);
+    final silverPerG = MetalsService.silverPerGram(code);
+    final sym = currencyByCode(code)?.symbol ?? code;
+    return Text(
+      '${appState.tr('zakatLivePrices')} · 1g Au = ${goldPerG.toStringAsFixed(2)} $sym · 1g Ag = ${silverPerG.toStringAsFixed(2)} $sym',
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: R.f(context, 9),
+        color: AppColors.cream.withValues(alpha: 0.6),
+      ),
     );
   }
 }
@@ -298,7 +588,7 @@ class _NumField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.gold, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
         ),
       ),
     );
@@ -313,6 +603,7 @@ class _ResultCard extends StatelessWidget {
     required this.due,
     required this.dueLabel,
     required this.belowNisab,
+    required this.unit,
   });
 
   final String title;
@@ -320,6 +611,7 @@ class _ResultCard extends StatelessWidget {
   final double due;
   final String dueLabel;
   final bool belowNisab;
+  final String unit;
 
   @override
   Widget build(BuildContext context) {
@@ -401,7 +693,7 @@ class _ResultCard extends StatelessWidget {
                 if (showDue) ...[
                   SizedBox(height: R.s(context, 4)),
                   Text(
-                    due.toStringAsFixed(2),
+                    '$unit ${due.toStringAsFixed(2)}',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: R.f(context, 22),
@@ -421,7 +713,9 @@ class _ResultCard extends StatelessWidget {
 
 // ==================== تبويب: المال ====================
 class _MoneyTab extends StatefulWidget {
-  const _MoneyTab();
+  const _MoneyTab({required this.currencyCode});
+
+  final String currencyCode;
 
   @override
   State<_MoneyTab> createState() => _MoneyTabState();
@@ -429,36 +723,20 @@ class _MoneyTab extends StatefulWidget {
 
 class _MoneyTabState extends State<_MoneyTab> {
   final _amount = TextEditingController();
-  final _goldPrice = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _goldPrice.text = MetalsService.goldPerGramUsd.toStringAsFixed(2);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _refreshPrice();
-    });
-  }
-
-  void _refreshPrice() {
-    if (MetalsService.lastFetch != null) {
-      _goldPrice.text = MetalsService.goldPerGramUsd.toStringAsFixed(2);
-      setState(() {});
-    }
-  }
+  double get _amountV => double.tryParse(_amount.text) ?? 0;
+  double get _goldPerG => MetalsService.goldPerGram(widget.currencyCode);
+  double get _nisab => 85 * _goldPerG;
+  bool get _reached => _amountV >= _nisab && _nisab > 0;
+  double get _due => _reached ? _amountV * 0.025 : 0;
+  String get _symbol =>
+      currencyByCode(widget.currencyCode)?.symbol ?? widget.currencyCode;
 
   @override
   void dispose() {
     _amount.dispose();
-    _goldPrice.dispose();
     super.dispose();
   }
-
-  double get _amountV => double.tryParse(_amount.text) ?? 0;
-  double get _goldPriceV => double.tryParse(_goldPrice.text) ?? 0;
-  double get _nisab => 85 * _goldPriceV;
-  bool get _reached => _amountV >= _nisab && _nisab > 0;
-  double get _due => _reached ? _amountV * 0.025 : 0;
 
   @override
   Widget build(BuildContext context) {
@@ -468,19 +746,12 @@ class _MoneyTabState extends State<_MoneyTab> {
         _NumField(
           controller: _amount,
           label: appState.tr('zakatMoneyAmount'),
-          suffix: appState.tr('currencyUnit'),
-          onChanged: (_) => setState(() {}),
-        ),
-        SizedBox(height: R.s(context, 10)),
-        _NumField(
-          controller: _goldPrice,
-          label: appState.tr('zakatGoldPrice'),
-          suffix: '/ g',
+          suffix: _symbol,
           onChanged: (_) => setState(() {}),
         ),
         SizedBox(height: R.s(context, 6)),
         Text(
-          appState.tr('zakatMoneyNisabHint'),
+          '${appState.tr('zakatMoneyNisabHint')} · ${_goldPerG.toStringAsFixed(2)} $ _symbol/g',
           style: TextStyle(
             fontSize: R.f(context, 10),
             color: AppColors.cream.withValues(alpha: 0.6),
@@ -492,16 +763,17 @@ class _MoneyTabState extends State<_MoneyTab> {
           rows: [
             MapEntry(
               appState.tr('zakatMoneyAmount'),
-              _amountV.toStringAsFixed(2),
+              '$_symbol ${_amountV.toStringAsFixed(2)}',
             ),
             MapEntry(
               appState.tr('zakatNisab'),
-              _nisab.toStringAsFixed(2),
+              '$_symbol ${_nisab.toStringAsFixed(2)}',
             ),
           ],
           due: _due,
           dueLabel: appState.tr('zakatDueAmount'),
           belowNisab: !_reached,
+          unit: _symbol,
         ),
       ],
     );
@@ -510,7 +782,9 @@ class _MoneyTabState extends State<_MoneyTab> {
 
 // ==================== تبويب: الذهب ====================
 class _GoldTab extends StatefulWidget {
-  const _GoldTab();
+  const _GoldTab({required this.currencyCode});
+
+  final String currencyCode;
 
   @override
   State<_GoldTab> createState() => _GoldTabState();
@@ -518,28 +792,22 @@ class _GoldTab extends StatefulWidget {
 
 class _GoldTabState extends State<_GoldTab> {
   final _weight = TextEditingController();
-  final _price = TextEditingController();
   int _karat = 24;
 
-  @override
-  void initState() {
-    super.initState();
-    _price.text = MetalsService.goldPerGramUsd.toStringAsFixed(2);
-  }
+  double get _weightV => double.tryParse(_weight.text) ?? 0;
+  double get _pricePerG => MetalsService.goldPerGram(widget.currencyCode);
+  double get _pureWeight => _weightV * (_karat / 24.0);
+  double get _value => _weightV * _pricePerG * (_karat / 24.0);
+  bool get _reached => _pureWeight >= 85;
+  double get _due => _reached ? _value * 0.025 : 0;
+  String get _symbol =>
+      currencyByCode(widget.currencyCode)?.symbol ?? widget.currencyCode;
 
   @override
   void dispose() {
     _weight.dispose();
-    _price.dispose();
     super.dispose();
   }
-
-  double get _weightV => double.tryParse(_weight.text) ?? 0;
-  double get _priceV => double.tryParse(_price.text) ?? 0;
-  double get _pureWeight => _weightV * (_karat / 24.0);
-  double get _value => _weightV * _priceV * (_karat / 24.0);
-  bool get _reached => _pureWeight >= 85;
-  double get _due => _reached ? _value * 0.025 : 0;
 
   @override
   Widget build(BuildContext context) {
@@ -553,7 +821,6 @@ class _GoldTabState extends State<_GoldTab> {
           onChanged: (_) => setState(() {}),
         ),
         SizedBox(height: R.s(context, 10)),
-        // اختيار العيار
         Text(
           appState.tr('zakatKarat'),
           style: TextStyle(
@@ -567,13 +834,14 @@ class _GoldTabState extends State<_GoldTab> {
             for (final k in [24, 22, 21, 18, 14])
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: R.s(context, 2)),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: R.s(context, 2)),
                   child: GestureDetector(
                     onTap: () => setState(() => _karat = k),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: EdgeInsets.symmetric(
-                          vertical: R.s(context, 8)),
+                      padding:
+                          EdgeInsets.symmetric(vertical: R.s(context, 8)),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: _karat == k
@@ -600,12 +868,13 @@ class _GoldTabState extends State<_GoldTab> {
               ),
           ],
         ),
-        SizedBox(height: R.s(context, 10)),
-        _NumField(
-          controller: _price,
-          label: appState.tr('zakatGoldPrice24'),
-          suffix: '/ g',
-          onChanged: (_) => setState(() {}),
+        SizedBox(height: R.s(context, 6)),
+        Text(
+          '${appState.tr('zakatLiveGold')} ${_pricePerG.toStringAsFixed(2)} $_symbol/g',
+          style: TextStyle(
+            fontSize: R.f(context, 10),
+            color: AppColors.cream.withValues(alpha: 0.6),
+          ),
         ),
         SizedBox(height: R.s(context, 14)),
         _ResultCard(
@@ -621,12 +890,13 @@ class _GoldTabState extends State<_GoldTab> {
             ),
             MapEntry(
               appState.tr('zakatGoldValue'),
-              _value.toStringAsFixed(2),
+              '$_symbol ${_value.toStringAsFixed(2)}',
             ),
           ],
           due: _due,
           dueLabel: appState.tr('zakatDueAmount'),
           belowNisab: !_reached,
+          unit: _symbol,
         ),
       ],
     );
@@ -635,7 +905,9 @@ class _GoldTabState extends State<_GoldTab> {
 
 // ==================== تبويب: الفضة ====================
 class _SilverTab extends StatefulWidget {
-  const _SilverTab();
+  const _SilverTab({required this.currencyCode});
+
+  final String currencyCode;
 
   @override
   State<_SilverTab> createState() => _SilverTabState();
@@ -643,26 +915,20 @@ class _SilverTab extends StatefulWidget {
 
 class _SilverTabState extends State<_SilverTab> {
   final _weight = TextEditingController();
-  final _price = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _price.text = MetalsService.silverPerGramUsd.toStringAsFixed(3);
-  }
+  double get _weightV => double.tryParse(_weight.text) ?? 0;
+  double get _pricePerG => MetalsService.silverPerGram(widget.currencyCode);
+  double get _value => _weightV * _pricePerG;
+  bool get _reached => _weightV >= 595;
+  double get _due => _reached ? _value * 0.025 : 0;
+  String get _symbol =>
+      currencyByCode(widget.currencyCode)?.symbol ?? widget.currencyCode;
 
   @override
   void dispose() {
     _weight.dispose();
-    _price.dispose();
     super.dispose();
   }
-
-  double get _weightV => double.tryParse(_weight.text) ?? 0;
-  double get _priceV => double.tryParse(_price.text) ?? 0;
-  double get _value => _weightV * _priceV;
-  bool get _reached => _weightV >= 595;
-  double get _due => _reached ? _value * 0.025 : 0;
 
   @override
   Widget build(BuildContext context) {
@@ -675,12 +941,13 @@ class _SilverTabState extends State<_SilverTab> {
           suffix: 'g',
           onChanged: (_) => setState(() {}),
         ),
-        SizedBox(height: R.s(context, 10)),
-        _NumField(
-          controller: _price,
-          label: appState.tr('zakatSilverPrice'),
-          suffix: '/ g',
-          onChanged: (_) => setState(() {}),
+        SizedBox(height: R.s(context, 6)),
+        Text(
+          '${appState.tr('zakatLiveSilver')} ${_pricePerG.toStringAsFixed(3)} $_symbol/g',
+          style: TextStyle(
+            fontSize: R.f(context, 10),
+            color: AppColors.cream.withValues(alpha: 0.6),
+          ),
         ),
         SizedBox(height: R.s(context, 14)),
         _ResultCard(
@@ -692,12 +959,13 @@ class _SilverTabState extends State<_SilverTab> {
             ),
             MapEntry(
               appState.tr('zakatSilverValue'),
-              _value.toStringAsFixed(2),
+              '$_symbol ${_value.toStringAsFixed(2)}',
             ),
           ],
           due: _due,
           dueLabel: appState.tr('zakatDueAmount'),
           belowNisab: !_reached,
+          unit: _symbol,
         ),
       ],
     );
@@ -716,17 +984,15 @@ class _CropsTabState extends State<_CropsTab> {
   final _weight = TextEditingController();
   bool _rainFed = true;
 
+  double get _weightV => double.tryParse(_weight.text) ?? 0;
+  bool get _reached => _weightV >= 653;
+  double get _due => _reached ? _weightV * (_rainFed ? 0.10 : 0.05) : 0;
+
   @override
   void dispose() {
     _weight.dispose();
     super.dispose();
   }
-
-  double get _weightV => double.tryParse(_weight.text) ?? 0;
-  bool get _reached => _weightV >= 653;
-  double get _due => _reached
-      ? _weightV * (_rainFed ? 0.10 : 0.05)
-      : 0;
 
   @override
   Widget build(BuildContext context) {
@@ -777,10 +1043,7 @@ class _CropsTabState extends State<_CropsTab> {
         _ResultCard(
           title: appState.tr('zakatResult'),
           rows: [
-            MapEntry(
-              appState.tr('zakatNisab'),
-              '653.00 kg',
-            ),
+            MapEntry(appState.tr('zakatNisab'), '653.00 kg'),
             MapEntry(
               appState.tr('zakatCropWeight'),
               '${_weightV.toStringAsFixed(2)} kg',
@@ -793,6 +1056,7 @@ class _CropsTabState extends State<_CropsTab> {
           due: _due,
           dueLabel: appState.tr('zakatDueWeight'),
           belowNisab: !_reached,
+          unit: 'kg',
         ),
       ],
     );
@@ -880,15 +1144,17 @@ class _LivestockTabState extends State<_LivestockTab> {
         if (_n <= 120) return '1 ${appState.tr('zakatSheep')}';
         if (_n <= 200) return '2 ${appState.tr('zakatSheep')}';
         if (_n <= 399) return '3 ${appState.tr('zakatSheep')}';
-        final hundreds = _n ~/ 100;
-        return '$hundreds ${appState.tr('zakatSheep')}';
+        return '${_n ~/ 100} ${appState.tr('zakatSheep')}';
       case 'cow':
         if (_n < 30) return appState.tr('zakatNoZakat');
-        if (_n <= 39) return '1 ${appState.tr('zakatCalf')} (${appState.tr('zakatTabii')})';
-        if (_n <= 59) return '1 ${appState.tr('zakatCalf')} (${appState.tr('zakatMusinnah')})';
+        if (_n <= 39) {
+          return '1 ${appState.tr('zakatCalf')} (${appState.tr('zakatTabii')})';
+        }
+        if (_n <= 59) {
+          return '1 ${appState.tr('zakatCalf')} (${appState.tr('zakatMusinnah')})';
+        }
         if (_n <= 69) return '2 ${appState.tr('zakatCalf')}';
-        final extra = (_n - 60) ~/ 30;
-        return '${2 + extra} ${appState.tr('zakatCalf')}';
+        return '${2 + (_n - 60) ~/ 30} ${appState.tr('zakatCalf')}';
       case 'camel':
         if (_n < 5) return appState.tr('zakatNoZakat');
         if (_n <= 24) return '1 ${appState.tr('zakatSheep')}';
@@ -898,8 +1164,7 @@ class _LivestockTabState extends State<_LivestockTab> {
         if (_n <= 75) return '1 ${appState.tr('zakatJadhah')}';
         if (_n <= 90) return '2 ${appState.tr('zakatBintLabun')}';
         if (_n <= 120) return '2 ${appState.tr('zakatHiqqah')}';
-        final hundreds = _n ~/ 50;
-        return '$hundreds ${appState.tr('zakatHiqqah')}';
+        return '${_n ~/ 50} ${appState.tr('zakatHiqqah')}';
     }
     return '—';
   }
