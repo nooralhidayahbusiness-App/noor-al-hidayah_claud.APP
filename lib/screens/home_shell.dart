@@ -114,6 +114,19 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
+class _TabData {
+  const _TabData({
+    this.icon,
+    this.activeIcon,
+    this.assetIcon,
+    required this.label,
+  });
+  final IconData? icon;
+  final IconData? activeIcon;
+  final String? assetIcon;
+  final String label;
+}
+
 class _BottomBar extends StatelessWidget {
   const _BottomBar({required this.index, required this.onSelected});
 
@@ -126,98 +139,131 @@ class _BottomBar extends StatelessWidget {
       listenable: themeState,
       builder: (context, _) {
         final accent = themeState.palette.accentLight;
-        final barHeight = R.s(context, 68);
-        final iconSize = R.s(context, 25);
-        final labelSize = R.f(context, 10.5);
+        final iconSize = R.s(context, 24);
+        final labelSize = R.f(context, 10);
+        final barHeight = R.s(context, 62);
+
+        final tabs = <_TabData>[
+          _TabData(
+            icon: Icons.home_outlined,
+            activeIcon: Icons.home_rounded,
+            label: appState.tr('tabHome'),
+          ),
+          _TabData(
+            icon: Icons.menu_book_outlined,
+            activeIcon: Icons.menu_book_rounded,
+            label: appState.tr('tabQuran'),
+          ),
+          _TabData(
+            icon: Icons.auto_stories_outlined,
+            activeIcon: Icons.auto_stories_rounded,
+            label: appState.tr('tabAdhkar'),
+          ),
+          _TabData(
+            assetIcon: 'assets/icons/challenge.png',
+            label: appState.tr('tabChallenge'),
+          ),
+          _TabData(
+            assetIcon: 'assets/icons/community.png',
+            label: appState.tr('tabCommunity'),
+          ),
+          _TabData(
+            assetIcon: 'assets/icons/more.png',
+            label: appState.tr('tabMore'),
+          ),
+        ];
 
         return DecoratedBox(
           decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.94),
             border: Border(
               top: BorderSide(
                   color: AppColors.gold.withValues(alpha: 0.3)),
             ),
           ),
-          child: NavigationBarTheme(
-            data: NavigationBarThemeData(
-              height: barHeight,
-              backgroundColor: accent.withValues(alpha: 0.94),
-              surfaceTintColor: Colors.transparent,
-              indicatorColor: AppColors.gold.withValues(alpha: 0.18),
-              iconTheme: WidgetStateProperty.resolveWith(
-                (states) => IconThemeData(
-                  size: iconSize,
-                  color: states.contains(WidgetState.selected)
-                      ? AppColors.gold
-                      : AppColors.softGold.withValues(alpha: 0.7),
-                ),
-              ),
-              labelTextStyle: WidgetStateProperty.resolveWith(
-                (states) => TextStyle(
-                  fontSize: labelSize,
-                  fontWeight: states.contains(WidgetState.selected)
-                      ? FontWeight.w700
-                      : FontWeight.w500,
-                  color: states.contains(WidgetState.selected)
-                      ? AppColors.gold
-                      : AppColors.softGold.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-            child: NavigationBar(
-              selectedIndex: index,
-              onDestinationSelected: onSelected,
-              labelBehavior:
-                  NavigationDestinationLabelBehavior.alwaysShow,
-              destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.home_outlined),
-                  selectedIcon: const Icon(Icons.home_rounded),
-                  label: appState.tr('tabHome'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.menu_book_outlined),
-                  selectedIcon: const Icon(Icons.menu_book_rounded),
-                  label: appState.tr('tabQuran'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.auto_stories_outlined),
-                  selectedIcon: const Icon(Icons.auto_stories_rounded),
-                  label: appState.tr('tabAdhkar'),
-                ),
-                NavigationDestination(
-                  icon: AssetIcon(
-                    path: 'assets/icons/challenge.png',
-                    size: R.s(context, 25),
-                    opacity: 0.75,
+          child: SizedBox(
+            height: barHeight,
+            child: Row(
+              children: [
+                for (int i = 0; i < tabs.length; i++)
+                  Expanded(
+                    child: _BottomTab(
+                      data: tabs[i],
+                      selected: i == index,
+                      iconSize: iconSize,
+                      labelSize: labelSize,
+                      onTap: () => onSelected(i),
+                    ),
                   ),
-                  selectedIcon: AssetIcon(
-                    path: 'assets/icons/challenge.png',
-                    size: R.s(context, 25),
-                  ),
-                  label: appState.tr('tabChallenge'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.groups_outlined),
-                  selectedIcon: const Icon(Icons.groups_rounded),
-                  label: appState.tr('tabCommunity'),
-                ),
-                NavigationDestination(
-                  icon: AssetIcon(
-                    path: 'assets/icons/more.png',
-                    size: R.s(context, 25),
-                    opacity: 0.75,
-                  ),
-                  selectedIcon: AssetIcon(
-                    path: 'assets/icons/more.png',
-                    size: R.s(context, 25),
-                  ),
-                  label: appState.tr('tabMore'),
-                ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _BottomTab extends StatelessWidget {
+  const _BottomTab({
+    required this.data,
+    required this.selected,
+    required this.iconSize,
+    required this.labelSize,
+    required this.onTap,
+  });
+
+  final _TabData data;
+  final bool selected;
+  final double iconSize;
+  final double labelSize;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected
+        ? AppColors.gold
+        : AppColors.softGold.withValues(alpha: 0.7);
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (data.assetIcon != null)
+              AssetIcon(
+                path: data.assetIcon!,
+                size: iconSize,
+                opacity: selected ? 1.0 : 0.75,
+              )
+            else
+              Icon(
+                selected
+                    ? (data.activeIcon ?? data.icon)
+                    : data.icon,
+                size: iconSize,
+                color: color,
+              ),
+            const SizedBox(height: 2),
+            Text(
+              data.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: labelSize,
+                fontWeight:
+                    selected ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+                height: 1.1,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
