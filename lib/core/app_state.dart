@@ -194,6 +194,12 @@ const Map<String, String> _ar = {
 'zakatBintLabun': 'بنت لبون',
 'zakatHiqqah': 'حقة',
 'zakatJadhah': 'جذعة',
+// الزكاة — إضافات
+'zakatChooseCurrency': 'اختر العملة',
+'zakatSearchCurrency': 'ابحث عن عملة...',
+'zakatLivePrices': 'أسعار حية',
+'zakatLiveGold': 'سعر جرام الذهب:',
+'zakatLiveSilver': 'سعر جرام الفضة:',
 };
 
 const Map<String, String> _en = {
@@ -361,4 +367,9 @@ const Map<String, String> _en = {
 'zakatBintLabun': 'Bint Labun',
 'zakatHiqqah': 'Hiqqah',
 'zakatJadhah': 'Jadhah',
+'zakatChooseCurrency': 'Choose Currency',
+'zakatSearchCurrency': 'Search currency...',
+'zakatLivePrices': 'Live prices',
+'zakatLiveGold': 'Gold per gram:',
+'zakatLiveSilver': 'Silver per gram:',
 };
