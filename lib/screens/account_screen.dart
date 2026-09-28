@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import '../widgets/themed_background.dart';
+
 import '../core/app_state.dart';
 import '../core/profile_state.dart';
+import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/profile_avatar.dart';
+import '../widgets/themed_background.dart';
 import '../widgets/verified_badge.dart';
 import 'edit_profile_screen.dart';
 
@@ -103,24 +105,31 @@ class _AccountScreenState extends State<AccountScreen> {
 
         return Scaffold(
           body: ThemedBackground(
-  child: SafeArea(
+            child: SafeArea(
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 20, 0),
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      R.s(context, 6),
+                      R.s(context, 6),
+                      R.s(context, 16),
+                      0,
+                    ),
                     child: Row(
                       children: [
                         IconButton(
-                          onPressed: () => Navigator.of(context).maybePop(),
+                          onPressed: () =>
+                              Navigator.of(context).maybePop(),
                           tooltip: appState.tr('back'),
                           color: AppColors.softGold,
+                          iconSize: R.s(context, 22),
                           icon: const Icon(Icons.arrow_back_rounded),
                         ),
                         const Spacer(),
                         Text(
                           appState.tr('account'),
-                          style: const TextStyle(
-                            fontSize: 18,
+                          style: TextStyle(
+                            fontSize: R.f(context, 15),
                             fontWeight: FontWeight.w700,
                             color: AppColors.softGold,
                           ),
@@ -134,19 +143,19 @@ class _AccountScreenState extends State<AccountScreen> {
                             child: CircularProgressIndicator(
                                 color: AppColors.gold))
                         : ListView(
-                            padding: const EdgeInsets.all(20),
+                            padding: EdgeInsets.all(R.s(context, 16)),
                             children: [
                               _buildHeader(user?.email ?? ''),
-                              const SizedBox(height: 20),
+                              SizedBox(height: R.s(context, 14)),
                               _buildStatsGrid(points, level, streak),
-                              const SizedBox(height: 16),
+                              SizedBox(height: R.s(context, 12)),
                               _buildLevelProgress(
                                   points, level, nextLevelPoints, progress),
-                              const SizedBox(height: 20),
+                              SizedBox(height: R.s(context, 14)),
                               _buildActions(),
-                              const SizedBox(height: 20),
+                              SizedBox(height: R.s(context, 14)),
                               _buildSignOut(),
-                              const SizedBox(height: 20),
+                              SizedBox(height: R.s(context, 14)),
                             ],
                           ),
                   ),
@@ -164,37 +173,54 @@ class _AccountScreenState extends State<AccountScreen> {
     return GlassCard(
       child: Column(
         children: [
-          ProfileAvatar(email: email, avatar: avatar, size: 100),
-          const SizedBox(height: 8),
+          ProfileAvatar(
+            email: email,
+            avatar: avatar,
+            size: R.s(context, 78),
+          ),
+          SizedBox(height: R.s(context, 8)),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                profileState.name.isEmpty
-                    ? appState.tr('noName')
-                    : profileState.name,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.softGold,
+              Flexible(
+                child: Text(
+                  profileState.name.isEmpty
+                      ? appState.tr('noName')
+                      : profileState.name,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: R.f(context, 17),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.softGold,
+                    height: 1.25,
+                  ),
                 ),
               ),
-              const SizedBox(width: 6),
-              VerifiedBadge(type: _verifiedType(), size: 22),
+              SizedBox(width: R.s(context, 5)),
+              VerifiedBadge(type: _verifiedType(), size: R.s(context, 16)),
             ],
           ),
           if (profileState.bio.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              profileState.bio,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.cream.withValues(alpha: 0.75),
+            SizedBox(height: R.s(context, 5)),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: R.s(context, 8)),
+              child: Text(
+                profileState.bio,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: R.f(context, 11.5),
+                  height: 1.4,
+                  color: AppColors.cream.withValues(alpha: 0.75),
+                ),
               ),
             ),
           ],
-          const SizedBox(height: 8),
+          SizedBox(height: R.s(context, 6)),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -202,25 +228,31 @@ class _AccountScreenState extends State<AccountScreen> {
                 profileState.isPublic
                     ? Icons.public_rounded
                     : Icons.lock_outline_rounded,
-                size: 14,
+                size: R.s(context, 12),
                 color: AppColors.gold.withValues(alpha: 0.8),
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: R.s(context, 3)),
               Text(
                 appState.tr(profileState.isPublic ? 'public' : 'private'),
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: R.f(context, 10.5),
                   color: AppColors.cream.withValues(alpha: 0.6),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            email,
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.cream.withValues(alpha: 0.55),
+          SizedBox(height: R.s(context, 3)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: R.s(context, 8)),
+            child: Text(
+              email,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: R.f(context, 11),
+                color: AppColors.cream.withValues(alpha: 0.55),
+              ),
             ),
           ),
         ],
@@ -237,14 +269,14 @@ class _AccountScreenState extends State<AccountScreen> {
           label: appState.tr('points'),
           value: '$points',
         )),
-        const SizedBox(width: 12),
+        SizedBox(width: R.s(context, 8)),
         Expanded(
             child: _StatCard(
           icon: Icons.military_tech_rounded,
           label: appState.tr('level'),
           value: '$level',
         )),
-        const SizedBox(width: 12),
+        SizedBox(width: R.s(context, 8)),
         Expanded(
             child: _StatCard(
           icon: Icons.local_fire_department_rounded,
@@ -263,33 +295,36 @@ class _AccountScreenState extends State<AccountScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.trending_up_rounded,
-                  color: AppColors.gold, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                appState.tr('levelProgress'),
-                style: const TextStyle(
-                  color: AppColors.softGold,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
+              Icon(Icons.trending_up_rounded,
+                  color: AppColors.gold, size: R.s(context, 16)),
+              SizedBox(width: R.s(context, 6)),
+              Expanded(
+                child: Text(
+                  appState.tr('levelProgress'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.softGold,
+                    fontWeight: FontWeight.w700,
+                    fontSize: R.f(context, 12),
+                  ),
                 ),
               ),
-              const Spacer(),
               Text(
                 '$points / $nextLevelPoints',
                 style: TextStyle(
                   color: AppColors.cream.withValues(alpha: 0.75),
-                  fontSize: 13,
+                  fontSize: R.f(context, 11),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: R.s(context, 8)),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: progress,
-              minHeight: 10,
+              minHeight: R.s(context, 8),
               backgroundColor: Colors.black.withValues(alpha: 0.3),
               valueColor: const AlwaysStoppedAnimation(AppColors.gold),
             ),
@@ -308,7 +343,8 @@ class _AccountScreenState extends State<AccountScreen> {
             title: appState.tr('editProfile'),
             onTap: () async {
               await Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                MaterialPageRoute(
+                    builder: (_) => const EditProfileScreen()),
               );
               await _load();
             },
@@ -346,21 +382,24 @@ class _StatCard extends StatelessWidget {
     return GlassCard(
       child: Column(
         children: [
-          Icon(icon, color: AppColors.gold, size: 28),
-          const SizedBox(height: 8),
+          Icon(icon, color: AppColors.gold, size: R.s(context, 22)),
+          SizedBox(height: R.s(context, 6)),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 22,
+            style: TextStyle(
+              fontSize: R.f(context, 17),
               fontWeight: FontWeight.w700,
               color: AppColors.softGold,
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: R.s(context, 2)),
           Text(
             label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: R.f(context, 10),
               color: AppColors.cream.withValues(alpha: 0.7),
             ),
           ),
@@ -390,22 +429,28 @@ class _ActionRow extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        padding: EdgeInsets.symmetric(
+          horizontal: R.s(context, 6),
+          vertical: R.s(context, 12),
+        ),
         child: Row(
           children: [
-            Icon(icon, color: c, size: 22),
-            const SizedBox(width: 14),
+            Icon(icon, color: c, size: R.s(context, 18)),
+            SizedBox(width: R.s(context, 12)),
             Expanded(
               child: Text(
                 title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: R.f(context, 13),
                   fontWeight: FontWeight.w600,
                   color: color ?? AppColors.cream,
                 ),
               ),
             ),
             Icon(Icons.chevron_right_rounded,
+                size: R.s(context, 18),
                 color: AppColors.softGold.withValues(alpha: 0.7)),
           ],
         ),
