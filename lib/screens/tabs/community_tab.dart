@@ -67,6 +67,7 @@ class _CommunityTabState extends State<CommunityTab> {
                         icon: Icons.groups_rounded,
                         titleKey: 'tabCommunity',
                         messageKey: 'communitySoon',
+                        imagePath: 'assets/icons/community.png',
                       )
                     : const ChannelView(key: ValueKey('channel')),
               ),
