@@ -22,6 +22,7 @@ import '../duas_screen.dart';
 import '../khatm_plan_screen.dart';
 import '../haram_screen.dart';
 import '../qibla_screen.dart';
+import '../mosques_screen.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
@@ -155,12 +156,13 @@ class HomeTab extends StatelessWidget {
                ),
                 _QuickTile(
                   label: appState.tr('nearbyMosques'),
-                  onTap: soon,
+                  onTap: () => Navigator.of(context)
+                      .push(fadeRoute(const MosquesScreen())),
                   symbol: const SymbolImage(
                     'assets/images/mosque.png',
                     fallback: Icons.mosque_rounded,
                     tint: true,
-                  ),
+                   ),
                 ),
                 _QuickTile(
                   label: appState.tr('khatmPlan'),
