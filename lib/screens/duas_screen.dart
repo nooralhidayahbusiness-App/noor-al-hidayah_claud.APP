@@ -4,7 +4,9 @@ import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../data/duas.dart';
+import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/themed_background.dart';
 import 'duas_detail_screen.dart';
 
 class DuasScreen extends StatelessWidget {
@@ -15,38 +17,79 @@ class DuasScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
-        return ListView(
-          padding: EdgeInsets.fromLTRB(
-            R.s(context, 16),
-            R.s(context, 4),
-            R.s(context, 16),
-            R.s(context, 20),
+        return Scaffold(
+          body: ThemedBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // ===== الهيدر =====
+                  Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      R.s(context, 6),
+                      R.s(context, 6),
+                      R.s(context, 16),
+                      0,
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () =>
+                              Navigator.of(context).maybePop(),
+                          tooltip: appState.tr('back'),
+                          color: AppColors.softGold,
+                          iconSize: R.s(context, 22),
+                          icon: const Icon(Icons.arrow_back_rounded),
+                        ),
+                        const Spacer(),
+                        Text(
+                          appState.tr('duas'),
+                          style: TextStyle(
+                            fontSize: R.f(context, 15),
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.softGold,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const AuthLanguageButton(),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: R.s(context, 6)),
+
+                  // ===== المحتوى =====
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        R.s(context, 16),
+                        R.s(context, 4),
+                        R.s(context, 16),
+                        R.s(context, 20),
+                      ),
+                      children: [
+                        Text(
+                          appState.tr('duasSubtitle'),
+                          style: TextStyle(
+                            fontSize: R.f(context, 12),
+                            color:
+                                AppColors.cream.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        SizedBox(height: R.s(context, 14)),
+                        ...kDuaCategories.map(
+                          (cat) => Padding(
+                            padding: EdgeInsets.only(
+                                bottom: R.s(context, 10)),
+                            child: _CategoryCard(category: cat),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          children: [
-            Text(
-              appState.tr('duas'),
-              style: TextStyle(
-                fontSize: R.f(context, 22),
-                fontWeight: FontWeight.w700,
-                color: AppColors.softGold,
-              ),
-            ),
-            SizedBox(height: R.s(context, 4)),
-            Text(
-              appState.tr('duasSubtitle'),
-              style: TextStyle(
-                fontSize: R.f(context, 12),
-                color: AppColors.cream.withValues(alpha: 0.7),
-              ),
-            ),
-            SizedBox(height: R.s(context, 14)),
-            ...kDuaCategories.map(
-              (cat) => Padding(
-                padding: EdgeInsets.only(bottom: R.s(context, 10)),
-                child: _CategoryCard(category: cat),
-              ),
-            ),
-          ],
         );
       },
     );
