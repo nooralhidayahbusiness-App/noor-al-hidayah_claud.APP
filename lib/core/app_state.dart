@@ -234,6 +234,12 @@ const Map<String, String> _ar = {
 'makruh': 'المكروهات',
 'makruhSubtitle': 'ما يُكره شرعاً — تركه أفضل',
 'evidence': 'الدليل',
+'qiblaNeedLocation': 'يجب تحديد موقعك أولاً لاستخدام البوصلة.',
+'qiblaNoSensor': 'الحساس غير متوفر — استخدم الاتجاه المعروض.',
+'qiblaAligned': '🎉 أنت متجه إلى القبلة!',
+'qiblaRotate': 'أدر جهازك حتى يشير السهم للأعلى',
+'qiblaAngle': 'اتجاه القبلة',
+'qiblaDistance': 'المسافة إلى مكة',
 };
 
 const Map<String, String> _en = {
@@ -440,4 +446,10 @@ const Map<String, String> _en = {
 'makruh': 'Disliked Matters',
 'makruhSubtitle': 'What is disliked in Islam — avoiding is better',
 'evidence': 'Evidence',
+'qiblaNeedLocation': 'You must set your location first to use the compass.',
+'qiblaNoSensor': 'Sensor unavailable — use the displayed direction.',
+'qiblaAligned': '🎉 You are facing the Qibla!',
+'qiblaRotate': 'Rotate your device until the arrow points up',
+'qiblaAngle': 'Qibla direction',
+'qiblaDistance': 'Distance to Makkah',
 };
