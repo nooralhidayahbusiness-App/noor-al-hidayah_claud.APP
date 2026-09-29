@@ -59,11 +59,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           (notifs['adhanBeforeMinutes'] as num?)?.toInt() ?? 0;
       if (mounted) {
         setState(() {
-          _settings = s;
-          _notifications = loaded;
-          _adhanBeforeMinutes = before;
-          _loading = false;
-        });
+  _notifications = loaded;
+  _adhanBeforeMinutes = before;
+  _loading = false;
+});
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
