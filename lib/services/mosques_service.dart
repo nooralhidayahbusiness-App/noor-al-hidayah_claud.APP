@@ -138,24 +138,20 @@ out center tags;
   }
 
   /// الاتجاه بالدرجات من الشمال.
-  double _bearing({
-    required double lat1,
-    required double lng1,
-    required double lat2,
-    required double lng2,
-  }) {
-    final φ1 = _toRad(lat1);
-    final φ2 = _toRad(lat2);
-    final Δλ = _toRad(lng2 - lng1);
-    final y = math.sin(Δλ) * math.cos(φ2);
-    final x = math.cos(φ1) * math.sin(φ2) -
-        math.sin(φ1) * math.cos(φ2) * math.cos(Δλ);
-    final θ = math.atan2(y, x);
-    return (_toDeg(θ) + 360) % 360;
-  }
-
-  double _toRad(double d) => d * math.pi / 180.0;
-  double _toDeg(double r) => r * 180.0 / math.pi;
+double _bearing({
+  required double lat1,
+  required double lng1,
+  required double lat2,
+  required double lng2,
+}) {
+  final phi1 = _toRad(lat1);
+  final phi2 = _toRad(lat2);
+  final deltaLambda = _toRad(lng2 - lng1);
+  final y = math.sin(deltaLambda) * math.cos(phi2);
+  final x = math.cos(phi1) * math.sin(phi2) -
+      math.sin(phi1) * math.cos(phi2) * math.cos(deltaLambda);
+  final theta = math.atan2(y, x);
+  return (_toDeg(theta) + 360) % 360;
 }
 
 final mosquesService = MosquesService.instance;
