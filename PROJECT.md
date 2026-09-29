@@ -1,13 +1,13 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-29 | **الإصدار:** Beta 1.0
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-29 | **الإصدار:** Beta 1.1
 
 ---
 
 ## 📌 نظرة عامة
 
 ### التقنيات
-- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API**.
+- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API** + **flutter_compass**.
 - **Codespaces + GitHub** للتطوير، **GitHub Pages** للنشر.
 
 ### المالك
@@ -67,7 +67,8 @@ lib/
 │   ├── auth_service, user_service, storage_service
 │   ├── location_service, quran_audio_service, tafsir_service, share_service
 │   ├── metals_service          (أسعار الذهب/الفضة/الصرف + cache)
-│   └── khatm_service           (خطة ختم القرآن)
+│   ├── khatm_service           (خطة ختم القرآن)
+│   └── qibla_service           (اتجاه القبلة + المسافة إلى مكة)
 ├── screens/
 │   ├── splash (Auto-login), welcome, login, register, location
 │   ├── home_shell               (شريط سفلي مخصص + SafeArea)
@@ -80,6 +81,7 @@ lib/
 │   ├── zakat_screen
 │   ├── khatm_plan_screen
 │   ├── haram_screen, prohibition_detail_screen
+│   ├── qibla_screen
 │   └── tabs/
 │       ├── home_tab, quran_browser_tab, community_tab, more_tab
 │       └── soon_tabs
@@ -201,7 +203,15 @@ service cloud.firestore {
 - [x] كل بند فيه: عنوان + وصف + دليل + مرجع.
 - [x] نسخ + مشاركة لكل بند.
 
-### 16) الإسناد
+### 16) القبلة (Qibla)
+- [x] شاشة كاملة مع بوصلة + سهم اتجاه.
+- [x] حساب الزاوية رياضياً (`QiblaService`).
+- [x] المسافة إلى مكة بـ Haversine.
+- [x] مؤشر بصري (N/E/S/W) + علامات درجات.
+- [x] تنبيه عند عدم توفر الحساس (للويب).
+- [x] يعمل على الجوال بحساس البوصلة.
+
+### 17) الإسناد
 - [x] قسم Flaticon في تبويب المزيد
 
 ---
@@ -209,8 +219,7 @@ service cloud.firestore {
 ## ⏳ قيد التنفيذ
 
 ### 🔥 الأولوية القادمة
-1. [ ] **القبلة (Qibla)** — بوصلة ← التالي
-2. [ ] **المساجد القريبة (Nearby Mosques)** — خريطة
+1. [ ] **المساجد القريبة (Nearby Mosques)** — خريطة OpenStreetMap + Overpass API ← التالي
 
 ### لاحقاً
 - [ ] شاشة الإعدادات الكاملة
@@ -234,6 +243,7 @@ service cloud.firestore {
 ### APIs خارجية (مجانية، بدون مفتاح)
 - **أسعار الذهب/الفضة:** `https://data-asg.goldprice.org/dbXRates/USD`
 - **أسعار الصرف:** `https://open.er-api.com/v6/USD`
+- **المساجد القريبة:** `https://overpass-api.de/api/interpreter` (قريباً)
 
 ### أصول الصور
 **assets/icons/**: Setting, challenge, coupon, more, store, community, true.me, true.users, adhan  
@@ -249,6 +259,9 @@ flutter:
     - assets/images/
     - assets/images/backgrounds/
 ```
+
+**Dependencies المهمة:**
+`firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`, `flutter_compass`, `flutter_map` (قريباً), `latlong2` (قريباً).
 
 ### Git Workflow
 ```
@@ -272,20 +285,20 @@ git add . && git commit -m "..." && git push
 
 ## 🙏 شكر وتقدير
 
-بعض الأيقونات من [Flaticon](https://www.flaticon.com/) — Icon made by Flaticon.
+بعض الأيقونات من [Flaticon](https://www.flaticon.com/) — Icon made by Flaticon from www.flaticon.com.
 
 ---
 
 ## 🎯 قواعد للمطور الجديد
 
 1. `flutter analyze` = "No issues found" قبل أي تعديل.
-2. **استبدال كامل**.
-3. ألوان → `ThemedColors`.
+2. **استبدال كامل** — لا تعديل بالقطع.
+3. ألوان → `ThemedColors` (لا `AppColors`).
 4. أحجام → `R.s()` / `R.f()`.
 5. Firestore تحت `users/{uid}`.
 6. `UserService` + `AuthService`.
-7. الترجمات في `app_state.dart`.
-8. الصور في `assets/`.
+7. الترجمات في `app_state.dart` (`_ar` + `_en`).
+8. الصور في `assets/` → تحديث `pubspec.yaml`.
 9. ⚠️ تجنّب تكرار الأحرف العربية في `currencies.dart`.
 10. اختبار: `flutter analyze` + `bash tool/preview.sh`.
 
@@ -302,7 +315,7 @@ git add . && git commit -m "..." && git push
 - abdelrahmenbenromdhan11@gmail.com
 - vevocom888@gmail.com
 
-**إيميلات العمل:**
+**إيميلات العمل (Business):**
 - nooralhidayahbusiness@gmail.com
 - nooralimanechannel@gmail.com
 
@@ -312,7 +325,7 @@ git add . && git commit -m "..." && git push
 
 ## 🛠️ طريقة العمل بين المالك و AI (Workflow)
 
-> ⚠️ قسم دائم — لا يُحذف أبداً.
+> ⚠️ قسم دائم — لا يُحذف أبداً عند تحديث `PROJECT.md`.
 
 ### المبادئ
 1. ملف واحد لكل ميزة.
@@ -334,6 +347,12 @@ git add . && git commit -m "..." && git push
 - **ملف Flutter:** Add file → Create new file → الصق → Commit.
 - **صورة:** Add file → Upload files → المجلد → حدّث `pubspec.yaml`.
 
+### تحديث `PROJECT.md`
+1. أضف `- [x]` في "المنجز".
+2. احذف البند من "قيد التنفيذ".
+3. حدّث "آخر تحديث" + "الإصدار".
+4. ⚠️ لا تحذف قسم Workflow.
+
 ### حل مشكلة Codespaces (نفاد الذاكرة)
 ```
 pkill -f flutter ; pkill -f dart
@@ -347,5 +366,8 @@ flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8095 --web-renderer 
 1. لا حفظ بدون اختبار.
 2. لا استبدال جزئي.
 3. لا انتقال بدون تحديث `PROJECT.md`.
+
+### إذا حصل خطأ
+أوقف → انسخ الخطأ كامل + صورة + اسم الملف → أرسل للـ AI → أعد من الخطوة 2.
 
 **آخر تحديث لهذا القسم:** 2026-09-29 — ثابت ولا يُحذف.
