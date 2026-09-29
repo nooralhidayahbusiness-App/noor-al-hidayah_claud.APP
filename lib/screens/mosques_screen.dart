@@ -10,7 +10,6 @@ import '../core/theme.dart';
 import '../models/mosque.dart';
 import '../services/mosques_service.dart';
 import '../widgets/auth_widgets.dart';
-import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
 
 class MosquesScreen extends StatefulWidget {
