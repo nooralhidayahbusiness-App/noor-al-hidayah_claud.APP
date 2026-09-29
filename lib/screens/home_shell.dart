@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'settings_screen.dart';
 import '../core/app_flow.dart';
 import '../core/app_state.dart';
 import '../core/prayer_state.dart';
@@ -69,19 +69,18 @@ class _HomeShellState extends State<HomeShell> {
                         ),
                         const Spacer(),
                         IconButton(
-                          onPressed: () {
-                            showAuthMessage(
-                              context,
-                              appState.tr('comingSoon'),
-                            );
-                          },
-                          tooltip: appState.tr('settings'),
-                          iconSize: R.s(context, 26),
-                          icon: const AssetIcon(
-                            path: 'assets/icons/Setting.png',
-                            size: 26,
-                          ),
-                        ),
+  onPressed: () => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => const SettingsScreen(),
+    ),
+  ),
+  tooltip: appState.tr('settings'),
+  iconSize: R.s(context, 26),
+  icon: const AssetIcon(
+    path: 'assets/icons/Setting.png',
+    size: 26,
+  ),
+),
                         const SizedBox(width: 4),
                         const AuthLanguageButton(),
                       ],
