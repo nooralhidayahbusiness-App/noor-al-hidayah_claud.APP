@@ -53,7 +53,6 @@ dependencies:
   flutter_compass: ^0.8.1
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
-  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
