@@ -20,6 +20,7 @@ import '../prayer_times_page.dart';
 import '../hadith_page.dart';
 import '../duas_screen.dart';
 import '../khatm_plan_screen.dart';
+import '../haram_screen.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
@@ -180,22 +181,24 @@ class HomeTab extends StatelessWidget {
                   ),
                 _QuickTile(
                   label: appState.tr('haram'),
-                  onTap: soon,
+                  onTap: () => Navigator.of(context)
+                      .push(fadeRoute(const HaramScreen())),
                   symbol: const SymbolImage(
                     'assets/images/haram.png',
                     fallback: Icons.block_rounded,
                     tint: true,
+                    ),
                   ),
-                ),
-                _QuickTile(
-                  label: appState.tr('makruh'),
-                  onTap: soon,
-                  symbol: const SymbolImage(
-                    'assets/images/stop.png',
-                    fallback: Icons.warning_amber_rounded,
-                    tint: true,
-                  ),
-                ),
+               _QuickTile(
+                 label: appState.tr('makruh'),
+                 onTap: () => Navigator.of(context)
+                     .push(fadeRoute(const MakruhScreen())),
+                 symbol: const SymbolImage(
+                   'assets/images/stop.png',
+                   fallback: Icons.warning_amber_rounded,
+                   tint: true,
+                   ),
+                 ),
               ],
             ),
             SizedBox(height: R.s(context, 18)),
