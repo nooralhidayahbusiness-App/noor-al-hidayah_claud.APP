@@ -1,6 +1,6 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-28 | **الإصدار:** Beta 0.7
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-29 | **الإصدار:** Beta 0.8
 
 ---
 
@@ -56,7 +56,8 @@ lib/
 ├── data/
 │   ├── questions                (~55 سؤال)
 │   ├── adhkar                   (7 أقسام، ~60 ذكر)
-│   ├── currencies               (160+ عملة + كشف من الموقع)
+│   ├── duas                     (7 أقسام، ~60 دعاء)
+│   ├── currencies               (160+ عملة)
 │   └── store_items              (10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات)
 ├── models/
 │   ├── quran, saved_location
@@ -71,6 +72,7 @@ lib/
 │   ├── challenge, challenge_play, challenge_result
 │   ├── store, my_purchases
 │   ├── adhkar_screen, adhkar_detail_screen
+│   ├── duas_screen, duas_detail_screen
 │   ├── tasbeeh_screen
 │   ├── zakat_screen
 │   └── tabs/
@@ -156,7 +158,7 @@ service cloud.firestore {
 - [x] GlassCard/StarBadge/OrnamentMedallion/SymbolImage theme-aware
 
 ### 7) الأحجام المتجاوبة
-- [x] welcome / home_tab / home_shell / account / AI card / prayer card / tasbeeh / zakat
+- [x] كل الشاشات responsive
 
 ### 8) الشريط السفلي
 - [x] SafeArea (لا يلمس أزرار الهاتف)
@@ -173,46 +175,45 @@ service cloud.firestore {
 - [x] الضغط = عد، ضغط مطول = إعادة
 
 ### 11) التسبيح
-- [x] شاشة كاملة مع عدّاد دائري + نبض عند كل ضغطة + haptic
-- [x] اختيار الذكر (7 خيارات)
-- [x] الهدف (33/100/مفتوح)
-- [x] حفظ في Firestore: `progress.tasbeeh` (total + today + target)
-- [x] Wakelock — الشاشة لا تنام
+- [x] شاشة كاملة مع عدّاد دائري + نبض + haptic
+- [x] 7 أذكار + الهدف (33/100/مفتوح) + Wakelock
+- [x] حفظ في Firestore
 
 ### 12) حساب الزكاة (كامل)
-- [x] 5 أنواع: المال + الذهب + الفضة + الزروع + الأنعام
-- [x] 160+ عملة (`lib/data/currencies.dart`)
-- [x] كشف العملة تلقائياً من الموقع
-- [x] أسعار حية للذهب/الفضة (goldprice.org) + أسعار الصرف (open.er-api.com)
-- [x] Cache لمدة 30 دقيقة
-- [x] عيارات الذهب (24/22/21/18/14)
-- [x] زكاة الأنعام (غنم/بقر/إبل) بأنصبتها الشرعية
-- [x] تنبيه: حاسبة تقديرية فقط، ليست مكان صدقة
+- [x] 5 أنواع + 160+ عملة + كشف تلقائي من الموقع
+- [x] أسعار حية للذهب/الفضة + أسعار الصرف + cache 30 دقيقة
+- [x] عيارات الذهب + زكاة الأنعام (غنم/بقر/إبل)
+- [x] تنبيه: حاسبة تقديرية فقط
 
-### 13) الإسناد
+### 13) الأدعية (كامل)
+- [x] بنك أدعية (`lib/data/duas.dart`) — 7 أقسام (~60 دعاء).
+- [x] شاشة رئيسية (ThemedBackground + زر رجوع + زر ترجمة).
+- [x] شاشة تفاصيل ببطاقات + نسخ + مشاركة.
+- [x] الضغط على الزر = نسخ النص للحافظة + رسالة.
+
+### 14) الإسناد
 - [x] قسم Flaticon في تبويب المزيد
 
 ---
 
 ## ⏳ قيد التنفيذ
 
-### 🔥 الأولوية القادمة (من السهل للصعب)
-1. [ ] **الأدعية (Duas)** ← التالي
-2. [ ] **خطة ختم القرآن (Khatm Plan)**
-3. [ ] **المحرمات + المكروهات**
-4. [ ] **القبلة (Qibla)**
-5. [ ] **المساجد القريبة (Nearby Mosques)**
+### 🔥 الأولوية القادمة
+1. [ ] **خطة ختم القرآن (Khatm Plan)** ← التالي
+2. [ ] **المحرمات + المكروهات**
+3. [ ] **القبلة (Qibla)**
+4. [ ] **المساجد القريبة (Nearby Mosques)**
 
 ### لاحقاً
-- [ ] شاشة الإعدادات الكاملة (زر Setting.png)
-- [ ] إشعارات لكل صلاة + تشغيل الأذان + تذكير قبل الأذان
+- [ ] شاشة الإعدادات الكاملة
+- [ ] إشعارات لكل صلاة + الأذان + تذكير
 - [ ] الوضع النهاري/الليلي
 - [ ] زر "وثّق حسابي" للمستخدم العادي
 - [ ] شاشة الأذان (10 مؤذنين)
-- [ ] اللغات: الفرنسية، الأوردو، النيبالية، الإندونيسية، المليزية
+- [ ] اللغات الإضافية
 - [ ] المعلم الذكي (AI) كامل
-- [ ] شاشة المجتمع (نشر + تفاعل)
-- [ ] شاشة "الصدقة" منفصلة (محتوى، بدون روابط)
+- [ ] شاشة المجتمع
+- [ ] شاشة "الصدقة" منفصلة
 
 ---
 
@@ -222,7 +223,7 @@ service cloud.firestore {
 - Project ID: `noor-al-hidayah` | Number: `762471094332`
 - Web App: `1:762471094332:web:68fe063e9282d7441d8b39` | Location: `nam5`
 
-### APIs خارجية (مجانية، بدون مفتاح)
+### APIs خارجية
 - **أسعار الذهب/الفضة:** `https://data-asg.goldprice.org/dbXRates/USD`
 - **أسعار الصرف:** `https://open.er-api.com/v6/USD`
 
@@ -240,7 +241,6 @@ flutter:
     - assets/images/
     - assets/images/backgrounds/
 ```
-Dependencies المهمة: `firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`.
 
 ### Git Workflow
 ```
@@ -250,13 +250,13 @@ git add . && git commit -m "..." && git push
 ```
 
 ### كودات وأصحاب (Owner)
-- **NAH2026** → 1000 نقطة (غير محدود لحسابات المالك، مرة لكل مستخدم آخر).
+- **NAH2026** → 1000 نقطة (غير محدود للمالك، مرة لكل مستخدم).
 
-**الإيميلات الشخصية (تستخدم Me.png + true.me.png):**
+**الإيميلات الشخصية (Me.png + true.me.png):**
 - abdelrahmenbenromdhan11@gmail.com
 - vevocom888@gmail.com
 
-**إيميلات العمل (تستخدم logo.png + true.me.png):**
+**إيميلات العمل (logo.png + true.me.png):**
 - nooralhidayahbusiness@gmail.com
 - nooralimanechannel@gmail.com
 
@@ -264,7 +264,7 @@ git add . && git commit -m "..." && git push
 
 ## 🙏 شكر وتقدير
 
-بعض الأيقونات من [Flaticon](https://www.flaticon.com/) — Icon made by Flaticon from www.flaticon.com. الإسناد معروض في تبويب "المزيد".
+بعض الأيقونات من [Flaticon](https://www.flaticon.com/) — Icon made by Flaticon from www.flaticon.com.
 
 ---
 
@@ -278,7 +278,7 @@ git add . && git commit -m "..." && git push
 6. `UserService` + `AuthService` للـ Firestore.
 7. الترجمات في `app_state.dart` (`_ar` + `_en`).
 8. الصور في `assets/` → تحديث `pubspec.yaml`.
-9. ⚠️ **الأحرف العربية في المحرر:** تجنّب تكرار الكلمات العربية في `currencies.dart` (مشكلة ترميز).
+9. ⚠️ الأحرف العربية في `currencies.dart`: تجنّب التكرار (مشكلة ترميز).
 10. اختبار: `flutter analyze` + `bash tool/preview.sh`.
 
 ### القاعدة الذهبية:
@@ -304,52 +304,40 @@ git add . && git commit -m "..." && git push
 
 ## 🛠️ طريقة العمل بين المالك و AI (Workflow)
 
-> ⚠️ قسم دائم — لا يُحذف أبداً عند تحديث `PROJECT.md`.
+> ⚠️ قسم دائم — لا يُحذف أبداً.
 
 ### المبادئ
 1. ملف واحد لكل ميزة.
-2. **استبدال كامل** — انسخ الملف كامل واستبدل القديم.
+2. **استبدال كامل**.
 3. لا حفظ قبل `flutter analyze` = `No issues found!` + اختبار.
 4. `PROJECT.md` يُحدّث بعد كل ميزة.
 5. خطوات صغيرة.
 
 ### دورة العمل
-**1.** AI يشرح + يعطي الكود (كامل، "ملف جديد" أو "استبدل").  
-**2.** المالك ينسخ في GitHub:
-   - ملف جديد: Add file → Create new file → الصق → Commit.
-   - ملف موجود: افتحه → القلم ✏️ → Select All → Delete → الصق → Commit.  
-**3.** Terminal: `git pull` → `flutter analyze` (يجب "No issues found!").  
+**1.** AI يشرح + يعطي الكود كامل.  
+**2.** المالك ينسخ في GitHub → Commit.  
+**3.** Terminal: `git pull` → `flutter analyze`.  
 **4.** اختبار: `bash tool/preview.sh`.  
-**5.** حفظ: `git add . && git commit -m "Feature: ..." && git push`.  
+**5.** حفظ: `git add . && git commit && git push`.  
 **6.** تحديث `PROJECT.md`.  
 **7.** الميزة التالية.
 
 ### إنشاء ملفات جديدة
-- **ملف Flutter:** GitHub → المجلد → Add file → Create new file → اكتب الاسم → الصق → Commit.
+- **ملف Flutter:** Add file → Create new file → الصق → Commit.
 - **صورة:** Add file → Upload files → المجلد → حدّث `pubspec.yaml`.
 
-### تحديث `PROJECT.md`
-1. أضف `- [x]` في "المنجز".
-2. احذف البند من "قيد التنفيذ".
-3. حدّث "آخر تحديث" + "الإصدار".
-4. ⚠️ لا تحذف قسم Workflow.
-
 ### حل مشكلة Codespaces (نفاد الذاكرة)
-عند `Dart compiler exited unexpectedly`:
 ```
 pkill -f flutter ; pkill -f dart
 flutter clean
 flutter pub get
 flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8095 --web-renderer html
 ```
-إذا فشل: **Stop Codespace** → **Open in browser** → تشغيل عادي.
+إذا فشل: **Stop Codespace** → **Open in browser**.
 
 ### القواعد الذهبية
 1. لا حفظ بدون اختبار.
 2. لا استبدال جزئي.
 3. لا انتقال بدون تحديث `PROJECT.md`.
 
-### إذا حصل خطأ
-أوقف → انسخ الخطأ كامل + صورة + اسم الملف → أرسل للـ AI → أعد من الخطوة 2.
-
-**آخر تحديث لهذا القسم:** 2026-09-28 — ثابت ولا يُحذف.
+**آخر تحديث لهذا القسم:** 2026-09-29 — ثابت ولا يُحذف.
