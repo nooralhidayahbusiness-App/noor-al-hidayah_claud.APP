@@ -240,6 +240,15 @@ const Map<String, String> _ar = {
 'qiblaRotate': 'أدر جهازك حتى يشير السهم للأعلى',
 'qiblaAngle': 'اتجاه القبلة',
 'qiblaDistance': 'المسافة إلى مكة',
+// المساجد القريبة
+'nearbyMosques': 'المساجد القريبة',
+'mosquesRadius': 'نطاق البحث',
+'mosquesError': 'تعذّر جلب المساجد. تحقق من اتصالك.',
+'mosquesNone': 'لا توجد مساجد في هذا النطاق.',
+'mosquesNavigate': 'التوجيه',
+'mosquesNoMapsApp': 'لا يوجد تطبيق خرائط على جهازك',
+'km': 'كم',
+'retry': 'إعادة المحاولة',
 };
 
 const Map<String, String> _en = {
@@ -452,4 +461,12 @@ const Map<String, String> _en = {
 'qiblaRotate': 'Rotate your device until the arrow points up',
 'qiblaAngle': 'Qibla direction',
 'qiblaDistance': 'Distance to Makkah',
+'nearbyMosques': 'Nearby Mosques',
+'mosquesRadius': 'Search radius',
+'mosquesError': 'Could not fetch mosques. Check your connection.',
+'mosquesNone': 'No mosques found in this radius.',
+'mosquesNavigate': 'Navigate',
+'mosquesNoMapsApp': 'No maps app on your device',
+'km': 'km',
+'retry': 'Retry',
 };
