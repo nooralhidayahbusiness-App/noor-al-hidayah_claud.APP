@@ -50,7 +50,8 @@ dependencies:
   firebase_auth: ^6.7.0
   cloud_firestore: ^6.10.0
   wakelock_plus: ^1.2.8
-
+  flutter_compass: ^0.8.1
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
