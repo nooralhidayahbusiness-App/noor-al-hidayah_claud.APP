@@ -229,6 +229,11 @@ const Map<String, String> _ar = {
 'khatmCompleteBody': 'ما شاء الله! أتممت ختم القرآن الكريم. جعله الله في ميزان حسناتك.',
 'khatmStartNew': 'ابدأ ختمة جديدة',
 'khatmHistory': 'آخر الأيام',
+'haram': 'المحرمات',
+'haramSubtitle': 'ما حرّمه الله ورسوله ﷺ — تجنّبها واجب',
+'makruh': 'المكروهات',
+'makruhSubtitle': 'ما يُكره شرعاً — تركه أفضل',
+'evidence': 'الدليل',
 };
 
 const Map<String, String> _en = {
@@ -430,4 +435,9 @@ const Map<String, String> _en = {
 'khatmCompleteBody': 'MashaAllah! You have completed the Quran.',
 'khatmStartNew': 'Start a new khatma',
 'khatmHistory': 'Recent days',
+'haram': 'Prohibitions',
+'haramSubtitle': 'What Allah and His Messenger ﷺ forbade — avoiding is obligatory',
+'makruh': 'Disliked Matters',
+'makruhSubtitle': 'What is disliked in Islam — avoiding is better',
+'evidence': 'Evidence',
 };
