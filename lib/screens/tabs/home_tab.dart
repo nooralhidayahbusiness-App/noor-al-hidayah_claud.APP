@@ -159,13 +159,14 @@ class HomeTab extends StatelessWidget {
                   ),
                 ),
                 _QuickTile(
-                  label: appState.tr('khatmPlan'),
-                  onTap: soon,
-                  symbol: const SymbolImage(
-                    'assets/images/Read.png',
-                    fallback: Icons.auto_stories_rounded,
-                  ),
-                ),
+  label: appState.tr('khatmPlan'),
+  onTap: () => Navigator.of(context)
+      .push(fadeRoute(const KhatmPlanScreen())),
+  symbol: const SymbolImage(
+    'assets/images/Read.png',
+    fallback: Icons.auto_stories_rounded,
+  ),
+),
                 _QuickTile(
                   label: appState.tr('zakat'),
                   onTap: () => Navigator.of(context)
