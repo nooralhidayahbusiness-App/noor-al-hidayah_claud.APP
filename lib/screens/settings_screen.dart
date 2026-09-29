@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
-import '../core/quran_prefs.dart';
 import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
