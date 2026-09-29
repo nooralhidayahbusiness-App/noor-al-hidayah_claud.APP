@@ -40,7 +40,6 @@ class HomeTab extends StatelessWidget {
             : (appState.isArabic ? data.hijriAr : data.hijriEn);
         final label = prayerState.location?.label ?? '';
 
-        void soon() => showAuthMessage(context, appState.tr('comingSoon'));
 
         return ListView(
           padding: EdgeInsets.fromLTRB(
