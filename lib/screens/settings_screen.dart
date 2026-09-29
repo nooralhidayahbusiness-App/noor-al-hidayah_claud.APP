@@ -8,7 +8,6 @@ import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
-import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
 import 'account_screen.dart';
