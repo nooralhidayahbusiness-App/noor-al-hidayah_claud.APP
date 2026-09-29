@@ -51,7 +51,9 @@ dependencies:
   cloud_firestore: ^6.10.0
   wakelock_plus: ^1.2.8
   flutter_compass: ^0.8.1
-  
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
