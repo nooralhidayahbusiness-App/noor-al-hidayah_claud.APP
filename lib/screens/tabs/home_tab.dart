@@ -21,6 +21,7 @@ import '../hadith_page.dart';
 import '../duas_screen.dart';
 import '../khatm_plan_screen.dart';
 import '../haram_screen.dart';
+import '../qibla_screen.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
@@ -136,12 +137,13 @@ class HomeTab extends StatelessWidget {
                 ),
                 _QuickTile(
                   label: appState.tr('qibla'),
-                  onTap: soon,
+                  onTap: () => Navigator.of(context)
+                      .push(fadeRoute(const QiblaScreen())),
                   symbol: const SymbolImage(
                     'assets/images/Kaaba.png',
                     fallback: Icons.explore_rounded,
-                  ),
-                ),
+                   ),
+                 ),
                 _QuickTile(
                  label: appState.tr('tasbeeh'),
                  onTap: () => Navigator.of(context)
