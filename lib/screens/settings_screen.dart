@@ -22,7 +22,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
-  Map<String, dynamic> _settings = {};
   Map<String, bool> _notifications = {};
 
   // الافتراضيات
