@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -12,8 +11,6 @@ class MosquesService {
 
   static const _endpoint = 'https://overpass-api.de/api/interpreter';
 
-  /// يبحث عن المساجد حول نقطة معينة.
-  /// [radiusMeters] نصف القطر بالأمتار (افتراضي 10000 = 10 كم).
   Future<List<Mosque>> findNearby({
     required double latitude,
     required double longitude,
@@ -52,7 +49,6 @@ out center tags;
         final e = el as Map<String, dynamic>;
         final tags = (e['tags'] as Map?) ?? {};
 
-        // الإحداثيات (node له lat/lon، way له center).
         double? lat;
         double? lng;
         if (e['lat'] != null && e['lon'] != null) {
@@ -74,17 +70,17 @@ out center tags;
         final address = _buildAddress(tags);
 
         final distKm = _haversine(
-          lat1: latitude,
-          lng1: longitude,
-          lat2: lat,
-          lng2: lng,
+          latitude,
+          longitude,
+          lat,
+          lng,
         );
 
-        final bearing = _bearing(
-          lat1: latitude,
-          lng1: longitude,
-          lat2: lat,
-          lng2: lng,
+        final brg = _bearing(
+          latitude,
+          longitude,
+          lat,
+          lng,
         );
 
         list.add(Mosque(
@@ -94,15 +90,14 @@ out center tags;
           longitude: lng,
           address: address,
           distanceKm: distKm,
-          bearing: bearing,
+          bearing: brg,
         ));
       }
 
-      // ترتيب حسب المسافة
       list.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
       return list;
     } catch (e) {
-      throw Exception('فشل البحث عن المساجد: $e');
+      throw Exception('Failed to fetch mosques: $e');
     }
   }
 
@@ -118,14 +113,13 @@ out center tags;
     return parts.join(', ');
   }
 
-  /// المسافة بالكيلومتر (Haversine).
-  double _haversine({
-    required double lat1,
-    required double lng1,
-    required double lat2,
-    required double lng2,
-  }) {
-    const R = 6371.0;
+  double _haversine(
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
+    const earthRadiusKm = 6371.0;
     final dLat = _toRad(lat2 - lat1);
     final dLng = _toRad(lng2 - lng1);
     final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
@@ -134,24 +128,29 @@ out center tags;
             math.sin(dLng / 2) *
             math.sin(dLng / 2);
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return R * c;
+    return earthRadiusKm * c;
   }
 
-  /// الاتجاه بالدرجات من الشمال.
-double _bearing({
-  required double lat1,
-  required double lng1,
-  required double lat2,
-  required double lng2,
-}) {
-  final phi1 = _toRad(lat1);
-  final phi2 = _toRad(lat2);
-  final deltaLambda = _toRad(lng2 - lng1);
-  final y = math.sin(deltaLambda) * math.cos(phi2);
-  final x = math.cos(phi1) * math.sin(phi2) -
-      math.sin(phi1) * math.cos(phi2) * math.cos(deltaLambda);
-  final theta = math.atan2(y, x);
-  return (_toDeg(theta) + 360) % 360;
+  double _bearing(
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
+    final phi1 = _toRad(lat1);
+    final phi2 = _toRad(lat2);
+    final deltaLambda = _toRad(lng2 - lng1);
+
+    final y = math.sin(deltaLambda) * math.cos(phi2);
+    final x = math.cos(phi1) * math.sin(phi2) -
+        math.sin(phi1) * math.cos(phi2) * math.cos(deltaLambda);
+
+    final theta = math.atan2(y, x);
+    return (_toDeg(theta) + 360) % 360;
+  }
+
+  double _toRad(double degrees) => degrees * math.pi / 180.0;
+  double _toDeg(double radians) => radians * 180.0 / math.pi;
 }
 
 final mosquesService = MosquesService.instance;
