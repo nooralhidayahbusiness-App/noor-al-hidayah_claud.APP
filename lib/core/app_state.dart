@@ -200,6 +200,12 @@ const Map<String, String> _ar = {
 'zakatLivePrices': 'أسعار حية',
 'zakatLiveGold': 'سعر جرام الذهب:',
 'zakatLiveSilver': 'سعر جرام الفضة:',
+'duas': 'الأدعية',
+'duasSubtitle': 'أدعية قرآنية ونبوية لكل الأحوال',
+'copy': 'نسخ',
+'share': 'مشاركة',
+'copied': 'تم النسخ ✓',
+'copiedToShare': 'تم النسخ — يمكنك لصقه في أي تطبيق',
 };
 
 const Map<String, String> _en = {
@@ -372,4 +378,10 @@ const Map<String, String> _en = {
 'zakatLivePrices': 'Live prices',
 'zakatLiveGold': 'Gold per gram:',
 'zakatLiveSilver': 'Silver per gram:',
+'duas': 'Duas',
+'duasSubtitle': 'Quranic and prophetic duas for all situations',
+'copy': 'Copy',
+'share': 'Share',
+'copied': 'Copied ✓',
+'copiedToShare': 'Copied — paste it in any app',
 };
