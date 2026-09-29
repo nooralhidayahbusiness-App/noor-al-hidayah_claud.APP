@@ -247,8 +247,7 @@ class _MosquesScreenState extends State<MosquesScreen> {
       children: [
         TileLayer(
   urlTemplate:
-      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  subdomains: const ['a', 'b', 'c', 'd'],
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
   userAgentPackageName: 'noor.al.hidayah.app',
 ),
         // علامة موقع المستخدم
