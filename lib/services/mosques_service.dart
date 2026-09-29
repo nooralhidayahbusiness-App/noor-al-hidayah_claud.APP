@@ -9,7 +9,11 @@ class MosquesService {
   MosquesService._();
   static final MosquesService instance = MosquesService._();
 
-  static const _endpoint = 'https://overpass-api.de/api/interpreter';
+  static const List<String> _endpoints = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+];
 
   Future<List<Mosque>> findNearby({
     required double latitude,
@@ -25,21 +29,35 @@ class MosquesService {
 out center tags;
 ''';
 
-    try {
-      final res = await http
-          .post(
-            Uri.parse(_endpoint),
-            headers: {
-              'User-Agent': 'NoorAlHidayahApp/1.0',
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: {'data': query},
-          )
-          .timeout(const Duration(seconds: 30));
+    http.Response? res;
+Exception? lastError;
 
-      if (res.statusCode != 200) {
-        throw Exception('Overpass HTTP ${res.statusCode}');
-      }
+for (final endpoint in _endpoints) {
+  try {
+    final r = await http
+        .post(
+          Uri.parse(endpoint),
+          headers: {
+            'User-Agent': 'NoorAlHidayahApp/1.0',
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: {'data': query},
+        )
+        .timeout(const Duration(seconds: 25));
+    if (r.statusCode == 200) {
+      res = r;
+      break;
+    }
+    lastError = Exception('HTTP ${r.statusCode}');
+  } catch (e) {
+    lastError = e is Exception ? e : Exception(e.toString());
+  }
+}
+
+try {
+  if (res == null) {
+    throw lastError ?? Exception('All Overpass endpoints failed');
+  }
 
       final data = json.decode(res.body) as Map<String, dynamic>;
       final elements = (data['elements'] as List?) ?? [];
