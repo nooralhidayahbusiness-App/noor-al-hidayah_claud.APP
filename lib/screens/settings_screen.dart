@@ -24,7 +24,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
   Map<String, bool> _notifications = {};
 
-  // الافتراضيات
   static const _defaultNotifs = <String, bool>{
     'fajr': true,
     'dhuhr': true,
@@ -59,10 +58,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           (notifs['adhanBeforeMinutes'] as num?)?.toInt() ?? 0;
       if (mounted) {
         setState(() {
-  _notifications = loaded;
-  _adhanBeforeMinutes = before;
-  _loading = false;
-});
+          _notifications = loaded;
+          _adhanBeforeMinutes = before;
+          _loading = false;
+        });
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
@@ -296,7 +295,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               children: [
                                 _ToggleRow(
                                   icon: Icons.quiz_rounded,
-                                  title: appState.tr('dailyChallengeNotif'),
+                                  title:
+                                      appState.tr('dailyChallengeNotif'),
                                   value: _notifications[
                                           'dailyChallenge'] ??
                                       true,
@@ -381,16 +381,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   value: reciterPrefs.autoAdvance,
                                   onChanged: (v) async {
                                     await reciterPrefs.setAutoAdvance(v);
-                                    setState(() {});
-                                  },
-                                ),
-                                _Divider(),
-                                _ToggleRow(
-                                  icon: Icons.text_fields_rounded,
-                                  title: appState.tr('quranSimpleFont'),
-                                  value: quranPrefs.simpleFont,
-                                  onChanged: (v) async {
-                                    await quranPrefs.setSimpleFont(v);
                                     setState(() {});
                                   },
                                 ),
