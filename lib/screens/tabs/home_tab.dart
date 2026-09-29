@@ -19,6 +19,7 @@ import '../../widgets/prayer_widgets.dart';
 import '../prayer_times_page.dart';
 import '../hadith_page.dart';
 import '../duas_screen.dart';
+import '../khatm_plan_screen.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
