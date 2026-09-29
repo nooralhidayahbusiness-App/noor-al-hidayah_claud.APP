@@ -48,17 +48,21 @@ class _MosquesScreenState extends State<MosquesScreen> {
     });
 
     try {
+      debugPrint(
+          '🔍 Search: ${_userLatLng.latitude}, ${_userLatLng.longitude} (${_radiusKm}km)');
       final list = await mosquesService.findNearby(
         latitude: _userLatLng.latitude,
         longitude: _userLatLng.longitude,
         radiusMeters: _radiusKm * 1000,
       );
+      debugPrint('✅ Found: ${list.length}');
       if (!mounted) return;
       setState(() {
         _mosques = list;
         _loading = false;
       });
     } catch (e) {
+      debugPrint('❌ Error: $e');
       if (!mounted) return;
       setState(() {
         _error = e.toString();
@@ -76,7 +80,6 @@ class _MosquesScreenState extends State<MosquesScreen> {
   }
 
   Future<void> _openInMaps(Mosque m) async {
-    // محاولة فتح Google Maps أولاً
     final googleUrl = Uri.parse(
       'https://www.google.com/maps/dir/?api=1'
       '&destination=${m.latitude},${m.longitude}',
@@ -145,14 +148,13 @@ class _MosquesScreenState extends State<MosquesScreen> {
               Expanded(
                 flex: 6,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: R.s(context, 12)),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: R.s(context, 12)),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Stack(
                       children: [
                         _buildMap(),
-                        // زر تحديث
                         Positioned(
                           top: 8,
                           right: 8,
@@ -161,7 +163,6 @@ class _MosquesScreenState extends State<MosquesScreen> {
                             onTap: _load,
                           ),
                         ),
-                        // فلتر النطاق
                         Positioned(
                           top: 8,
                           left: 8,
@@ -170,7 +171,6 @@ class _MosquesScreenState extends State<MosquesScreen> {
                             onTap: _openRadiusPicker,
                           ),
                         ),
-                        // حالة التحميل
                         if (_loading)
                           const Center(
                             child: CircularProgressIndicator(
@@ -184,8 +184,8 @@ class _MosquesScreenState extends State<MosquesScreen> {
                                 color: AppColors.deepGreen
                                     .withValues(alpha: 0.95),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                    color: AppColors.gold),
+                                border:
+                                    Border.all(color: AppColors.gold),
                               ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -246,11 +246,10 @@ class _MosquesScreenState extends State<MosquesScreen> {
       ),
       children: [
         TileLayer(
-  urlTemplate:
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-  userAgentPackageName: 'noor.al.hidayah.app',
-),
-        // علامة موقع المستخدم
+          urlTemplate:
+              'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+          userAgentPackageName: 'noor.al.hidayah.app',
+        ),
         MarkerLayer(
           markers: [
             Marker(
@@ -260,7 +259,8 @@ class _MosquesScreenState extends State<MosquesScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF2196F3).withValues(alpha: 0.3),
+                  color:
+                      const Color(0xFF2196F3).withValues(alpha: 0.3),
                   border: Border.all(
                     color: const Color(0xFF2196F3),
                     width: 2,
@@ -275,7 +275,6 @@ class _MosquesScreenState extends State<MosquesScreen> {
             ),
           ],
         ),
-        // علامات المساجد
         MarkerLayer(
           markers: _mosques.map((m) {
             final selected = _selected?.id == m.id;
@@ -288,15 +287,16 @@ class _MosquesScreenState extends State<MosquesScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.deepGreen.withValues(alpha: 0.95),
+                    color:
+                        AppColors.deepGreen.withValues(alpha: 0.95),
                     border: Border.all(
                       color: AppColors.gold,
                       width: selected ? 3 : 2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.gold
-                            .withValues(alpha: selected ? 0.7 : 0.4),
+                        color: AppColors.gold.withValues(
+                            alpha: selected ? 0.7 : 0.4),
                         blurRadius: selected ? 14 : 8,
                       ),
                     ],
@@ -449,9 +449,8 @@ class _MosqueTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dir = appState.isArabic
-        ? mosque.cardinalAr()
-        : mosque.cardinalEn();
+    final dir =
+        appState.isArabic ? mosque.cardinalAr() : mosque.cardinalEn();
 
     return GestureDetector(
       onTap: onTap,
@@ -513,7 +512,8 @@ class _MosqueTile extends StatelessWidget {
                         mosque.distanceText(),
                         style: TextStyle(
                           fontSize: R.f(context, 10.5),
-                          color: AppColors.cream.withValues(alpha: 0.8),
+                          color:
+                              AppColors.cream.withValues(alpha: 0.8),
                         ),
                       ),
                       SizedBox(width: R.s(context, 8)),
@@ -525,7 +525,8 @@ class _MosqueTile extends StatelessWidget {
                         dir,
                         style: TextStyle(
                           fontSize: R.f(context, 10.5),
-                          color: AppColors.cream.withValues(alpha: 0.8),
+                          color:
+                              AppColors.cream.withValues(alpha: 0.8),
                         ),
                       ),
                     ],
@@ -579,7 +580,8 @@ class _CircleButton extends StatelessWidget {
           color: AppColors.deepGreen.withValues(alpha: 0.9),
           border: Border.all(color: AppColors.gold),
         ),
-        child: Icon(icon, color: AppColors.gold, size: R.s(context, 18)),
+        child:
+            Icon(icon, color: AppColors.gold, size: R.s(context, 18)),
       ),
     );
   }
