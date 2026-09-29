@@ -9,11 +9,10 @@ class MosquesService {
   MosquesService._();
   static final MosquesService instance = MosquesService._();
 
-  static const List<String> _endpoints = [
-    'https://overpass.kumi.systems/api/interpreter',
-    'https://overpass-api.de/api/interpreter',
-    'https://overpass.private.coffee/api/interpreter',
-  ];
+  /// نلف الطلب بـ CORS proxy ليعمل على الويب.
+  static const String _proxy = 'https://api.allorigins.win/raw?url=';
+  static const String _overpass =
+      'https://overpass-api.de/api/interpreter';
 
   Future<List<Mosque>> findNearby({
     required double latitude,
@@ -25,42 +24,45 @@ class MosquesService {
         '(around:$radiusMeters,$latitude,$longitude);'
         'out;';
 
-    http.Response? res;
-    String lastError = '';
+    final overpassUrl = Uri.parse(_overpass);
+    final finalUrl = Uri.parse(
+      '$_proxy${Uri.encodeComponent(overpassUrl.toString())}'
+      '&data=${Uri.encodeComponent(query)}',
+    );
 
-    for (final endpoint in _endpoints) {
+    http.Response res;
+    try {
+      res = await http
+          .get(
+            finalUrl,
+            headers: {'User-Agent': 'NoorAlHidayahApp/1.0'},
+          )
+          .timeout(const Duration(seconds: 45));
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+
+    if (res.statusCode != 200) {
+      throw Exception('HTTP ${res.statusCode}');
+    }
+
+    // مع CORS proxy، قد يكون الرد بتنسيق غير مباشر.
+    var body = res.body;
+    if (!body.contains('"elements"')) {
+      // محاولة فك التغليف
       try {
-        final r = await http
-            .post(
-              Uri.parse(endpoint),
-              headers: {
-                'User-Agent': 'NoorAlHidayahApp/1.0',
-                'Content-Type': 'application/x-www-form-urlencoded',
-              },
-              body: {'data': query},
-            )
-            .timeout(const Duration(seconds: 40));
-
-        if (r.statusCode == 200) {
-          if (r.body.contains('"elements"')) {
-            res = r;
-            break;
-          } else {
-            lastError = 'Response has no elements';
-          }
-        } else {
-          lastError = 'HTTP ${r.statusCode}';
+        final wrapped = json.decode(body);
+        if (wrapped is Map && wrapped['contents'] != null) {
+          body = wrapped['contents'] as String;
         }
-      } catch (e) {
-        lastError = e.toString();
-      }
+      } catch (_) {}
     }
 
-    if (res == null) {
-      throw Exception('Overpass failed: $lastError');
+    if (!body.contains('"elements"')) {
+      throw Exception('Invalid response from Overpass');
     }
 
-    final data = json.decode(res.body) as Map<String, dynamic>;
+    final data = json.decode(body) as Map<String, dynamic>;
     final elements = (data['elements'] as List?) ?? [];
 
     final list = <Mosque>[];
@@ -78,7 +80,6 @@ class MosquesService {
           'مسجد';
 
       final address = _buildAddress(tags);
-
       final distKm = _haversine(latitude, longitude, lat, lng);
       final brg = _bearing(latitude, longitude, lat, lng);
 
@@ -108,7 +109,7 @@ class MosquesService {
   }
 
   double _haversine(double lat1, double lng1, double lat2, double lng2) {
-    const earthRadiusKm = 6371.0;
+    const r = 6371.0;
     final dLat = _toRad(lat2 - lat1);
     final dLng = _toRad(lng2 - lng1);
     final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
@@ -117,7 +118,7 @@ class MosquesService {
             math.sin(dLng / 2) *
             math.sin(dLng / 2);
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return earthRadiusKm * c;
+    return r * c;
   }
 
   double _bearing(double lat1, double lng1, double lat2, double lng2) {
@@ -131,8 +132,8 @@ class MosquesService {
     return (_toDeg(theta) + 360) % 360;
   }
 
-  double _toRad(double degrees) => degrees * math.pi / 180.0;
-  double _toDeg(double radians) => radians * 180.0 / math.pi;
+  double _toRad(double d) => d * math.pi / 180.0;
+  double _toDeg(double r) => r * 180.0 / math.pi;
 }
 
 final mosquesService = MosquesService.instance;
