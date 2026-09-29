@@ -1,6 +1,6 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-29 | **الإصدار:** Beta 0.8
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-29 | **الإصدار:** Beta 0.9
 
 ---
 
@@ -25,21 +25,21 @@
 
 ## 🎨 نظام التصميم
 
-### الألوان الافتراضية
+### الألوان
 `deepGreen #041F18` | `green #0B3D2E` | `emerald #14664C` | `gold #D4AF37` | `softGold #F1DC9A` | `cream #FFF8E7`
 
 ### الثيمات الديناميكية
-- **9 ثيمات** (`lib/core/theme_palette.dart`): 6 عادية + 3 VIP.
+- **9 ثيمات** (`theme_palette.dart`): 6 عادية + 3 VIP.
 - **themeState** يحفظ المختار (محلي + Firestore).
-- **ThemedColors** ألوان ديناميكية — تُستخدم بدل `AppColors` في العناصر القابلة للتغيير.
-- **VIP animations**: نجوم متحركة + shimmer + تدرجات + توهج نابض.
+- **ThemedColors** ألوان ديناميكية.
+- **VIP animations**: نجوم + shimmer + تدرجات + توهج نابض.
 
-### الأحجام المتجاوبة (`lib/core/responsive.dart`)
+### الأحجام المتجاوبة (`responsive.dart`)
 - حاسوب ≥ 1000px → 0.88 | تابلت ≥ 700px → 0.78 | جوال ≥ 500px → 0.68 | جوال صغير → 0.62.
-- استخدم **`R.s(context, base)`** للأحجام، **`R.f(context, base)`** للنصوص.
+- استخدم **`R.s(context, base)`** و **`R.f(context, base)`**.
 
 ### الخطوط
-- العناوين: Amiri / Noto Naskh | الآيات: amiriQuran (26) | النصوص: Cairo / Noto Sans Arabic.
+- العناوين: Amiri / Noto Naskh | الآيات: amiriQuran (26) | النصوص: Cairo.
 
 ---
 
@@ -64,7 +64,8 @@ lib/
 ├── services/
 │   ├── auth_service, user_service, storage_service
 │   ├── location_service, quran_audio_service, tafsir_service, share_service
-│   └── metals_service          (أسعار الذهب/الفضة/الصرف + cache)
+│   ├── metals_service          (أسعار الذهب/الفضة/الصرف + cache)
+│   └── khatm_service           (خطة ختم القرآن)
 ├── screens/
 │   ├── splash (Auto-login), welcome, login, register, location
 │   ├── home_shell               (شريط سفلي مخصص + SafeArea)
@@ -75,6 +76,7 @@ lib/
 │   ├── duas_screen, duas_detail_screen
 │   ├── tasbeeh_screen
 │   ├── zakat_screen
+│   ├── khatm_plan_screen
 │   └── tabs/
 │       ├── home_tab, quran_browser_tab, community_tab, more_tab
 │       └── soon_tabs
@@ -103,7 +105,9 @@ users/{uid}/
 └── progress: {
       challenges: { lastPlayedDate, todayPoints, todayCorrect, totalCompleted }
       tasbeeh:    { totalCount, todayCount, lastDate, target, lastDhikr }
-      quran:      {}
+      quran:      { khatmActive, startDate, endDate, totalPages, pagesPerDay,
+                    pagesRead, lastReadDate, lastReadPage, streak, history,
+                    completedKhatmas }
       aiTeacher:  {}
     }
 ```
@@ -127,71 +131,69 @@ service cloud.firestore {
 ### 1) الحسابات + Auto-login
 - [x] تسجيل/دخول/خروج Firebase
 - [x] `authService.isOwner`
-- [x] مزامنة كاملة (صورة/موقع/بيانات)
-- [x] Auto-login: يحفظ الجلسة + يتخطى Welcome و Login.
-- [x] فحص الموقع → HomeShell أو LocationScreen.
+- [x] مزامنة كاملة
+- [x] Auto-login: يحفظ الجلسة، يتخطى Welcome و Login.
 
 ### 2) الملف الشخصي
-- [x] شاشة "حسابي" + تعديل
+- [x] شاشة حسابي + تعديل
 - [x] حلقة ذهبية دوّارة + توهج
-- [x] شعار التوثيق (true.me / true.users)
-- [x] صور مخصصة (Me.png / logo.png) لحسابات المالك
+- [x] شعار التوثيق
+- [x] صور مخصصة (Me.png / logo.png)
 - [x] الاسم الطويل لا يخرج من البطاقة
 
 ### 3) النقاط والمستويات
 - [x] addPoints / incrementStats / setStats
 - [x] مستوى تلقائي (100 نقطة/مستوى)
-- [x] كود `NAH2026` = 1000 نقطة (غير محدود للمالك)
+- [x] كود `NAH2026` = 1000 نقطة
 
 ### 4) التحديات
-- [x] 5 أسئلة عشوائية يومياً، 30 ثانية لكل سؤال
-- [x] 20 نقطة/إجابة، منع الإعادة اليومية، Streak تلقائي
+- [x] 5 أسئلة عشوائية يومياً، 30 ثانية/سؤال
+- [x] 20 نقطة/إجابة، Streak تلقائي
 
 ### 5) المتجر
-- [x] 4 تبويبات: خلفيات/قراء/مؤذنون/ثيمات
+- [x] 4 تبويبات
 - [x] 10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات
 - [x] VIP animations + شارات VIP/ANIMATION
-- [x] "مشترياتي" + تبديل فوري
+- [x] "مشترياتي"
 
 ### 6) الخلفيات والثيمات
 - [x] AppBackground + AnimatedVipBackground + ThemedBackground
-- [x] GlassCard/StarBadge/OrnamentMedallion/SymbolImage theme-aware
+- [x] كل العناصر theme-aware
 
 ### 7) الأحجام المتجاوبة
-- [x] كل الشاشات responsive
+- [x] كل الشاشات
 
 ### 8) الشريط السفلي
-- [x] SafeArea (لا يلمس أزرار الهاتف)
-- [x] شريط مخصص: الكتابة تحت الأيقونة مباشرة
-- [x] أيقونات: challenge.png + community.png + more.png
+- [x] SafeArea، مخصص، الكتابة تحت الأيقونة
+- [x] أيقونات challenge/community/more
 
 ### 9) الصفحة الرئيسية
-- [x] بطاقة AI Teacher — سطر واحد
-- [x] بطاقة الصلاة — `adhan.png` ذهبية + لمعان متحرك
+- [x] بطاقة AI — سطر واحد
+- [x] بطاقة الصلاة — adhan.png ذهبية + لمعان متحرك
 
 ### 10) الأذكار
-- [x] بنك أذكار (`lib/data/adhkar.dart`) — 7 أقسام (~60 ذكر)
-- [x] شاشة رئيسية + شاشة تفاصيل بعدّاد
-- [x] الضغط = عد، ضغط مطول = إعادة
+- [x] 7 أقسام (~60 ذكر) + عدّاد + إعادة
 
 ### 11) التسبيح
-- [x] شاشة كاملة مع عدّاد دائري + نبض + haptic
-- [x] 7 أذكار + الهدف (33/100/مفتوح) + Wakelock
-- [x] حفظ في Firestore
+- [x] عدّاد دائري + نبض + haptic + Wakelock
+- [x] 7 أذكار + هدف (33/100/مفتوح)
 
-### 12) حساب الزكاة (كامل)
-- [x] 5 أنواع + 160+ عملة + كشف تلقائي من الموقع
-- [x] أسعار حية للذهب/الفضة + أسعار الصرف + cache 30 دقيقة
-- [x] عيارات الذهب + زكاة الأنعام (غنم/بقر/إبل)
-- [x] تنبيه: حاسبة تقديرية فقط
+### 12) حساب الزكاة
+- [x] 5 أنواع + 160+ عملة + كشف تلقائي
+- [x] أسعار حية (ذهب/فضة/صرف) + cache 30 دقيقة
 
-### 13) الأدعية (كامل)
-- [x] بنك أدعية (`lib/data/duas.dart`) — 7 أقسام (~60 دعاء).
-- [x] شاشة رئيسية (ThemedBackground + زر رجوع + زر ترجمة).
-- [x] شاشة تفاصيل ببطاقات + نسخ + مشاركة.
-- [x] الضغط على الزر = نسخ النص للحافظة + رسالة.
+### 13) الأدعية
+- [x] 7 أقسام (~60 دعاء) + نسخ + مشاركة
 
-### 14) الإسناد
+### 14) خطة ختم القرآن
+- [x] 30/60/90/180 يوم مع حساب تلقائي للورد اليومي
+- [x] تتبع الصفحة الحالية (1-604)
+- [x] ورد اليوم + Streak + إحصائيات
+- [x] سجل آخر 30 يوم
+- [x] شاشة احتفال عند إتمام الختمة
+- [x] حفظ في `progress.quran`
+
+### 15) الإسناد
 - [x] قسم Flaticon في تبويب المزيد
 
 ---
@@ -199,10 +201,9 @@ service cloud.firestore {
 ## ⏳ قيد التنفيذ
 
 ### 🔥 الأولوية القادمة
-1. [ ] **خطة ختم القرآن (Khatm Plan)** ← التالي
-2. [ ] **المحرمات + المكروهات**
-3. [ ] **القبلة (Qibla)**
-4. [ ] **المساجد القريبة (Nearby Mosques)**
+1. [ ] **المحرمات + المكروهات** ← التالي
+2. [ ] **القبلة (Qibla)** — بوصلة
+3. [ ] **المساجد القريبة (Nearby Mosques)**
 
 ### لاحقاً
 - [ ] شاشة الإعدادات الكاملة
@@ -223,7 +224,7 @@ service cloud.firestore {
 - Project ID: `noor-al-hidayah` | Number: `762471094332`
 - Web App: `1:762471094332:web:68fe063e9282d7441d8b39` | Location: `nam5`
 
-### APIs خارجية
+### APIs خارجية (مجانية، بدون مفتاح)
 - **أسعار الذهب/الفضة:** `https://data-asg.goldprice.org/dbXRates/USD`
 - **أسعار الصرف:** `https://open.er-api.com/v6/USD`
 
@@ -250,7 +251,7 @@ git add . && git commit -m "..." && git push
 ```
 
 ### كودات وأصحاب (Owner)
-- **NAH2026** → 1000 نقطة (غير محدود للمالك، مرة لكل مستخدم).
+- **NAH2026** → 1000 نقطة (غير محدود للمالك).
 
 **الإيميلات الشخصية (Me.png + true.me.png):**
 - abdelrahmenbenromdhan11@gmail.com
@@ -264,25 +265,25 @@ git add . && git commit -m "..." && git push
 
 ## 🙏 شكر وتقدير
 
-بعض الأيقونات من [Flaticon](https://www.flaticon.com/) — Icon made by Flaticon from www.flaticon.com.
+بعض الأيقونات من [Flaticon](https://www.flaticon.com/) — Icon made by Flaticon.
 
 ---
 
 ## 🎯 قواعد للمطور الجديد
 
 1. `flutter analyze` = "No issues found" قبل أي تعديل.
-2. **استبدال كامل** — لا تعديل بالقطع.
-3. ألوان قابلة للتغيير → `ThemedColors` (لا `AppColors`).
+2. **استبدال كامل**.
+3. ألوان → `ThemedColors`.
 4. أحجام → `R.s()` / `R.f()`.
-5. كل بيانات في Firestore تحت `users/{uid}`.
-6. `UserService` + `AuthService` للـ Firestore.
-7. الترجمات في `app_state.dart` (`_ar` + `_en`).
-8. الصور في `assets/` → تحديث `pubspec.yaml`.
-9. ⚠️ الأحرف العربية في `currencies.dart`: تجنّب التكرار (مشكلة ترميز).
+5. Firestore تحت `users/{uid}`.
+6. `UserService` + `AuthService`.
+7. الترجمات في `app_state.dart`.
+8. الصور في `assets/`.
+9. ⚠️ تجنّب تكرار الأحرف العربية في `currencies.dart`.
 10. اختبار: `flutter analyze` + `bash tool/preview.sh`.
 
 ### القاعدة الذهبية:
-بعد كل ميزة ناجحة: `git add . && git commit && git push` + تحديث `PROJECT.md`.
+بعد كل ميزة: `git add . && git commit && git push` + تحديث `PROJECT.md`.
 
 ---
 
@@ -294,7 +295,7 @@ git add . && git commit -m "..." && git push
 - abdelrahmenbenromdhan11@gmail.com
 - vevocom888@gmail.com
 
-**إيميلات العمل (Business):**
+**إيميلات العمل:**
 - nooralhidayahbusiness@gmail.com
 - nooralimanechannel@gmail.com
 
