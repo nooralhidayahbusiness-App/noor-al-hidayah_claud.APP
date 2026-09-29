@@ -246,21 +246,11 @@ class _MosquesScreenState extends State<MosquesScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'noor.al.hidayah',
-          tileBuilder: (context, tileWidget, tile) {
-            // تطبيق فلتر داكن على الخريطة
-            return ColorFiltered(
-              colorFilter: const ColorFilter.matrix([
-                -0.6, 0, 0, 0, 180,
-                0, -0.6, 0, 0, 180,
-                0, 0, -0.6, 0, 180,
-                0, 0, 0, 1, 0,
-              ]),
-              child: tileWidget,
-            );
-          },
-        ),
+  urlTemplate:
+      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  subdomains: const ['a', 'b', 'c', 'd'],
+  userAgentPackageName: 'noor.al.hidayah.app',
+),
         // علامة موقع المستخدم
         MarkerLayer(
           markers: [
