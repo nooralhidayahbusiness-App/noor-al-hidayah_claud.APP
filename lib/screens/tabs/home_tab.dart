@@ -18,6 +18,7 @@ import '../../widgets/ornament_medallion.dart';
 import '../../widgets/prayer_widgets.dart';
 import '../prayer_times_page.dart';
 import '../hadith_page.dart';
+import '../duas_screen.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
@@ -113,12 +114,13 @@ class HomeTab extends StatelessWidget {
                 ),
                 _QuickTile(
                   label: appState.tr('duas'),
-                  onTap: soon,
+                  onTap: () => Navigator.of(context)
+                      .push(fadeRoute(const DuasScreen())),
                   symbol: const SymbolImage(
                     'assets/images/dua-hands.png',
                     fallback: Icons.volunteer_activism_rounded,
                     tint: true,
-                  ),
+                   ),
                 ),
                 _QuickTile(
                   label: appState.tr('hadiths'),
