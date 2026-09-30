@@ -1,13 +1,13 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-29 | **الإصدار:** Beta 1.1
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-30 | **الإصدار:** Beta 1.2
 
 ---
 
 ## 📌 نظرة عامة
 
 ### التقنيات
-- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API** + **flutter_compass**.
+- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API** + **flutter_compass** + **flutter_map**.
 - **Codespaces + GitHub** للتطوير، **GitHub Pages** للنشر.
 
 ### المالك
@@ -29,7 +29,7 @@
 `deepGreen #041F18` | `green #0B3D2E` | `emerald #14664C` | `gold #D4AF37` | `softGold #F1DC9A` | `cream #FFF8E7`
 
 ### الثيمات الديناميكية
-- **9 ثيمات** (`theme_palette.dart`): 6 عادية + 3 VIP.
+- **9 ثيمات**: 6 عادية + 3 VIP.
 - **themeState** يحفظ المختار (محلي + Firestore).
 - **ThemedColors** ألوان ديناميكية.
 - **VIP animations**: نجوم + shimmer + تدرجات + توهج نابض.
@@ -50,41 +50,29 @@ lib/
 ├── core/
 │   ├── app_flow, app_state, prayer_state, profile_state
 │   ├── theme, theme_palette, theme_state, themed_colors
-│   ├── responsive               (R.s / R.f)
+│   ├── responsive
 │   ├── reciter_prefs, fonts, validators, navigation
 │   ├── quran_prefs, divine_names, firebase_options, strings_prayer
 ├── data/
-│   ├── questions                (~55 سؤال)
-│   ├── adhkar                   (7 أقسام، ~60 ذكر)
-│   ├── duas                     (7 أقسام، ~60 دعاء)
-│   ├── haram                    (5 أقسام، ~31 محرم)
-│   ├── makruh                   (4 أقسام، ~20 مكروه)
-│   ├── currencies               (160+ عملة)
-│   └── store_items              (10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات)
+│   ├── questions, adhkar, duas, haram, makruh, currencies, store_items
 ├── models/
-│   ├── quran, saved_location
+│   ├── quran, saved_location, mosque
 ├── services/
 │   ├── auth_service, user_service, storage_service
 │   ├── location_service, quran_audio_service, tafsir_service, share_service
-│   ├── metals_service          (أسعار الذهب/الفضة/الصرف + cache)
-│   ├── khatm_service           (خطة ختم القرآن)
-│   └── qibla_service           (اتجاه القبلة + المسافة إلى مكة)
+│   ├── metals_service, khatm_service, qibla_service, mosques_service
 ├── screens/
-│   ├── splash (Auto-login), welcome, login, register, location
-│   ├── home_shell               (شريط سفلي مخصص + SafeArea)
-│   ├── account, edit_profile
+│   ├── splash, welcome, login, register, location
+│   ├── home_shell
+│   ├── account, edit_profile, settings_screen
 │   ├── challenge, challenge_play, challenge_result
 │   ├── store, my_purchases
 │   ├── adhkar_screen, adhkar_detail_screen
 │   ├── duas_screen, duas_detail_screen
-│   ├── tasbeeh_screen
-│   ├── zakat_screen
-│   ├── khatm_plan_screen
+│   ├── tasbeeh_screen, zakat_screen, khatm_plan_screen
 │   ├── haram_screen, prohibition_detail_screen
-│   ├── qibla_screen
-│   └── tabs/
-│       ├── home_tab, quran_browser_tab, community_tab, more_tab
-│       └── soon_tabs
+│   ├── qibla_screen, mosques_screen
+│   └── tabs/ (home_tab, quran_browser_tab, community_tab, more_tab, soon_tabs)
 └── widgets/
     ├── app_branding, animated_vip_background, themed_background
     ├── theme_preview, asset_icon, profile_avatar, verified_badge
@@ -142,9 +130,7 @@ service cloud.firestore {
 ### 2) الملف الشخصي
 - [x] شاشة حسابي + تعديل
 - [x] حلقة ذهبية دوّارة + توهج
-- [x] شعار التوثيق
-- [x] صور مخصصة (Me.png / logo.png)
-- [x] الاسم الطويل لا يخرج من البطاقة
+- [x] شعار التوثيق + صور مخصصة
 
 ### 3) النقاط والمستويات
 - [x] addPoints / incrementStats / setStats
@@ -156,81 +142,71 @@ service cloud.firestore {
 - [x] 20 نقطة/إجابة، Streak تلقائي
 
 ### 5) المتجر
-- [x] 4 تبويبات
+- [x] 4 تبويبات: خلفيات/قراء/مؤذنون/ثيمات
 - [x] 10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات
-- [x] VIP animations + شارات VIP/ANIMATION
+- [x] VIP animations + شارات
 - [x] "مشترياتي"
 
 ### 6) الخلفيات والثيمات
 - [x] AppBackground + AnimatedVipBackground + ThemedBackground
 - [x] كل العناصر theme-aware
 
-### 7) الأحجام المتجاوبة
-- [x] كل الشاشات
+### 7) الأحجام المتجاوبة — كل الشاشات
 
-### 8) الشريط السفلي
-- [x] SafeArea، مخصص، الكتابة تحت الأيقونة
-- [x] أيقونات challenge/community/more
+### 8) الشريط السفلي — SafeArea + مخصص + أيقونات
 
-### 9) الصفحة الرئيسية
-- [x] بطاقة AI — سطر واحد
-- [x] بطاقة الصلاة — adhan.png ذهبية + لمعان متحرك
+### 9) الصفحة الرئيسية — بطاقة AI + بطاقة الصلاة
 
-### 10) الأذكار
-- [x] 7 أقسام (~60 ذكر) + عدّاد + إعادة
+### 10) الأذكار — 7 أقسام (~60 ذكر) + عدّاد
 
-### 11) التسبيح
-- [x] عدّاد دائري + نبض + haptic + Wakelock
-- [x] 7 أذكار + هدف (33/100/مفتوح)
+### 11) التسبيح — عدّاد دائري + Wakelock + 7 أذكار + هدف
 
-### 12) حساب الزكاة
-- [x] 5 أنواع + 160+ عملة + كشف تلقائي
-- [x] أسعار حية (ذهب/فضة/صرف) + cache 30 دقيقة
+### 12) حساب الزكاة — 5 أنواع + 160+ عملة + أسعار حية
 
-### 13) الأدعية
-- [x] 7 أقسام (~60 دعاء) + نسخ + مشاركة
+### 13) الأدعية — 7 أقسام (~60 دعاء) + نسخ + مشاركة
 
-### 14) خطة ختم القرآن
-- [x] 30/60/90/180 يوم مع حساب تلقائي للورد اليومي
-- [x] تتبع الصفحة الحالية (1-604)
-- [x] ورد اليوم + Streak + إحصائيات
-- [x] سجل آخر 30 يوم
-- [x] شاشة احتفال عند إتمام الختمة
+### 14) خطة ختم القرآن — 30/60/90/180 يوم + ورد يومي + سجل
 
-### 15) المحرمات + المكروهات
-- [x] 5 أقسام للمحرمات (~31 بند): عقيدة، عبادات، معاملات، آداب، بدن.
-- [x] 4 أقسام للمكروهات (~20 بند): عبادات، طعام، معاملات، آداب.
-- [x] كل بند فيه: عنوان + وصف + دليل + مرجع.
-- [x] نسخ + مشاركة لكل بند.
+### 15) المحرمات + المكروهات — ~50 بند بأدلة
 
-### 16) القبلة (Qibla)
-- [x] شاشة كاملة مع بوصلة + سهم اتجاه.
-- [x] حساب الزاوية رياضياً (`QiblaService`).
-- [x] المسافة إلى مكة بـ Haversine.
-- [x] مؤشر بصري (N/E/S/W) + علامات درجات.
-- [x] تنبيه عند عدم توفر الحساس (للويب).
-- [x] يعمل على الجوال بحساس البوصلة.
+### 16) القبلة — بوصلة + مسافة إلى مكة
 
-### 17) الإسناد
-- [x] قسم Flaticon في تبويب المزيد
+### 17) المساجد القريبة
+- [x] خريطة OpenStreetMap + Overpass API.
+- [x] 60% خريطة + 40% قائمة قابلة للتمرير.
+- [x] فلترة النطاق (1/3/5/10 كم).
+- [x] زر التوجيه (Google/Apple Maps).
+- [x] يعمل على APK/iOS — على الويب قد يفشل بسبب CORS.
+
+### 18) شاشة الإعدادات (كامل)
+- [x] قسم الحساب (يفتح شاشة حسابي).
+- [x] إشعارات الصلاة (5 مفاتيح + الأذان + التذكيرات اليومية).
+- [x] تذكير قبل الأذان (0/5/10/15/20 دقيقة).
+- [x] المظهر (اللغة + الثيمات).
+- [x] القرآن (القارئ + التقدم التلقائي).
+- [x] حول التطبيق (الإصدار + المطور + Flaticon).
+- [x] زر تسجيل الخروج.
+- [x] حفظ الإعدادات في Firestore.
+
+### 19) الإسناد
+- [x] قسم Flaticon في تبويب المزيد + شاشة الإعدادات.
 
 ---
 
 ## ⏳ قيد التنفيذ
 
-### 🔥 الأولوية القادمة
-1. [ ] **المساجد القريبة (Nearby Mosques)** — خريطة OpenStreetMap + Overpass API ← التالي
+### 🔥 الأولوية القادمة (بالترتيب)
+1. [ ] **الإشعارات الفعلية** (تفعيل ما في الإعدادات) ← التالي
+2. [ ] **شاشة الأذان** (10 مؤذنين + عرض الأذان) + خلفيات أذان في المتجر (3 VIP)
+3. [ ] **اللغات الإضافية** (الفرنسية، الأوردو، النيبالية، الإندونيسية، المليزية)
+4. [ ] **المعلم الذكي (AI) كامل**
+5. [ ] **شاشة المجتمع** (نشر + تفاعل)
 
 ### لاحقاً
-- [ ] شاشة الإعدادات الكاملة
-- [ ] إشعارات لكل صلاة + الأذان + تذكير
 - [ ] الوضع النهاري/الليلي
 - [ ] زر "وثّق حسابي" للمستخدم العادي
-- [ ] شاشة الأذان (10 مؤذنين)
-- [ ] اللغات الإضافية
-- [ ] المعلم الذكي (AI) كامل
-- [ ] شاشة المجتمع
 - [ ] شاشة "الصدقة" منفصلة
+- [ ] إعادة محاولة CORS proxy للمساجد على الويب
 
 ---
 
@@ -240,28 +216,18 @@ service cloud.firestore {
 - Project ID: `noor-al-hidayah` | Number: `762471094332`
 - Web App: `1:762471094332:web:68fe063e9282d7441d8b39` | Location: `nam5`
 
-### APIs خارجية (مجانية، بدون مفتاح)
+### APIs خارجية (مجانية)
 - **أسعار الذهب/الفضة:** `https://data-asg.goldprice.org/dbXRates/USD`
 - **أسعار الصرف:** `https://open.er-api.com/v6/USD`
-- **المساجد القريبة:** `https://overpass-api.de/api/interpreter` (قريباً)
+- **المساجد:** Overpass API.
 
 ### أصول الصور
 **assets/icons/**: Setting, challenge, coupon, more, store, community, true.me, true.users, adhan  
 **assets/images/**: Me, logo, avatar_man, avatar_woman  
 **assets/images/backgrounds/**: backgroundv2 (default), _blue, _orange, _brown, _dark, _purple, _olive, vip1, vip2, vip3
 
-### pubspec.yaml
-```
-flutter:
-  uses-material-design: true
-  assets:
-    - assets/icons/
-    - assets/images/
-    - assets/images/backgrounds/
-```
-
-**Dependencies المهمة:**
-`firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`, `flutter_compass`, `flutter_map` (قريباً), `latlong2` (قريباً).
+### pubspec.yaml — Dependencies المهمة
+`firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`, `flutter_compass`, `flutter_map`, `latlong2`, `url_launcher`.
 
 ### Git Workflow
 ```
@@ -285,7 +251,7 @@ git add . && git commit -m "..." && git push
 
 ## 🙏 شكر وتقدير
 
-بعض الأيقونات من [Flaticon](https://www.flaticon.com/) — Icon made by Flaticon from www.flaticon.com.
+بعض الأيقونات من [Flaticon](https://www.flaticon.com/) — Icon made by Flaticon.
 
 ---
 
@@ -297,8 +263,8 @@ git add . && git commit -m "..." && git push
 4. أحجام → `R.s()` / `R.f()`.
 5. Firestore تحت `users/{uid}`.
 6. `UserService` + `AuthService`.
-7. الترجمات في `app_state.dart` (`_ar` + `_en`).
-8. الصور في `assets/` → تحديث `pubspec.yaml`.
+7. الترجمات في `app_state.dart`.
+8. الصور في `assets/`.
 9. ⚠️ تجنّب تكرار الأحرف العربية في `currencies.dart`.
 10. اختبار: `flutter analyze` + `bash tool/preview.sh`.
 
@@ -315,7 +281,7 @@ git add . && git commit -m "..." && git push
 - abdelrahmenbenromdhan11@gmail.com
 - vevocom888@gmail.com
 
-**إيميلات العمل (Business):**
+**إيميلات العمل:**
 - nooralhidayahbusiness@gmail.com
 - nooralimanechannel@gmail.com
 
@@ -325,7 +291,7 @@ git add . && git commit -m "..." && git push
 
 ## 🛠️ طريقة العمل بين المالك و AI (Workflow)
 
-> ⚠️ قسم دائم — لا يُحذف أبداً عند تحديث `PROJECT.md`.
+> ⚠️ قسم دائم — لا يُحذف أبداً.
 
 ### المبادئ
 1. ملف واحد لكل ميزة.
@@ -347,12 +313,6 @@ git add . && git commit -m "..." && git push
 - **ملف Flutter:** Add file → Create new file → الصق → Commit.
 - **صورة:** Add file → Upload files → المجلد → حدّث `pubspec.yaml`.
 
-### تحديث `PROJECT.md`
-1. أضف `- [x]` في "المنجز".
-2. احذف البند من "قيد التنفيذ".
-3. حدّث "آخر تحديث" + "الإصدار".
-4. ⚠️ لا تحذف قسم Workflow.
-
 ### حل مشكلة Codespaces (نفاد الذاكرة)
 ```
 pkill -f flutter ; pkill -f dart
@@ -367,7 +327,4 @@ flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8095 --web-renderer 
 2. لا استبدال جزئي.
 3. لا انتقال بدون تحديث `PROJECT.md`.
 
-### إذا حصل خطأ
-أوقف → انسخ الخطأ كامل + صورة + اسم الملف → أرسل للـ AI → أعد من الخطوة 2.
-
-**آخر تحديث لهذا القسم:** 2026-09-29 — ثابت ولا يُحذف.
+**آخر تحديث لهذا القسم:** 2026-09-30 — ثابت ولا يُحذف.
