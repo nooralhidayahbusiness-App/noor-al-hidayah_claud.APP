@@ -23,6 +23,7 @@ import '../khatm_plan_screen.dart';
 import '../haram_screen.dart';
 import '../qibla_screen.dart';
 import '../mosques_screen.dart';
+import '../ai_teacher_screen.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
@@ -67,9 +68,10 @@ class HomeTab extends StatelessWidget {
               ),
             SizedBox(height: R.s(context, 12)),
             AiTeacherCard(
-              onTap: () =>
-                  showAuthMessage(context, appState.tr('teacherSoon')),
-            ),
+  onTap: () => Navigator.of(context).push(
+    fadeRoute(const AiTeacherScreen()),
+  ),
+),
             SizedBox(height: R.s(context, 20)),
             Text(
               appState.tr('quickAccess'),
