@@ -10,12 +10,14 @@ import '../core/app_state.dart';
 import '../core/prayer_state.dart';
 import 'user_service.dart';
 
-/// يمثّل وقت صلاة واحد.
 class PrayerEntry {
-  final String name; // 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'
+  final String name;
   final DateTime time;
   const PrayerEntry(this.name, this.time);
 }
+
+/// دالة تُستدعى عند الضغط على إشعار الصلاة.
+typedef OnPrayerTap = void Function(String prayerKey, DateTime prayerTime);
 
 class NotificationService {
   NotificationService._();
@@ -24,6 +26,8 @@ class NotificationService {
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   bool _supported = false;
+
+  OnPrayerTap? onPrayerTap;
 
   static const _prayerIds = {
     'fajr': 100,
@@ -67,6 +71,7 @@ class NotificationService {
           android: android,
           iOS: ios,
         ),
+        onDidReceiveNotificationResponse: _onTap,
       );
 
       _supported = Platform.isAndroid || Platform.isIOS;
@@ -74,6 +79,28 @@ class NotificationService {
       debugPrint('Notification init error: $e');
       _supported = false;
     }
+  }
+
+  void _onTap(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) return;
+
+    // الصيغة: "prayerKey|timestampMs"
+    final parts = payload.split('|');
+    if (parts.isEmpty) return;
+
+    final prayerKey = parts[0];
+    DateTime when;
+    if (parts.length > 1) {
+      final ms = int.tryParse(parts[1]);
+      when = ms != null
+          ? DateTime.fromMillisecondsSinceEpoch(ms)
+          : DateTime.now();
+    } else {
+      when = DateTime.now();
+    }
+
+    onPrayerTap?.call(prayerKey, when);
   }
 
   Future<bool> requestPermissions() async {
@@ -112,7 +139,6 @@ class NotificationService {
     } catch (_) {}
   }
 
-  /// يعيد جدولة كل الإشعارات بناءً على الإعدادات الحالية.
   Future<void> reschedule({
     required List<PrayerEntry> prayers,
   }) async {
@@ -125,7 +151,6 @@ class NotificationService {
     final beforeMin =
         (notifs['adhanBeforeMinutes'] as num?)?.toInt() ?? 0;
 
-    // 1) إشعارات الصلاة
     for (final p in prayers) {
       final enabled = notifs[p.name] == true;
       if (!enabled) continue;
@@ -136,12 +161,12 @@ class NotificationService {
       await _schedulePrayer(
         id: _prayerIds[p.name] ?? 100,
         name: p.name,
-        at: notifyAt,
+        at: p.time,
+        notifyAt: notifyAt,
         beforeMin: beforeMin,
       );
     }
 
-    // 2) التذكيرات اليومية
     if (notifs['dailyChallenge'] == true) {
       await _scheduleDaily(
         id: _dailyChallengeId,
@@ -177,6 +202,7 @@ class NotificationService {
     required int id,
     required String name,
     required DateTime at,
+    required DateTime notifyAt,
     required int beforeMin,
   }) async {
     final prayerName = appState.tr(name);
@@ -185,14 +211,38 @@ class NotificationService {
         : '${appState.tr('notifAdhanBefore')} $beforeMin ${appState.tr('minutes')} · $prayerName';
     final body = appState.tr('notifAdhanBody');
 
-    await _zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      at: at,
-      channelId: 'prayer_channel',
-      channelName: appState.tr('notifChannelPrayer'),
-    );
+    final payload = '$name|${at.millisecondsSinceEpoch}';
+
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(notifyAt, tz.local),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'prayer_channel',
+            appState.tr('notifChannelPrayer'),
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            playSound: true,
+            category: AndroidNotificationCategory.alarm,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('Schedule error ($id): $e');
+    }
   }
 
   Future<void> _scheduleDaily({
@@ -208,68 +258,33 @@ class NotificationService {
       first = first.add(const Duration(days: 1));
     }
 
-    await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(first, tz.local),
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_channel',
-          appState.tr('notifChannelDaily'),
-          channelDescription: appState.tr('notifChannelDailyDesc'),
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: const DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
-  }
-
-  Future<void> _zonedSchedule({
-    required int id,
-    required String title,
-    required String body,
-    required DateTime at,
-    required String channelId,
-    required String channelName,
-  }) async {
     try {
       await _plugin.zonedSchedule(
         id,
         title,
         body,
-        tz.TZDateTime.from(at, tz.local),
+        tz.TZDateTime.from(first, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            channelId,
-            channelName,
-            importance: Importance.high,
-            priority: Priority.high,
+            'daily_channel',
+            appState.tr('notifChannelDaily'),
+            channelDescription: appState.tr('notifChannelDailyDesc'),
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
             icon: '@mipmap/ic_launcher',
-            playSound: true,
           ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+          iOS: const DarwinNotificationDetails(),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );
     } catch (e) {
-      debugPrint('Schedule error ($id): $e');
+      debugPrint('Daily schedule error ($id): $e');
     }
   }
 
-  /// يجمع أوقات الصلاة من prayerState. يعمل بحذر مع أي بنية.
   List<PrayerEntry> collectPrayerTimes() {
     final list = <PrayerEntry>[];
     final data = prayerState.data;
@@ -283,7 +298,6 @@ class NotificationService {
         if (value is DateTime) {
           list.add(PrayerEntry(key, value));
         } else if (value is String) {
-          // قد يكون النص مثل "4:54 ص"
           final parsed = _parseTimeText(value, now);
           if (parsed != null) list.add(PrayerEntry(key, parsed));
         }
@@ -325,7 +339,6 @@ class NotificationService {
 
   DateTime? _parseTimeText(String text, DateTime day) {
     try {
-      // "4:54 ص" أو "4:54 AM"
       final isAm = text.contains('ص') || text.toUpperCase().contains('AM');
       final isPm = text.contains('م') || text.toUpperCase().contains('PM');
       final cleaned = text
