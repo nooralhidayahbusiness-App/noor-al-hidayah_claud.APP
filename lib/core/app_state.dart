@@ -372,6 +372,18 @@ const Map<String, String> _ar = {
   'languageIndonesian': 'Bahasa Indonesia',
   'languageMalay': 'Bahasa Melayu',
   'languageChoose': 'اختر اللغة',
+// المعلم الذكي
+'teacherWelcome': 'مرحباً بك في المعلم',
+'teacherWelcomeDesc': 'مساعدك الذكي لتعلم القرآن الكريم. اختر قسماً للبدء، أو اسأل أي سؤال.',
+'teacherCategories': 'الأقسام التعليمية',
+'teacherHint': 'اكتب سؤالك...',
+'teacherClearTitle': 'محادثة جديدة؟',
+'teacherClearBody': 'سيتم حذف المحادثة الحالية.',
+'teacherErrorGeneric': 'تعذّر الاتصال بالمعلم. حاول مرة أخرى.',
+'teacherErrorQuota': 'استهلكت الحصة المجانية. حاول بعد قليل.',
+'teacherErrorAuth': 'مشكلة في مفتاح API. راجع الإعدادات.',
+'teacherErrorTimeout': 'انتهت المهلة. تحقق من الاتصال.',
+'teacherErrorBlocked': 'لم يستطع المعلم الرد. جرّب صياغة أخرى.',
 };
 
 // =====================================================================
@@ -651,4 +663,16 @@ const Map<String, String> _en = {
   'languageIndonesian': 'Bahasa Indonesia',
   'languageMalay': 'Bahasa Melayu',
   'languageChoose': 'Choose language',
+// AI Teacher
+'teacherWelcome': 'Welcome to the Teacher',
+'teacherWelcomeDesc': 'Your AI assistant for learning the Holy Quran. Choose a category to start, or ask any question.',
+'teacherCategories': 'Learning Categories',
+'teacherHint': 'Type your question...',
+'teacherClearTitle': 'New chat?',
+'teacherClearBody': 'The current conversation will be cleared.',
+'teacherErrorGeneric': 'Could not connect. Try again.',
+'teacherErrorQuota': 'Free quota used. Try again later.',
+'teacherErrorAuth': 'API key issue. Check settings.',
+'teacherErrorTimeout': 'Timeout. Check your connection.',
+'teacherErrorBlocked': 'Teacher could not respond. Try rephrasing.',
 };
