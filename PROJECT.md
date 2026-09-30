@@ -1,13 +1,13 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-30 | **الإصدار:** Beta 1.2
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-30 | **الإصدار:** Beta 1.3
 
 ---
 
 ## 📌 نظرة عامة
 
 ### التقنيات
-- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API** + **flutter_compass** + **flutter_map**.
+- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API** + **flutter_compass** + **flutter_map** + **flutter_local_notifications**.
 - **Codespaces + GitHub** للتطوير، **GitHub Pages** للنشر.
 
 ### المالك
@@ -61,6 +61,7 @@ lib/
 │   ├── auth_service, user_service, storage_service
 │   ├── location_service, quran_audio_service, tafsir_service, share_service
 │   ├── metals_service, khatm_service, qibla_service, mosques_service
+│   └── notification_service
 ├── screens/
 │   ├── splash, welcome, login, register, location
 │   ├── home_shell
@@ -188,7 +189,17 @@ service cloud.firestore {
 - [x] زر تسجيل الخروج.
 - [x] حفظ الإعدادات في Firestore.
 
-### 19) الإسناد
+### 19) الإشعارات (كامل)
+- [x] `flutter_local_notifications` + `timezone` + `flutter_timezone`.
+- [x] `NotificationService` لجمع أوقات الصلاة وجدولتها.
+- [x] إشعارات 5 صلوات (قابلة للتفعيل/الإيقاف).
+- [x] تذكير قبل الأذان (0/5/10/15/20 دقيقة).
+- [x] 3 تذكيرات يومية: التحدي (9ص)، الورد (6ص)، آية اليوم (7ص).
+- [x] طلب الصلاحيات تلقائياً عند فتح الإعدادات.
+- [x] إعادة الجدولة تلقائياً عند كل تغيير.
+- [x] يعمل على APK/iOS — على الويب محدود.
+
+### 20) الإسناد
 - [x] قسم Flaticon في تبويب المزيد + شاشة الإعدادات.
 
 ---
@@ -196,11 +207,10 @@ service cloud.firestore {
 ## ⏳ قيد التنفيذ
 
 ### 🔥 الأولوية القادمة (بالترتيب)
-1. [ ] **الإشعارات الفعلية** (تفعيل ما في الإعدادات) ← التالي
-2. [ ] **شاشة الأذان** (10 مؤذنين + عرض الأذان) + خلفيات أذان في المتجر (3 VIP)
-3. [ ] **اللغات الإضافية** (الفرنسية، الأوردو، النيبالية، الإندونيسية، المليزية)
-4. [ ] **المعلم الذكي (AI) كامل**
-5. [ ] **شاشة المجتمع** (نشر + تفاعل)
+1. [ ] **شاشة الأذان** (10 مؤذنين + عرض الأذان) + خلفيات أذان في المتجر (3 VIP) ← التالي
+2. [ ] **اللغات الإضافية** (الفرنسية، الأوردو، النيبالية، الإندونيسية، المليزية)
+3. [ ] **المعلم الذكي (AI) كامل**
+4. [ ] **شاشة المجتمع** (نشر + تفاعل)
 
 ### لاحقاً
 - [ ] الوضع النهاري/الليلي
@@ -227,7 +237,7 @@ service cloud.firestore {
 **assets/images/backgrounds/**: backgroundv2 (default), _blue, _orange, _brown, _dark, _purple, _olive, vip1, vip2, vip3
 
 ### pubspec.yaml — Dependencies المهمة
-`firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`, `flutter_compass`, `flutter_map`, `latlong2`, `url_launcher`.
+`firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`, `flutter_compass`, `flutter_map`, `latlong2`, `url_launcher`, `flutter_local_notifications`, `timezone`, `flutter_timezone`.
 
 ### Git Workflow
 ```
