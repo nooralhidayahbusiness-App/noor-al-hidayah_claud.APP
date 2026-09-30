@@ -71,3 +71,9 @@ android/app/*.keystore
 # ===== Codespaces =====
 .devcontainer/
 .codespaces/
+# ===== Secrets — لا تُرفع أبداً =====
+lib/core/secrets.dart
+.env
+.env.local
+*.key
+
