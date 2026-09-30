@@ -294,6 +294,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   value: _adhanBeforeMinutes,
                                   onTap: _openAdhanBeforePicker,
                                 ),
+                           _Divider(),
+_NavRow(
+  icon: Icons.wallpaper_rounded,
+  title: appState.tr('adhanBackground'),
+  subtitle: themeState.adhanBackgroundId ==
+          'default'
+      ? appState.tr('themeDefault')
+      : themeState.adhanBackgroundId,
+  onTap: _openStore,
+),
+_Divider(),
+_NavRow(
+  icon: Icons.record_voice_over_rounded,
+  title: appState.tr('adhanReciter'),
+  subtitle: themeState.adhanId == 'default'
+      ? appState.tr('themeDefault')
+      : themeState.adhanId,
+  onTap: _openStore,
+),
                               ],
                             ),
                           ),
