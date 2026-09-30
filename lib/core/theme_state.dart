@@ -9,11 +9,13 @@ class ThemeState extends ChangeNotifier {
   static const _voiceKey = 'active_voice';
   static const _adhanKey = 'active_adhan';
   static const _themeKey = 'active_theme';
+  static const _adhanBgKey = 'active_adhan_background';
 
   String backgroundId = 'default';
   String reciterId = 'default';
   String adhanId = 'default';
   String themeId = 'default';
+  String adhanBackgroundId = 'default';
   bool _loaded = false;
 
   ThemePalette get palette => paletteFor(themeId);
@@ -30,6 +32,8 @@ class ThemeState extends ChangeNotifier {
         reciterId = (inventory['activeVoice'] as String?) ?? 'default';
         adhanId = (inventory['activeAdhan'] as String?) ?? 'default';
         themeId = (inventory['activeTheme'] as String?) ?? 'default';
+        adhanBackgroundId =
+            (inventory['activeAdhanBackground'] as String?) ?? 'default';
         await _saveLocal();
         notifyListeners();
         return;
@@ -42,6 +46,7 @@ class ThemeState extends ChangeNotifier {
     reciterId = prefs.getString(_voiceKey) ?? 'default';
     adhanId = prefs.getString(_adhanKey) ?? 'default';
     themeId = prefs.getString(_themeKey) ?? 'default';
+    adhanBackgroundId = prefs.getString(_adhanBgKey) ?? 'default';
     notifyListeners();
   }
 
@@ -73,12 +78,20 @@ class ThemeState extends ChangeNotifier {
     await _saveRemote('activeTheme', id);
   }
 
+  Future<void> setAdhanBackground(String id) async {
+    adhanBackgroundId = id;
+    notifyListeners();
+    await _saveLocal();
+    await _saveRemote('activeAdhanBackground', id);
+  }
+
   Future<void> _saveLocal() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_bgKey, backgroundId);
     await prefs.setString(_voiceKey, reciterId);
     await prefs.setString(_adhanKey, adhanId);
     await prefs.setString(_themeKey, themeId);
+    await prefs.setString(_adhanBgKey, adhanBackgroundId);
   }
 
   Future<void> _saveRemote(String key, String value) async {
