@@ -46,3 +46,28 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+# ===== Secrets — لا تُرفع أبداً =====
+lib/core/secrets.dart
+.env
+.env.local
+*.key
+
+# ===== Firebase =====
+firebase-debug.log
+firestore-debug.log
+.firebase/
+
+# ===== iOS =====
+ios/Pods/
+ios/.symlinks/
+ios/Runner/GoogleService-Info.plist
+
+# ===== Android Keystore =====
+android/key.properties
+android/app/upload-keystore.jks
+android/app/*.jks
+android/app/*.keystore
+
+# ===== Codespaces =====
+.devcontainer/
+.codespaces/
