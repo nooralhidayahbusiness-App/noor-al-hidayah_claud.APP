@@ -1,13 +1,13 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-30 | **الإصدار:** Beta 1.3
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-30 | **الإصدار:** Beta 1.4
 
 ---
 
 ## 📌 نظرة عامة
 
 ### التقنيات
-- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API** + **flutter_compass** + **flutter_map** + **flutter_local_notifications**.
+- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API** + **flutter_compass** + **flutter_map** + **flutter_local_notifications** + **audioplayers**.
 - **Codespaces + GitHub** للتطوير، **GitHub Pages** للنشر.
 
 ### المالك
@@ -55,13 +55,14 @@ lib/
 │   ├── quran_prefs, divine_names, firebase_options, strings_prayer
 ├── data/
 │   ├── questions, adhkar, duas, haram, makruh, currencies, store_items
+│   ├── adhan_reciters, adhan_timings
 ├── models/
 │   ├── quran, saved_location, mosque
 ├── services/
 │   ├── auth_service, user_service, storage_service
 │   ├── location_service, quran_audio_service, tafsir_service, share_service
 │   ├── metals_service, khatm_service, qibla_service, mosques_service
-│   └── notification_service
+│   ├── notification_service, adhan_service
 ├── screens/
 │   ├── splash, welcome, login, register, location
 │   ├── home_shell
@@ -73,6 +74,7 @@ lib/
 │   ├── tasbeeh_screen, zakat_screen, khatm_plan_screen
 │   ├── haram_screen, prohibition_detail_screen
 │   ├── qibla_screen, mosques_screen
+│   ├── adhan_screen
 │   └── tabs/ (home_tab, quran_browser_tab, community_tab, more_tab, soon_tabs)
 └── widgets/
     ├── app_branding, animated_vip_background, themed_background
@@ -93,8 +95,9 @@ users/{uid}/
 ├── profile: { name, bio, isPublic, country, verified, verifiedType, faceScanDone }
 ├── stats: { points, level, streak, lastActiveDate, challengesCompleted,
 │            totalCorrectAnswers, quranKhatmas, aiTeacherScore, redeemedCoupons }
-├── inventory: { backgrounds, voices, adhans, themes,
-│                activeBackground, activeVoice, activeAdhan, activeTheme }
+├── inventory: { backgrounds, voices, adhans, adhanBackgrounds, themes,
+│                activeBackground, activeVoice, activeAdhan,
+│                activeAdhanBackground, activeTheme }
 ├── settings: { language, theme, notifications{...} }
 └── progress: {
       challenges: { lastPlayedDate, todayPoints, todayCorrect, totalCompleted }
@@ -126,7 +129,7 @@ service cloud.firestore {
 - [x] تسجيل/دخول/خروج Firebase
 - [x] `authService.isOwner`
 - [x] مزامنة كاملة
-- [x] Auto-login: يحفظ الجلسة، يتخطى Welcome و Login.
+- [x] Auto-login
 
 ### 2) الملف الشخصي
 - [x] شاشة حسابي + تعديل
@@ -143,8 +146,8 @@ service cloud.firestore {
 - [x] 20 نقطة/إجابة، Streak تلقائي
 
 ### 5) المتجر
-- [x] 4 تبويبات: خلفيات/قراء/مؤذنون/ثيمات
-- [x] 10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات
+- [x] 5 تبويبات: خلفيات/قراء/مؤذنون/خلفيات أذان/ثيمات
+- [x] 10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات + 8 خلفيات أذان
 - [x] VIP animations + شارات
 - [x] "مشترياتي"
 
@@ -180,26 +183,41 @@ service cloud.firestore {
 - [x] يعمل على APK/iOS — على الويب قد يفشل بسبب CORS.
 
 ### 18) شاشة الإعدادات (كامل)
-- [x] قسم الحساب (يفتح شاشة حسابي).
-- [x] إشعارات الصلاة (5 مفاتيح + الأذان + التذكيرات اليومية).
-- [x] تذكير قبل الأذان (0/5/10/15/20 دقيقة).
-- [x] المظهر (اللغة + الثيمات).
-- [x] القرآن (القارئ + التقدم التلقائي).
-- [x] حول التطبيق (الإصدار + المطور + Flaticon).
-- [x] زر تسجيل الخروج.
-- [x] حفظ الإعدادات في Firestore.
+- [x] قسم الحساب
+- [x] إشعارات الصلاة (5 مفاتيح + الأذان + التذكيرات اليومية)
+- [x] تذكير قبل الأذان (0/5/10/15/20 دقيقة)
+- [x] المظهر (اللغة + الثيمات)
+- [x] القرآن (القارئ + التقدم التلقائي)
+- [x] حول التطبيق
+- [x] زر تسجيل الخروج
+- [x] حفظ الإعدادات في Firestore
 
 ### 19) الإشعارات (كامل)
 - [x] `flutter_local_notifications` + `timezone` + `flutter_timezone`.
-- [x] `NotificationService` لجمع أوقات الصلاة وجدولتها.
 - [x] إشعارات 5 صلوات (قابلة للتفعيل/الإيقاف).
-- [x] تذكير قبل الأذان (0/5/10/15/20 دقيقة).
+- [x] تذكير قبل الأذان.
 - [x] 3 تذكيرات يومية: التحدي (9ص)، الورد (6ص)، آية اليوم (7ص).
-- [x] طلب الصلاحيات تلقائياً عند فتح الإعدادات.
-- [x] إعادة الجدولة تلقائياً عند كل تغيير.
-- [x] يعمل على APK/iOS — على الويب محدود.
+- [x] طلب الصلاحيات تلقائياً.
+- [x] إعادة الجدولة عند التغيير.
+- [x] payload → يفتح شاشة الأذان عند الضغط.
 
-### 20) الإسناد
+### 20) شاشة الأذان (كامل)
+- [x] 10 مؤذنين بروابط MP3 مباشرة (`adhan_reciters.dart`).
+- [x] تشغيل تلقائي عند فتح الشاشة (`adhan_service.dart`).
+- [x] نص متحرك يتبع الصوت (توقيتات في `adhan_timings.dart`).
+- [x] سطرين بحد أقصى: السابق باهت + الحالي بارز بتوهج.
+- [x] زر القبلة + إيقاف/تشغيل + تأجيل + "صليت".
+- [x] خلفية من المتجر (8 خلفيات).
+- [x] تظهر تلقائياً عند الضغط على الإشعار.
+- [x] fallback للويب (بدون صوت/إشعار).
+
+### 21) خلفيات الأذان (8 في المتجر)
+- [x] 5 عادية (400-700 نقطة).
+- [x] 3 VIP (2000 نقطة) مع animations + نص متحرك.
+- [x] تبويب جديد في المتجر: "خلفيات الأذان".
+- [x] شارة `VIP` + `ANIMATION`.
+
+### 22) الإسناد
 - [x] قسم Flaticon في تبويب المزيد + شاشة الإعدادات.
 
 ---
@@ -207,10 +225,9 @@ service cloud.firestore {
 ## ⏳ قيد التنفيذ
 
 ### 🔥 الأولوية القادمة (بالترتيب)
-1. [ ] **شاشة الأذان** (10 مؤذنين + عرض الأذان) + خلفيات أذان في المتجر (3 VIP) ← التالي
-2. [ ] **اللغات الإضافية** (الفرنسية، الأوردو، النيبالية، الإندونيسية، المليزية)
-3. [ ] **المعلم الذكي (AI) كامل**
-4. [ ] **شاشة المجتمع** (نشر + تفاعل)
+1. [ ] **اللغات الإضافية** (الفرنسية، الأوردو، النيبالية، الإندونيسية، المليزية) ← التالي
+2. [ ] **المعلم الذكي (AI) كامل**
+3. [ ] **شاشة المجتمع** (نشر + تفاعل)
 
 ### لاحقاً
 - [ ] الوضع النهاري/الليلي
@@ -230,14 +247,16 @@ service cloud.firestore {
 - **أسعار الذهب/الفضة:** `https://data-asg.goldprice.org/dbXRates/USD`
 - **أسعار الصرف:** `https://open.er-api.com/v6/USD`
 - **المساجد:** Overpass API.
+- **الأذان:** `islamcan.com/audio/adhan/azanN.mp3` (10 ملفات).
 
 ### أصول الصور
 **assets/icons/**: Setting, challenge, coupon, more, store, community, true.me, true.users, adhan  
 **assets/images/**: Me, logo, avatar_man, avatar_woman  
-**assets/images/backgrounds/**: backgroundv2 (default), _blue, _orange, _brown, _dark, _purple, _olive, vip1, vip2, vip3
+**assets/images/backgrounds/**: backgroundv2 (default), _blue, _orange, _brown, _dark, _purple, _olive, vip1, vip2, vip3  
+**assets/images/adhan_backgrounds/**: adhan_bg_1..5, adhan_bg_vip_1..3
 
 ### pubspec.yaml — Dependencies المهمة
-`firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`, `flutter_compass`, `flutter_map`, `latlong2`, `url_launcher`, `flutter_local_notifications`, `timezone`, `flutter_timezone`.
+`firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`, `flutter_compass`, `flutter_map`, `latlong2`, `url_launcher`, `flutter_local_notifications`, `timezone`, `flutter_timezone`, `audioplayers`.
 
 ### Git Workflow
 ```
