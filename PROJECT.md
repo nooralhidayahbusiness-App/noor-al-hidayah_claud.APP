@@ -1,6 +1,6 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-30 | **الإصدار:** Beta 1.4
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-30 | **الإصدار:** Beta 1.5
 
 ---
 
@@ -53,6 +53,8 @@ lib/
 │   ├── responsive
 │   ├── reciter_prefs, fonts, validators, navigation
 │   ├── quran_prefs, divine_names, firebase_options, strings_prayer
+│   └── i18n/
+│       ├── fr.dart, ur.dart, ne.dart, id.dart, ms.dart
 ├── data/
 │   ├── questions, adhkar, duas, haram, makruh, currencies, store_items
 │   ├── adhan_reciters, adhan_timings
@@ -83,6 +85,23 @@ lib/
     ├── auth_widgets, glow_sparks, islamic_pattern
     ├── ai_teacher_card, prayer_widgets, daily_cards, avatar_picker
 ```
+
+---
+
+## 🌍 اللغات المدعومة (7 لغات)
+
+| # | اللغة | الكود | الاتجاه | الملف |
+|---|-------|------|---------|-------|
+| 1 | العربية | `ar` | RTL | `app_state.dart` |
+| 2 | English | `en` | LTR | `app_state.dart` |
+| 3 | Français | `fr` | LTR | `i18n/fr.dart` |
+| 4 | اردو | `ur` | RTL | `i18n/ur.dart` |
+| 5 | नेपाली | `ne` | LTR | `i18n/ne.dart` |
+| 6 | Bahasa Indonesia | `id` | LTR | `i18n/id.dart` |
+| 7 | Bahasa Melayu | `ms` | LTR | `i18n/ms.dart` |
+
+- **دالة `appState.setLanguage(code)`** للتبديل.
+- **قائمة اختيار في شاشة الإعدادات** (7 لغات + علامة ✓ على المختارة).
 
 ---
 
@@ -217,7 +236,13 @@ service cloud.firestore {
 - [x] تبويب جديد في المتجر: "خلفيات الأذان".
 - [x] شارة `VIP` + `ANIMATION`.
 
-### 22) الإسناد
+### 22) اللغات (7 لغات كاملة)
+- [x] العربية + English + Français + اردو + नेपाली + Bahasa Indonesia + Bahasa Melayu.
+- [x] ملفات `i18n/*.dart` للغات الجديدة.
+- [x] `appState.setLanguage(code)` + دعم RTL للأوردو.
+- [x] قائمة اختيار اللغة في الإعدادات (7 لغات).
+
+### 23) الإسناد
 - [x] قسم Flaticon في تبويب المزيد + شاشة الإعدادات.
 
 ---
@@ -225,9 +250,8 @@ service cloud.firestore {
 ## ⏳ قيد التنفيذ
 
 ### 🔥 الأولوية القادمة (بالترتيب)
-1. [ ] **اللغات الإضافية** (الفرنسية، الأوردو، النيبالية، الإندونيسية، المليزية) ← التالي
-2. [ ] **المعلم الذكي (AI) كامل**
-3. [ ] **شاشة المجتمع** (نشر + تفاعل)
+1. [ ] **المعلم الذكي (AI) كامل** — مع خطة مجانية + شارة Beta ← التالي
+2. [ ] **شاشة المجتمع** (نشر + تفاعل) — **⚠️ تذكير: جعل `community.png` ذهبي**
 
 ### لاحقاً
 - [ ] الوضع النهاري/الليلي
@@ -248,6 +272,7 @@ service cloud.firestore {
 - **أسعار الصرف:** `https://open.er-api.com/v6/USD`
 - **المساجد:** Overpass API.
 - **الأذان:** `islamcan.com/audio/adhan/azanN.mp3` (10 ملفات).
+- **AI Teacher:** (قيد البحث — خطة مجانية).
 
 ### أصول الصور
 **assets/icons/**: Setting, challenge, coupon, more, store, community, true.me, true.users, adhan  
@@ -292,7 +317,7 @@ git add . && git commit -m "..." && git push
 4. أحجام → `R.s()` / `R.f()`.
 5. Firestore تحت `users/{uid}`.
 6. `UserService` + `AuthService`.
-7. الترجمات في `app_state.dart`.
+7. الترجمات: `app_state.dart` (ar/en) + `i18n/*.dart` (fr/ur/ne/id/ms).
 8. الصور في `assets/`.
 9. ⚠️ تجنّب تكرار الأحرف العربية في `currencies.dart`.
 10. اختبار: `flutter analyze` + `bash tool/preview.sh`.
