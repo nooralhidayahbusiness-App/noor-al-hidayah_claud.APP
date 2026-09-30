@@ -4,13 +4,16 @@ import 'package:flutter/material.dart';
 import 'core/app_state.dart';
 import 'core/firebase_options.dart';
 import 'core/theme.dart';
-import 'core/theme_state.dart';
+import 'services/notification_service.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
+  } catch (_) {}
+  try {
+    await notificationService.init();
   } catch (_) {}
   runApp(const NoorApp());
 }
@@ -21,12 +24,12 @@ class NoorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([appState, themeState]),
+      listenable: appState,
       builder: (ctx, _) {
         return MaterialApp(
           title: 'نور الهداية',
           debugShowCheckedModeBanner: false,
-          theme: buildThemedAppTheme(themeState.palette),
+          theme: buildAppTheme(),
           builder: (context, child) => Directionality(
             textDirection: appState.direction,
             child: child!,
