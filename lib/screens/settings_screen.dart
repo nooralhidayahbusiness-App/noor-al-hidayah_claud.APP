@@ -6,6 +6,7 @@ import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../services/user_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
@@ -42,6 +43,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _notifications = Map.from(_defaultNotifs);
     _load();
+    // بعد التحميل، نطلب الصلاحيات ونعيد الجدولة
+    Future.delayed(const Duration(seconds: 1), () async {
+      if (!mounted) return;
+      await notificationService.requestPermissions();
+      await _rescheduleNotifications();
+    });
   }
 
   Future<void> _load() async {
@@ -81,11 +88,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleNotif(String key, bool value) async {
     setState(() => _notifications[key] = value);
     await _saveNotifications();
+    await _rescheduleNotifications();
   }
 
   Future<void> _setAdhanBefore(int minutes) async {
     setState(() => _adhanBeforeMinutes = minutes);
     await _saveNotifications();
+    await _rescheduleNotifications();
+  }
+
+  Future<void> _rescheduleNotifications() async {
+    final prayers = notificationService.collectPrayerTimes();
+    await notificationService.reschedule(prayers: prayers);
   }
 
   Future<void> _openStore() async {
