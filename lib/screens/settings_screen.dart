@@ -43,7 +43,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _notifications = Map.from(_defaultNotifs);
     _load();
-    // بعد التحميل، نطلب الصلاحيات ونعيد الجدولة
     Future.delayed(const Duration(seconds: 1), () async {
       if (!mounted) return;
       await notificationService.requestPermissions();
@@ -149,6 +148,129 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  void _openLanguagePicker() {
+    final languages = <MapEntry<String, String>>[
+      const MapEntry('ar', 'العربية'),
+      const MapEntry('en', 'English'),
+      const MapEntry('fr', 'Français'),
+      const MapEntry('ur', 'اردو'),
+      const MapEntry('ne', 'नेपाली'),
+      const MapEntry('id', 'Bahasa Indonesia'),
+      const MapEntry('ms', 'Bahasa Melayu'),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        padding: EdgeInsets.all(R.s(context, 16)),
+        decoration: const BoxDecoration(
+          color: AppColors.deepGreen,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: R.s(context, 12)),
+            Text(
+              appState.tr('languageChoose'),
+              style: TextStyle(
+                fontSize: R.f(context, 14),
+                fontWeight: FontWeight.w700,
+                color: AppColors.softGold,
+              ),
+            ),
+            SizedBox(height: R.s(context, 12)),
+            ...languages.map((lang) {
+              final isSelected = appState.languageCode == lang.key;
+              return Padding(
+                padding: EdgeInsets.only(bottom: R.s(context, 6)),
+                child: GestureDetector(
+                  onTap: () {
+                    appState.setLanguage(lang.key);
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: R.s(context, 12),
+                      vertical: R.s(context, 12),
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.gold.withValues(alpha: 0.2)
+                          : Colors.black.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.gold
+                            : AppColors.gold.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            lang.value,
+                            style: TextStyle(
+                              fontSize: R.f(context, 14),
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.gold
+                                  : AppColors.cream,
+                            ),
+                          ),
+                        ),
+                        if (isSelected)
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: AppColors.gold,
+                            size: R.s(context, 20),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+            SizedBox(height: R.s(context, 8)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _currentLanguageLabel() {
+    switch (appState.languageCode) {
+      case 'ar':
+        return 'العربية';
+      case 'en':
+        return 'English';
+      case 'fr':
+        return 'Français';
+      case 'ur':
+        return 'اردو';
+      case 'ne':
+        return 'नेपाली';
+      case 'id':
+        return 'Bahasa Indonesia';
+      case 'ms':
+        return 'Bahasa Melayu';
+      default:
+        return 'العربية';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -156,7 +278,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // ===== الهيدر =====
               Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(
                   R.s(context, 6),
@@ -202,7 +323,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           R.s(context, 20),
                         ),
                         children: [
-                          // ===== 1) الحساب =====
                           _SectionHeader(
                               title: appState.tr('settingsAccount')),
                           GlassCard(
@@ -216,7 +336,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           SizedBox(height: R.s(context, 14)),
 
-                          // ===== 2) الإشعارات =====
                           _SectionHeader(
                               title: appState.tr('settingsNotifications')),
                           GlassCard(
@@ -268,7 +387,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           SizedBox(height: R.s(context, 14)),
 
-                          // ===== 3) الأذان =====
                           _SectionHeader(
                               title: appState.tr('settingsAdhan')),
                           GlassCard(
@@ -294,31 +412,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   value: _adhanBeforeMinutes,
                                   onTap: _openAdhanBeforePicker,
                                 ),
-                           _Divider(),
-_NavRow(
-  icon: Icons.wallpaper_rounded,
-  title: appState.tr('adhanBackground'),
-  subtitle: themeState.adhanBackgroundId ==
-          'default'
-      ? appState.tr('themeDefault')
-      : themeState.adhanBackgroundId,
-  onTap: _openStore,
-),
-_Divider(),
-_NavRow(
-  icon: Icons.record_voice_over_rounded,
-  title: appState.tr('adhanReciter'),
-  subtitle: themeState.adhanId == 'default'
-      ? appState.tr('themeDefault')
-      : themeState.adhanId,
-  onTap: _openStore,
-),
+                                _Divider(),
+                                _NavRow(
+                                  icon: Icons.wallpaper_rounded,
+                                  title: appState.tr('adhanBackground'),
+                                  subtitle: themeState.adhanBackgroundId ==
+                                          'default'
+                                      ? appState.tr('themeDefault')
+                                      : themeState.adhanBackgroundId,
+                                  onTap: _openStore,
+                                ),
+                                _Divider(),
+                                _NavRow(
+                                  icon: Icons.record_voice_over_rounded,
+                                  title: appState.tr('adhanReciter'),
+                                  subtitle: themeState.adhanId == 'default'
+                                      ? appState.tr('themeDefault')
+                                      : themeState.adhanId,
+                                  onTap: _openStore,
+                                ),
                               ],
                             ),
                           ),
                           SizedBox(height: R.s(context, 14)),
 
-                          // ===== 4) التذكيرات اليومية =====
                           _SectionHeader(
                               title: appState.tr('settingsDaily')),
                           GlassCard(
@@ -362,7 +479,6 @@ _NavRow(
                           ),
                           SizedBox(height: R.s(context, 14)),
 
-                          // ===== 5) المظهر =====
                           _SectionHeader(
                               title: appState.tr('settingsAppearance')),
                           GlassCard(
@@ -372,10 +488,8 @@ _NavRow(
                                 _ChoiceRow(
                                   icon: Icons.language_rounded,
                                   title: appState.tr('language'),
-                                  textValue: appState.isArabic
-                                      ? 'العربية'
-                                      : 'English',
-                                  onTap: appState.toggleLanguage,
+                                  textValue: _currentLanguageLabel(),
+                                  onTap: _openLanguagePicker,
                                 ),
                                 _Divider(),
                                 _NavRow(
@@ -392,7 +506,6 @@ _NavRow(
                           ),
                           SizedBox(height: R.s(context, 14)),
 
-                          // ===== 6) القرآن =====
                           _SectionHeader(
                               title: appState.tr('settingsQuran')),
                           GlassCard(
@@ -421,7 +534,6 @@ _NavRow(
                           ),
                           SizedBox(height: R.s(context, 14)),
 
-                          // ===== 7) حول التطبيق =====
                           _SectionHeader(
                               title: appState.tr('settingsAbout')),
                           GlassCard(
@@ -451,7 +563,6 @@ _NavRow(
                           ),
                           SizedBox(height: R.s(context, 14)),
 
-                          // ===== 8) تسجيل الخروج =====
                           GlassCard(
                             ornament: false,
                             child: _NavRow(
@@ -463,7 +574,6 @@ _NavRow(
                           ),
                           SizedBox(height: R.s(context, 20)),
 
-                          // ===== Footer =====
                           Center(
                             child: Text(
                               appState.tr('credit'),
@@ -561,8 +671,6 @@ _NavRow(
     );
   }
 }
-
-// ==================== مكونات مساعدة ====================
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title});
