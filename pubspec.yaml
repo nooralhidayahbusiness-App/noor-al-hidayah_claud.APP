@@ -53,6 +53,9 @@ dependencies:
   flutter_compass: ^0.8.1
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  flutter_local_notifications: ^17.2.4
+  timezone: ^0.9.4
+  flutter_timezone: ^3.0.1
 
 dev_dependencies:
   flutter_test:
