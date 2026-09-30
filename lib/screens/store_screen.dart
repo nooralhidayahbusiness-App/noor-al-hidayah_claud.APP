@@ -21,7 +21,7 @@ class StoreScreen extends StatefulWidget {
 
 class _StoreScreenState extends State<StoreScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 4, vsync: this);
+  late final TabController _tabs = TabController(length: 5, vsync: this);
 
   bool _loading = true;
   int _points = 0;
@@ -67,6 +67,7 @@ class _StoreScreenState extends State<StoreScreen>
         'background' => 'backgrounds',
         'voice' => 'voices',
         'adhan' => 'adhans',
+        'adhanBackground' => 'adhanBackgrounds',
         'theme' => 'themes',
         _ => 'backgrounds',
       };
@@ -75,6 +76,7 @@ class _StoreScreenState extends State<StoreScreen>
         'background' => 'activeBackground',
         'voice' => 'activeVoice',
         'adhan' => 'activeAdhan',
+        'adhanBackground' => 'activeAdhanBackground',
         'theme' => 'activeTheme',
         _ => 'activeBackground',
       };
@@ -82,8 +84,12 @@ class _StoreScreenState extends State<StoreScreen>
   bool _isOwned(StoreItem item) =>
       item.price == 0 || _ownedList(item.type).contains(item.id);
 
-  bool _isActive(StoreItem item) =>
-      (_inventory[_activeKey(item.type)] as String?) == item.id;
+  bool _isActive(StoreItem item) {
+    if (item.type == 'adhanBackground') {
+      return themeState.adhanBackgroundId == item.id;
+    }
+    return (_inventory[_activeKey(item.type)] as String?) == item.id;
+  }
 
   Future<void> _activate(StoreItem item) async {
     switch (item.type) {
@@ -95,6 +101,9 @@ class _StoreScreenState extends State<StoreScreen>
         break;
       case 'adhan':
         await themeState.setAdhan(item.id);
+        break;
+      case 'adhanBackground':
+        await themeState.setAdhanBackground(item.id);
         break;
       case 'theme':
         await themeState.setTheme(item.id);
@@ -128,10 +137,10 @@ class _StoreScreenState extends State<StoreScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: themeState.palette.accentLight,
+        backgroundColor: AppColors.deepGreen,
         title: Text(
           appState.tr('confirmPurchase'),
-          style: TextStyle(color: themeState.palette.softGold),
+          style: const TextStyle(color: AppColors.softGold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -142,8 +151,8 @@ class _StoreScreenState extends State<StoreScreen>
                 Expanded(
                   child: Text(
                     appState.isArabic ? item.nameAr : item.nameEn,
-                    style: TextStyle(
-                      color: themeState.palette.gold,
+                    style: const TextStyle(
+                      color: AppColors.gold,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
@@ -155,13 +164,13 @@ class _StoreScreenState extends State<StoreScreen>
             const SizedBox(height: 10),
             Text(
               '${appState.tr('price')}: ${item.price} ${appState.tr('points')}',
-              style: TextStyle(color: themeState.palette.cream),
+              style: const TextStyle(color: AppColors.cream),
             ),
             const SizedBox(height: 6),
             Text(
               '${appState.tr('yourBalance')}: $_points',
               style: TextStyle(
-                color: themeState.palette.cream.withValues(alpha: 0.75),
+                color: AppColors.cream.withValues(alpha: 0.75),
                 fontSize: 13,
               ),
             ),
@@ -171,12 +180,12 @@ class _StoreScreenState extends State<StoreScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(appState.tr('cancel'),
-                style: TextStyle(color: themeState.palette.softGold)),
+                style: const TextStyle(color: AppColors.softGold)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(appState.tr('buy'),
-                style: TextStyle(color: themeState.palette.gold)),
+                style: const TextStyle(color: AppColors.gold)),
           ),
         ],
       ),
@@ -282,12 +291,13 @@ class _StoreScreenState extends State<StoreScreen>
                 indicatorWeight: 3,
                 labelStyle: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  fontSize: 14,
+                  fontSize: 13,
                 ),
                 tabs: [
                   Tab(text: appState.tr('tabBackgrounds')),
                   Tab(text: appState.tr('tabVoices')),
                   Tab(text: appState.tr('tabAdhans')),
+                  Tab(text: appState.tr('tabAdhanBgs')),
                   Tab(text: appState.tr('tabThemes')),
                 ],
               ),
@@ -302,6 +312,7 @@ class _StoreScreenState extends State<StoreScreen>
                           _buildGrid('background'),
                           _buildGrid('voice'),
                           _buildGrid('adhan'),
+                          _buildGrid('adhanBackground'),
                           _buildGrid('theme'),
                         ],
                       ),
