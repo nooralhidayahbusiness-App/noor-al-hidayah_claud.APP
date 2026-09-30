@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'settings_screen.dart';
+
 import '../core/app_flow.dart';
 import '../core/app_state.dart';
 import '../core/prayer_state.dart';
@@ -8,10 +8,12 @@ import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
+import '../services/notification_service.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/auth_widgets.dart';
 import 'challenge_screen.dart';
+import 'settings_screen.dart';
 import 'tabs/community_tab.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/more_tab.dart';
@@ -35,6 +37,14 @@ class _HomeShellState extends State<HomeShell> {
     profileState.load();
     reciterPrefs.load();
     themeState.load();
+    // جدولة الإشعارات بعد 3 ثواني (بعد تحميل البيانات)
+    Future.delayed(const Duration(seconds: 3), () async {
+      if (!mounted) return;
+      final prayers = notificationService.collectPrayerTimes();
+      if (prayers.isNotEmpty) {
+        await notificationService.reschedule(prayers: prayers);
+      }
+    });
   }
 
   void _select(int index) => setState(() => _index = index);
@@ -69,18 +79,18 @@ class _HomeShellState extends State<HomeShell> {
                         ),
                         const Spacer(),
                         IconButton(
-  onPressed: () => Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => const SettingsScreen(),
-    ),
-  ),
-  tooltip: appState.tr('settings'),
-  iconSize: R.s(context, 26),
-  icon: const AssetIcon(
-    path: 'assets/icons/Setting.png',
-    size: 26,
-  ),
-),
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const SettingsScreen(),
+                            ),
+                          ),
+                          tooltip: appState.tr('settings'),
+                          iconSize: R.s(context, 26),
+                          icon: const AssetIcon(
+                            path: 'assets/icons/Setting.png',
+                            size: 26,
+                          ),
+                        ),
                         const SizedBox(width: 4),
                         const AuthLanguageButton(),
                       ],
