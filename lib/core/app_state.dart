@@ -285,6 +285,18 @@ const Map<String, String> _ar = {
 'notifChannelDaily': 'التذكيرات اليومية',
 'notifChannelDailyDesc': 'التحدي، الورد، وآية اليوم',
 'notifWebUnsupported': 'الإشعارات تعمل على تطبيق الجوال فقط.',
+// شاشة الأذان + خلفيات الأذان
+'tabAdhanBgs': 'خلفيات الأذان',
+'adhanTitle': 'الأذان',
+'adhanBackground': 'خلفية الأذان',
+'adhanReciter': 'المؤذن',
+'close': 'إغلاق',
+'pause': 'إيقاف',
+'play': 'تشغيل',
+'adhanSnooze': 'تأجيل',
+'adhanSnoozeInfo': 'تم التأجيل 5 دقائق',
+'adhanPrayed': 'صليت',
+'adhanPrayedThanks': 'تقبّل الله! جزاك الله خيراً 🌸',
 };
 
 const Map<String, String> _en = {
@@ -540,4 +552,15 @@ const Map<String, String> _en = {
 'notifChannelDaily': 'Daily Reminders',
 'notifChannelDailyDesc': 'Challenge, Quran ward, verse of the day',
 'notifWebUnsupported': 'Notifications work on the mobile app only.',
+'tabAdhanBgs': 'Adhan Backgrounds',
+'adhanTitle': 'Adhan',
+'adhanBackground': 'Adhan background',
+'adhanReciter': 'Reciter',
+'close': 'Close',
+'pause': 'Pause',
+'play': 'Play',
+'adhanSnooze': 'Snooze',
+'adhanSnoozeInfo': 'Snoozed for 5 minutes',
+'adhanPrayed': 'I have prayed',
+'adhanPrayedThanks': 'May Allah accept! 🌸',
 };
