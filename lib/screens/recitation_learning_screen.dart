@@ -1129,7 +1129,7 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
   }
 }
 
-// ==================== منتقي القراء ====================
+// ==================== منتقي القراء (كل القراء) ====================
 class _ReciterSelectorSheet extends StatelessWidget {
   const _ReciterSelectorSheet({
     required this.ownedIds,
@@ -1141,12 +1141,6 @@ class _ReciterSelectorSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reciters =
-        kReciters.where((r) => ownedIds.contains(r.id)).toList();
-    if (reciters.isEmpty) {
-      reciters.add(kReciters.first);
-    }
-
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.deepGreen,
@@ -1178,88 +1172,139 @@ class _ReciterSelectorSheet extends StatelessWidget {
               color: AppColors.softGold,
             ),
           ),
-          SizedBox(height: R.s(context, 12)),
-          ...reciters.map((r) {
-            final selected = r.id == selectedId;
-            return Padding(
-              padding: EdgeInsets.only(bottom: R.s(context, 6)),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context, r.id),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: R.s(context, 12),
-                    vertical: R.s(context, 12),
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? AppColors.gold.withValues(alpha: 0.2)
-                        : Colors.black.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: selected
-                          ? AppColors.gold
-                          : AppColors.gold.withValues(alpha: 0.3),
-                      width: selected ? 1.5 : 1,
+          SizedBox(height: R.s(context, 6)),
+          Text(
+            appState.tr('recitationReciterHint'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: R.f(context, 10.5),
+              color: AppColors.cream.withValues(alpha: 0.6),
+            ),
+          ),
+          SizedBox(height: R.s(context, 10)),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.55,
+            child: ListView.builder(
+              itemCount: kReciters.length,
+              itemBuilder: (context, i) {
+                final r = kReciters[i];
+                final owned = ownedIds.contains(r.id) || r.price == 0;
+                final selected = r.id == selectedId;
+                return Padding(
+                  padding: EdgeInsets.only(bottom: R.s(context, 6)),
+                  child: GestureDetector(
+                    onTap: () {
+                      if (owned) {
+                        Navigator.pop(context, r.id);
+                      } else {
+                        Navigator.pop(context, '__store__');
+                      }
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: R.s(context, 12),
+                        vertical: R.s(context, 12),
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.gold.withValues(alpha: 0.2)
+                            : (owned
+                                ? Colors.black.withValues(alpha: 0.2)
+                                : Colors.black.withValues(alpha: 0.35)),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected
+                              ? AppColors.gold
+                              : AppColors.gold.withValues(alpha: 0.3),
+                          width: selected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: R.s(context, 36),
+                            height: R.s(context, 36),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.gold
+                                  .withValues(alpha: owned ? 0.15 : 0.08),
+                              border: Border.all(
+                                color: AppColors.gold
+                                    .withValues(alpha: owned ? 0.6 : 0.3),
+                              ),
+                            ),
+                            child: Icon(
+                              owned
+                                  ? Icons.record_voice_over_rounded
+                                  : Icons.lock_outline_rounded,
+                              color: AppColors.gold
+                                  .withValues(alpha: owned ? 1 : 0.5),
+                              size: R.s(context, 18),
+                            ),
+                          ),
+                          SizedBox(width: R.s(context, 10)),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  r.nameAr,
+                                  style: TextStyle(
+                                    fontSize: R.f(context, 13.5),
+                                    fontWeight: FontWeight.w700,
+                                    color: owned
+                                        ? AppColors.softGold
+                                        : AppColors.softGold
+                                            .withValues(alpha: 0.55),
+                                  ),
+                                ),
+                                if (!owned) ...[
+                                  SizedBox(height: R.s(context, 2)),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.stars_rounded,
+                                        color: AppColors.gold
+                                            .withValues(alpha: 0.7),
+                                        size: R.s(context, 11),
+                                      ),
+                                      SizedBox(width: R.s(context, 3)),
+                                      Text(
+                                        '${r.price} ${appState.tr('points')}',
+                                        style: TextStyle(
+                                          fontSize:
+                                              R.f(context, 10.5),
+                                          color: AppColors.gold
+                                              .withValues(alpha: 0.7),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          if (selected)
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.gold,
+                              size: R.s(context, 22),
+                            )
+                          else if (!owned)
+                            Icon(
+                              Icons.store_rounded,
+                              color: AppColors.gold
+                                  .withValues(alpha: 0.7),
+                              size: R.s(context, 20),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: R.s(context, 36),
-                        height: R.s(context, 36),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color:
-                              AppColors.gold.withValues(alpha: 0.15),
-                          border: Border.all(
-                            color: AppColors.gold
-                                .withValues(alpha: 0.6),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.record_voice_over_rounded,
-                          color: AppColors.gold,
-                          size: R.s(context, 18),
-                        ),
-                      ),
-                      SizedBox(width: R.s(context, 10)),
-                      Expanded(
-                        child: Text(
-                          r.nameAr,
-                          style: TextStyle(
-                            fontSize: R.f(context, 13.5),
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.softGold,
-                          ),
-                        ),
-                      ),
-                      if (selected)
-                        Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.gold,
-                          size: R.s(context, 22),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-          SizedBox(height: R.s(context, 4)),
-          TextButton.icon(
-            onPressed: () => Navigator.pop(context, '__store__'),
-            icon: Icon(
-              Icons.store_rounded,
-              color: AppColors.gold,
-              size: R.s(context, 20),
-            ),
-            label: Text(
-              appState.tr('recitationOpenStore'),
-              style: TextStyle(
-                fontSize: R.f(context, 13),
-                color: AppColors.gold,
-                fontWeight: FontWeight.w600,
-              ),
+                );
+              },
             ),
           ),
         ],
