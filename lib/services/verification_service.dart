@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class VerificationRequest {
   final String uid;
@@ -44,7 +45,6 @@ class VerificationService {
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
-  /// إرسال طلب توثيق.
   Future<void> submitRequest({
     required String photoBase64,
     required String name,
@@ -65,7 +65,6 @@ class VerificationService {
     });
   }
 
-  /// هل المستخدم عنده طلب قيد المراجعة؟
   Future<bool> hasPendingRequest() async {
     final uid = _uid;
     if (uid == null) return false;
@@ -80,8 +79,6 @@ class VerificationService {
     }
   }
 
-  /// جلب كل الطلبات المعلقة.
-  /// ⚠️ بدون orderBy لتجنب Composite Index — نرتب في Dart.
   Future<List<VerificationRequest>> loadPendingRequests() async {
     try {
       final snap = await _db
@@ -93,16 +90,14 @@ class VerificationService {
           .map((d) => VerificationRequest.fromMap(d.data()))
           .toList();
 
-      // ترتيب من الأحدث للأقدم
       list.sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
       return list;
     } catch (e) {
-      print('loadPendingRequests error: $e');
+      debugPrint('loadPendingRequests error: $e');
       return [];
     }
   }
 
-  /// عدد الطلبات المعلقة.
   Future<int> pendingCount() async {
     try {
       final snap = await _db
@@ -115,7 +110,6 @@ class VerificationService {
     }
   }
 
-  /// الموافقة — نوع: 'user' أو 'me'.
   Future<void> approve({
     required String targetUid,
     required String type,
@@ -140,7 +134,6 @@ class VerificationService {
     }, SetOptions(merge: true));
   }
 
-  /// رفض الطلب.
   Future<void> reject({required String targetUid}) async {
     final myEmail = FirebaseAuth.instance.currentUser?.email ?? '';
     await _db
@@ -153,7 +146,6 @@ class VerificationService {
     }, SetOptions(merge: true));
   }
 
-  /// إلغاء توثيق مستخدم.
   Future<void> revoke({required String targetUid}) async {
     await _db.collection('users').doc(targetUid).set({
       'profile': {
