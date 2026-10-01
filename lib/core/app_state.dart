@@ -399,6 +399,9 @@ const Map<String, String> _ar = {
 'recitationNextAyah': 'الآية التالية',
 'recitationChooseReciter': 'اختر القارئ',
 'recitationOpenStore': 'تصفح متجر القراء',
+'recitationChooseReciter': 'اختر القارئ',
+'recitationReciterHint': 'القراء المتاحون — اضغط على 🔒 للشراء',
+'recitationOpenStore': 'تصفح متجر القراء',
 };
 
 // =====================================================================
@@ -704,5 +707,8 @@ const Map<String, String> _en = {
 'recitationChooseSurah': 'Choose surah',
 'recitationNextAyah': 'Next verse',
 'recitationChooseReciter': 'Choose reciter',
+'recitationOpenStore': 'Browse reciters store',
+'recitationChooseReciter': 'Choose reciter',
+'recitationReciterHint': 'Available reciters — tap 🔒 to buy',
 'recitationOpenStore': 'Browse reciters store',
 };
