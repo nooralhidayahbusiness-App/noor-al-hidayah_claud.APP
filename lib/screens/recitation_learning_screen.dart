@@ -10,6 +10,7 @@ import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../models/quran.dart';
+import '../models/reciter.dart';
 import '../services/auth_service.dart';
 import '../services/gemini_service.dart';
 import '../services/quran_service.dart';
@@ -30,10 +31,9 @@ class RecitationLearningScreen extends StatefulWidget {
 
 class _RecitationLearningScreenState
     extends State<RecitationLearningScreen> {
-  // ============ الحالة ============
   QuranData? _data;
   int _surahNumber = 1;
-  int _ayahIndex = 0; // 0-based داخل السورة
+  int _ayahIndex = 0;
 
   bool _recording = false;
   bool _analyzing = false;
@@ -160,8 +160,8 @@ class _RecitationLearningScreenState
     }
     try {
       await _player.stop();
-      final url = reciterPrefs.reciter
-          .ayahUrl(_surah.number, _ayah.number);
+      final url =
+          reciterPrefs.reciter.ayahUrl(_surah.number, _ayah.number);
       await _player.play(UrlSource(url));
       if (mounted) setState(() => _playing = true);
     } catch (e) {
@@ -172,7 +172,6 @@ class _RecitationLearningScreenState
 
   // ============ التسجيل ============
   Future<void> _startRecording() async {
-    // إيقاف الصوت إذا يشتغل
     if (_playing) {
       await _player.stop();
       if (mounted) setState(() => _playing = false);
@@ -289,10 +288,39 @@ class _RecitationLearningScreenState
     _saveProgress();
   }
 
-  Future<void> _openStoreForReciter() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const StoreScreen()),
+  Future<void> _openReciterSelector() async {
+    List<String> ownedIds = ['default'];
+    try {
+      final inv = await userService.loadInventory();
+      final list = (inv['voices'] as List?)?.cast<String>();
+      if (list != null && list.isNotEmpty) {
+        ownedIds = list;
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ReciterSelectorSheet(
+        ownedIds: ownedIds,
+        selectedId: reciterPrefs.reciterId,
+      ),
     );
+
+    if (selected == null || !mounted) return;
+
+    if (selected == '__store__') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const StoreScreen()),
+      );
+      if (mounted) setState(() {});
+      return;
+    }
+
+    await reciterPrefs.setReciter(selected);
     if (mounted) setState(() {});
   }
 
@@ -325,8 +353,7 @@ class _RecitationLearningScreenState
       );
     }
 
-    final progress =
-        (_ayahIndex + 1) / _surah.ayahs.length;
+    final progress = (_ayahIndex + 1) / _surah.ayahs.length;
 
     return Scaffold(
       body: ThemedBackground(
@@ -396,8 +423,7 @@ class _RecitationLearningScreenState
                   vertical: R.s(context, 2),
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      const Color(0xFFFFA000).withValues(alpha: 0.2),
+                  color: const Color(0xFFFFA000).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: const Color(0xFFFFA000),
@@ -463,7 +489,7 @@ class _RecitationLearningScreenState
               ),
               const Spacer(),
               GestureDetector(
-                onTap: _openStoreForReciter,
+                onTap: _openReciterSelector,
                 child: Row(
                   children: [
                     Icon(
@@ -476,10 +502,15 @@ class _RecitationLearningScreenState
                       reciterPrefs.reciter.nameAr,
                       style: TextStyle(
                         fontSize: R.f(context, 11),
-                        color:
-                            AppColors.cream.withValues(alpha: 0.75),
+                        color: AppColors.cream.withValues(alpha: 0.75),
                         fontWeight: FontWeight.w600,
                       ),
+                    ),
+                    SizedBox(width: R.s(context, 2)),
+                    Icon(
+                      Icons.unfold_more_rounded,
+                      color: AppColors.softGold.withValues(alpha: 0.7),
+                      size: R.s(context, 14),
                     ),
                   ],
                 ),
@@ -624,8 +655,8 @@ class _RecitationLearningScreenState
                     children: List.generate(
                       5,
                       (i) => Padding(
-                        padding: EdgeInsets.only(
-                            right: R.s(context, 2)),
+                        padding:
+                            EdgeInsets.only(right: R.s(context, 2)),
                         child: Icon(
                           i < _stars
                               ? Icons.star_rounded
@@ -926,8 +957,7 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final list =
-        widget.data.surahs.where(_matches).toList();
+    final list = widget.data.surahs.where(_matches).toList();
 
     return Container(
       decoration: const BoxDecoration(
@@ -992,9 +1022,8 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppColors.gold,
-                ),
+                borderSide:
+                    const BorderSide(color: AppColors.gold),
               ),
             ),
           ),
@@ -1063,8 +1092,8 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
                                               R.f(context, 13.5),
                                           fontWeight:
                                               FontWeight.w700,
-                                          color: AppColors
-                                              .softGold,
+                                          color:
+                                              AppColors.softGold,
                                         ),
                                       ),
                                       Text(
@@ -1082,11 +1111,9 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
                                 ),
                                 if (selected)
                                   Icon(
-                                    Icons
-                                        .check_circle_rounded,
+                                    Icons.check_circle_rounded,
                                     color: AppColors.gold,
-                                    size:
-                                        R.s(context, 20),
+                                    size: R.s(context, 20),
                                   ),
                               ],
                             ),
@@ -1095,6 +1122,145 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
                       );
                     },
                   ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ==================== منتقي القراء ====================
+class _ReciterSelectorSheet extends StatelessWidget {
+  const _ReciterSelectorSheet({
+    required this.ownedIds,
+    required this.selectedId,
+  });
+
+  final List<String> ownedIds;
+  final String selectedId;
+
+  @override
+  Widget build(BuildContext context) {
+    final reciters =
+        kReciters.where((r) => ownedIds.contains(r.id)).toList();
+    if (reciters.isEmpty) {
+      reciters.add(kReciters.first);
+    }
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.deepGreen,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        R.s(context, 14),
+        R.s(context, 12),
+        R.s(context, 14),
+        R.s(context, 14),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          SizedBox(height: R.s(context, 12)),
+          Text(
+            appState.tr('recitationChooseReciter'),
+            style: TextStyle(
+              fontSize: R.f(context, 14),
+              fontWeight: FontWeight.w700,
+              color: AppColors.softGold,
+            ),
+          ),
+          SizedBox(height: R.s(context, 12)),
+          ...reciters.map((r) {
+            final selected = r.id == selectedId;
+            return Padding(
+              padding: EdgeInsets.only(bottom: R.s(context, 6)),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context, r.id),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: R.s(context, 12),
+                    vertical: R.s(context, 12),
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.gold.withValues(alpha: 0.2)
+                        : Colors.black.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: selected
+                          ? AppColors.gold
+                          : AppColors.gold.withValues(alpha: 0.3),
+                      width: selected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: R.s(context, 36),
+                        height: R.s(context, 36),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              AppColors.gold.withValues(alpha: 0.15),
+                          border: Border.all(
+                            color: AppColors.gold
+                                .withValues(alpha: 0.6),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.record_voice_over_rounded,
+                          color: AppColors.gold,
+                          size: R.s(context, 18),
+                        ),
+                      ),
+                      SizedBox(width: R.s(context, 10)),
+                      Expanded(
+                        child: Text(
+                          r.nameAr,
+                          style: TextStyle(
+                            fontSize: R.f(context, 13.5),
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.softGold,
+                          ),
+                        ),
+                      ),
+                      if (selected)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.gold,
+                          size: R.s(context, 22),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          SizedBox(height: R.s(context, 4)),
+          TextButton.icon(
+            onPressed: () => Navigator.pop(context, '__store__'),
+            icon: Icon(
+              Icons.store_rounded,
+              color: AppColors.gold,
+              size: R.s(context, 20),
+            ),
+            label: Text(
+              appState.tr('recitationOpenStore'),
+              style: TextStyle(
+                fontSize: R.f(context, 13),
+                color: AppColors.gold,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
