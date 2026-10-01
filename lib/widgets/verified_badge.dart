@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'asset_icon.dart';
 
 /// شعار التوثيق:
-/// - 'owner' → true.me.png (ذهبي مع لمعان)
-/// - 'user'  → true.users.png (ذهبي عادي)
+/// - 'owner' أو 'me' → true.me.png (ذهبي مع لمعان)
+/// - 'user' → true.users.png (ذهبي عادي)
 class VerifiedBadge extends StatefulWidget {
   const VerifiedBadge({
     super.key,
@@ -12,7 +12,7 @@ class VerifiedBadge extends StatefulWidget {
     this.size = 18,
   });
 
-  /// 'owner' | 'user' | 'none'
+  /// 'owner' | 'me' | 'user' | 'none'
   final String type;
   final double size;
 
@@ -39,12 +39,13 @@ class _VerifiedBadgeState extends State<VerifiedBadge>
       return const SizedBox.shrink();
     }
 
-    final asset = widget.type == 'owner'
+    final isSpecial = widget.type == 'owner' || widget.type == 'me';
+    final asset = isSpecial
         ? 'assets/icons/true.me.png'
         : 'assets/icons/true.users.png';
 
-    // فقط المالك له لمعان
-    if (widget.type == 'owner') {
+    // المالك والعلامة المميزة لهم لمعان
+    if (isSpecial) {
       return AnimatedBuilder(
         animation: _shimmer,
         builder: (context, child) {
