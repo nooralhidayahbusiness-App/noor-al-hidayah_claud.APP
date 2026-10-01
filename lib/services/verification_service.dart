@@ -8,7 +8,7 @@ class VerificationRequest {
   final String gender;
   final String photoBase64;
   final int requestedAt;
-  final String status; // pending | approved_user | approved_me | rejected
+  final String status;
 
   const VerificationRequest({
     required this.uid,
@@ -81,17 +81,23 @@ class VerificationService {
   }
 
   /// جلب كل الطلبات المعلقة.
+  /// ⚠️ بدون orderBy لتجنب Composite Index — نرتب في Dart.
   Future<List<VerificationRequest>> loadPendingRequests() async {
     try {
       final snap = await _db
           .collection('verification_requests')
           .where('status', isEqualTo: 'pending')
-          .orderBy('requestedAt', descending: true)
           .get();
-      return snap.docs
+
+      final list = snap.docs
           .map((d) => VerificationRequest.fromMap(d.data()))
           .toList();
-    } catch (_) {
+
+      // ترتيب من الأحدث للأقدم
+      list.sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+      return list;
+    } catch (e) {
+      print('loadPendingRequests error: $e');
       return [];
     }
   }
@@ -102,9 +108,8 @@ class VerificationService {
       final snap = await _db
           .collection('verification_requests')
           .where('status', isEqualTo: 'pending')
-          .count()
           .get();
-      return snap.count ?? 0;
+      return snap.docs.length;
     } catch (_) {
       return 0;
     }
@@ -148,7 +153,7 @@ class VerificationService {
     }, SetOptions(merge: true));
   }
 
-  /// إلغاء توثيق مستخدم (كان موثّقاً).
+  /// إلغاء توثيق مستخدم.
   Future<void> revoke({required String targetUid}) async {
     await _db.collection('users').doc(targetUid).set({
       'profile': {
