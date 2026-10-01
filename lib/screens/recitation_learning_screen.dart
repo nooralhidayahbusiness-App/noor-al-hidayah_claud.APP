@@ -6,15 +6,19 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../core/app_state.dart';
+import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
-import '../data/learning_verses.dart';
+import '../models/quran.dart';
 import '../services/auth_service.dart';
 import '../services/gemini_service.dart';
+import '../services/quran_service.dart';
 import '../services/recitation_service.dart';
 import '../services/user_service.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/star_badge.dart';
 import '../widgets/themed_background.dart';
+import 'store_screen.dart';
 
 class RecitationLearningScreen extends StatefulWidget {
   const RecitationLearningScreen({super.key});
@@ -26,7 +30,11 @@ class RecitationLearningScreen extends StatefulWidget {
 
 class _RecitationLearningScreenState
     extends State<RecitationLearningScreen> {
-  int _currentIndex = 0;
+  // ============ الحالة ============
+  QuranData? _data;
+  int _surahNumber = 1;
+  int _ayahIndex = 0; // 0-based داخل السورة
+
   bool _recording = false;
   bool _analyzing = false;
   bool _playing = false;
@@ -37,12 +45,13 @@ class _RecitationLearningScreenState
 
   final AudioPlayer _player = AudioPlayer();
 
-  LearningVerse get _current => kLearningVerses[_currentIndex];
+  QuranSurah get _surah => _data!.surah(_surahNumber);
+  QuranAyah get _ayah => _surah.ayahs[_ayahIndex];
 
   @override
   void initState() {
     super.initState();
-    _loadProgress();
+    _init();
     _player.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _playing = false);
     });
@@ -55,12 +64,35 @@ class _RecitationLearningScreenState
     super.dispose();
   }
 
+  Future<void> _init() async {
+    try {
+      final data = await QuranService.load();
+      if (!mounted) return;
+      setState(() => _data = data);
+      await _loadProgress();
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('${appState.tr('quranLoadError')}: $e', error: true);
+    }
+  }
+
   Future<void> _loadProgress() async {
     try {
       final p = await userService.loadProgress('aiTeacher');
-      if (!mounted) return;
+      final lastSurah = (p['lastRecitationSurah'] as num?)?.toInt() ?? 1;
+      final lastAyah = (p['lastRecitationAyah'] as num?)?.toInt() ?? 1;
+      final sessions =
+          (p['recitationSessions'] as num?)?.toInt() ?? 0;
+
+      if (!mounted || _data == null) return;
+      final surahNum = lastSurah.clamp(1, 114);
+      final surah = _data!.surah(surahNum);
+      final ayahIdx = (lastAyah - 1).clamp(0, surah.ayahs.length - 1);
+
       setState(() {
-        _sessionsCount = (p['recitationSessions'] as num?)?.toInt() ?? 0;
+        _surahNumber = surahNum;
+        _ayahIndex = ayahIdx;
+        _sessionsCount = sessions;
       });
     } catch (_) {}
   }
@@ -69,12 +101,57 @@ class _RecitationLearningScreenState
     if (authService.currentUser == null) return;
     try {
       await userService.saveProgress('aiTeacher', {
+        'lastRecitationSurah': _surahNumber,
+        'lastRecitationAyah': _ayah.number,
         'recitationSessions': _sessionsCount,
-        'lastRecitation': DateTime.now().millisecondsSinceEpoch,
+        'lastRecitationTime': DateTime.now().millisecondsSinceEpoch,
       });
     } catch (_) {}
   }
 
+  // ============ التنقل ============
+  void _goToAyah(int newIndex) {
+    if (newIndex < 0 || newIndex >= _surah.ayahs.length) return;
+    setState(() {
+      _ayahIndex = newIndex;
+      _analysisResult = null;
+      _stars = 0;
+      _accuracy = 0;
+    });
+    _saveProgress();
+  }
+
+  void _nextAyah() {
+    if (_ayahIndex + 1 < _surah.ayahs.length) {
+      _goToAyah(_ayahIndex + 1);
+    } else if (_surahNumber < 114) {
+      setState(() {
+        _surahNumber++;
+        _ayahIndex = 0;
+        _analysisResult = null;
+        _stars = 0;
+        _accuracy = 0;
+      });
+      _saveProgress();
+    }
+  }
+
+  void _prevAyah() {
+    if (_ayahIndex > 0) {
+      _goToAyah(_ayahIndex - 1);
+    } else if (_surahNumber > 1) {
+      setState(() {
+        _surahNumber--;
+        _ayahIndex = _data!.surah(_surahNumber).ayahs.length - 1;
+        _analysisResult = null;
+        _stars = 0;
+        _accuracy = 0;
+      });
+      _saveProgress();
+    }
+  }
+
+  // ============ الصوت ============
   Future<void> _togglePlayReciter() async {
     if (_playing) {
       await _player.stop();
@@ -83,7 +160,9 @@ class _RecitationLearningScreenState
     }
     try {
       await _player.stop();
-      await _player.play(UrlSource(_current.audioUrl));
+      final url = reciterPrefs.reciter
+          .ayahUrl(_surah.number, _ayah.number);
+      await _player.play(UrlSource(url));
       if (mounted) setState(() => _playing = true);
     } catch (e) {
       if (!mounted) return;
@@ -91,7 +170,13 @@ class _RecitationLearningScreenState
     }
   }
 
+  // ============ التسجيل ============
   Future<void> _startRecording() async {
+    // إيقاف الصوت إذا يشتغل
+    if (_playing) {
+      await _player.stop();
+      if (mounted) setState(() => _playing = false);
+    }
     final ok = await recitationService.start();
     if (!ok) {
       if (!mounted) return;
@@ -123,9 +208,9 @@ class _RecitationLearningScreenState
     try {
       final result = await recitationService.analyze(
         recordedPath: path,
-        expectedVerse: _current.textAr,
-        surahName: _current.surahName,
-        ayahNumber: _current.ayahNumber,
+        expectedVerse: _ayah.uthmani,
+        surahName: _surah.nameAr,
+        ayahNumber: _ayah.number,
         isArabic: appState.isArabic,
       );
       if (!mounted) return;
@@ -181,46 +266,34 @@ class _RecitationLearningScreenState
     return 0;
   }
 
-  void _nextVerse() {
-    if (_currentIndex + 1 < kLearningVerses.length) {
-      setState(() {
-        _currentIndex++;
-        _analysisResult = null;
-        _stars = 0;
-        _accuracy = 0;
-      });
-    }
-  }
-
-  void _prevVerse() {
-    if (_currentIndex > 0) {
-      setState(() {
-        _currentIndex--;
-        _analysisResult = null;
-        _stars = 0;
-        _accuracy = 0;
-      });
-    }
-  }
-
-  void _openVerseSelector() {
-    showModalBottomSheet(
+  // ============ اختيار السورة والقارئ ============
+  Future<void> _openSurahSelector() async {
+    if (_data == null) return;
+    final selected = await showModalBottomSheet<int>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _VerseSelectorSheet(
-        selectedIndex: _currentIndex,
-        onSelect: (i) {
-          setState(() {
-            _currentIndex = i;
-            _analysisResult = null;
-            _stars = 0;
-            _accuracy = 0;
-          });
-          Navigator.pop(context);
-        },
+      builder: (_) => _SurahSelectorSheet(
+        data: _data!,
+        selectedNumber: _surahNumber,
       ),
     );
+    if (selected == null) return;
+    setState(() {
+      _surahNumber = selected;
+      _ayahIndex = 0;
+      _analysisResult = null;
+      _stars = 0;
+      _accuracy = 0;
+    });
+    _saveProgress();
+  }
+
+  Future<void> _openStoreForReciter() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const StoreScreen()),
+    );
+    if (mounted) setState(() {});
   }
 
   void _showSnack(String msg, {bool error = false}) {
@@ -242,7 +315,18 @@ class _RecitationLearningScreenState
 
   @override
   Widget build(BuildContext context) {
-    final progress = (_currentIndex + 1) / kLearningVerses.length;
+    if (_data == null) {
+      return Scaffold(
+        body: ThemedBackground(
+          child: const Center(
+            child: CircularProgressIndicator(color: AppColors.gold),
+          ),
+        ),
+      );
+    }
+
+    final progress =
+        (_ayahIndex + 1) / _surah.ayahs.length;
 
     return Scaffold(
       body: ThemedBackground(
@@ -334,7 +418,7 @@ class _RecitationLearningScreenState
           ),
           SizedBox(width: R.s(context, 6)),
           IconButton(
-            onPressed: _openVerseSelector,
+            onPressed: _openSurahSelector,
             color: AppColors.softGold,
             iconSize: R.s(context, 20),
             icon: const Icon(Icons.list_rounded),
@@ -356,20 +440,48 @@ class _RecitationLearningScreenState
         children: [
           Row(
             children: [
-              Text(
-                '${_current.surahName} • ${appState.tr('ayahWord')} ${_current.ayahNumber}',
-                style: TextStyle(
-                  fontSize: R.f(context, 11.5),
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.gold,
+              GestureDetector(
+                onTap: _openSurahSelector,
+                child: Row(
+                  children: [
+                    Text(
+                      '${_surah.nameAr} • ${appState.tr('ayahWord')} ${_ayah.number}',
+                      style: TextStyle(
+                        fontSize: R.f(context, 12),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                    SizedBox(width: R.s(context, 4)),
+                    Icon(
+                      Icons.unfold_more_rounded,
+                      color: AppColors.gold.withValues(alpha: 0.8),
+                      size: R.s(context, 14),
+                    ),
+                  ],
                 ),
               ),
               const Spacer(),
-              Text(
-                '${_currentIndex + 1} / ${kLearningVerses.length}',
-                style: TextStyle(
-                  fontSize: R.f(context, 11),
-                  color: AppColors.cream.withValues(alpha: 0.7),
+              GestureDetector(
+                onTap: _openStoreForReciter,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.record_voice_over_rounded,
+                      color: AppColors.softGold.withValues(alpha: 0.8),
+                      size: R.s(context, 14),
+                    ),
+                    SizedBox(width: R.s(context, 4)),
+                    Text(
+                      reciterPrefs.reciter.nameAr,
+                      style: TextStyle(
+                        fontSize: R.f(context, 11),
+                        color:
+                            AppColors.cream.withValues(alpha: 0.75),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -395,7 +507,7 @@ class _RecitationLearningScreenState
       child: Column(
         children: [
           Text(
-            _current.textAr,
+            _ayah.uthmani,
             textAlign: TextAlign.center,
             textDirection: TextDirection.rtl,
             style: GoogleFonts.amiriQuran(
@@ -404,23 +516,25 @@ class _RecitationLearningScreenState
               color: AppColors.cream,
             ),
           ),
-          SizedBox(height: R.s(context, 12)),
-          Divider(
-            color: AppColors.gold.withValues(alpha: 0.25),
-            height: 1,
-          ),
-          SizedBox(height: R.s(context, 10)),
-          Text(
-            _current.textEn,
-            textAlign: TextAlign.center,
-            textDirection: TextDirection.ltr,
-            style: TextStyle(
-              fontSize: R.f(context, 12.5),
-              height: 1.6,
-              color: AppColors.cream.withValues(alpha: 0.75),
-              fontStyle: FontStyle.italic,
+          if (_ayah.translation.isNotEmpty) ...[
+            SizedBox(height: R.s(context, 12)),
+            Divider(
+              color: AppColors.gold.withValues(alpha: 0.25),
+              height: 1,
             ),
-          ),
+            SizedBox(height: R.s(context, 10)),
+            Text(
+              _ayah.translation,
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.ltr,
+              style: TextStyle(
+                fontSize: R.f(context, 12.5),
+                height: 1.6,
+                color: AppColors.cream.withValues(alpha: 0.75),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -431,12 +545,10 @@ class _RecitationLearningScreenState
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         IconButton(
-          onPressed: _currentIndex > 0 ? _prevVerse : null,
+          onPressed: _prevAyah,
           icon: Icon(
             Icons.skip_previous_rounded,
-            color: _currentIndex > 0
-                ? AppColors.gold
-                : AppColors.cream.withValues(alpha: 0.3),
+            color: AppColors.gold,
             size: R.s(context, 28),
           ),
         ),
@@ -458,14 +570,10 @@ class _RecitationLearningScreenState
         ),
 
         IconButton(
-          onPressed: _currentIndex + 1 < kLearningVerses.length
-              ? _nextVerse
-              : null,
+          onPressed: _nextAyah,
           icon: Icon(
             Icons.skip_next_rounded,
-            color: _currentIndex + 1 < kLearningVerses.length
-                ? AppColors.gold
-                : AppColors.cream.withValues(alpha: 0.3),
+            color: AppColors.gold,
             size: R.s(context, 28),
           ),
         ),
@@ -567,25 +675,49 @@ class _RecitationLearningScreenState
 
           SizedBox(height: R.s(context, 10)),
 
-          TextButton.icon(
-            onPressed: () => setState(() {
-              _analysisResult = null;
-              _stars = 0;
-              _accuracy = 0;
-            }),
-            icon: Icon(
-              Icons.refresh_rounded,
-              color: AppColors.gold,
-              size: R.s(context, 16),
-            ),
-            label: Text(
-              appState.tr('recitationTryAgain'),
-              style: TextStyle(
-                fontSize: R.f(context, 12),
-                color: AppColors.gold,
-                fontWeight: FontWeight.w600,
+          Row(
+            children: [
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: () => setState(() {
+                    _analysisResult = null;
+                    _stars = 0;
+                    _accuracy = 0;
+                  }),
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    color: AppColors.gold,
+                    size: R.s(context, 16),
+                  ),
+                  label: Text(
+                    appState.tr('recitationTryAgain'),
+                    style: TextStyle(
+                      fontSize: R.f(context, 12),
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: _nextAyah,
+                  icon: Icon(
+                    Icons.arrow_forward_rounded,
+                    color: AppColors.gold,
+                    size: R.s(context, 16),
+                  ),
+                  label: Text(
+                    appState.tr('recitationNextAyah'),
+                    style: TextStyle(
+                      fontSize: R.f(context, 12),
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -759,25 +891,54 @@ class _RecordButtonState extends State<_RecordButton>
   }
 }
 
-// ==================== منتقي الآيات ====================
-class _VerseSelectorSheet extends StatelessWidget {
-  const _VerseSelectorSheet({
-    required this.selectedIndex,
-    required this.onSelect,
+// ==================== منتقي السور (114) ====================
+class _SurahSelectorSheet extends StatefulWidget {
+  const _SurahSelectorSheet({
+    required this.data,
+    required this.selectedNumber,
   });
 
-  final int selectedIndex;
-  final ValueChanged<int> onSelect;
+  final QuranData data;
+  final int selectedNumber;
+
+  @override
+  State<_SurahSelectorSheet> createState() =>
+      _SurahSelectorSheetState();
+}
+
+class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
+  final _search = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  bool _matches(QuranSurah s) {
+    if (_query.isEmpty) return true;
+    final q = _query.trim().toLowerCase();
+    return s.number.toString() == q ||
+        s.nameAr.contains(q) ||
+        s.nameEn.toLowerCase().contains(q);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final grouped = groupVersesBySurah();
+    final list =
+        widget.data.surahs.where(_matches).toList();
 
     return Container(
-      padding: EdgeInsets.all(R.s(context, 14)),
       decoration: const BoxDecoration(
         color: AppColors.deepGreen,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        R.s(context, 14),
+        R.s(context, 12),
+        R.s(context, 14),
+        R.s(context, 8),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -790,7 +951,7 @@ class _VerseSelectorSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          SizedBox(height: R.s(context, 10)),
+          SizedBox(height: R.s(context, 12)),
           Text(
             appState.tr('recitationChooseSurah'),
             style: TextStyle(
@@ -800,65 +961,140 @@ class _VerseSelectorSheet extends StatelessWidget {
             ),
           ),
           SizedBox(height: R.s(context, 10)),
+          TextField(
+            controller: _search,
+            onChanged: (v) => setState(() => _query = v),
+            style: TextStyle(
+              color: AppColors.cream,
+              fontSize: R.f(context, 13),
+            ),
+            decoration: InputDecoration(
+              hintText: appState.tr('searchSurah'),
+              hintStyle: TextStyle(
+                color: AppColors.cream.withValues(alpha: 0.5),
+                fontSize: R.f(context, 12),
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                color: AppColors.gold,
+                size: R.s(context, 20),
+              ),
+              filled: true,
+              fillColor: Colors.black.withValues(alpha: 0.25),
+              contentPadding: EdgeInsets.symmetric(
+                vertical: R.s(context, 10),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppColors.gold.withValues(alpha: 0.4),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppColors.gold,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: R.s(context, 10)),
           SizedBox(
-            height: MediaQuery.of(context).size.height * 0.5,
-            child: ListView(
-              children: grouped.entries.map((entry) {
-                final verses = entry.value;
-                final firstIdx = kLearningVerses.indexOf(verses.first);
-                return Padding(
-                  padding: EdgeInsets.only(bottom: R.s(context, 4)),
-                  child: GestureDetector(
-                    onTap: () => onSelect(firstIdx),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: R.s(context, 12),
-                        vertical: R.s(context, 10),
-                      ),
-                      decoration: BoxDecoration(
-                        color: (selectedIndex >= firstIdx &&
-                                selectedIndex <
-                                    firstIdx + verses.length)
-                            ? AppColors.gold.withValues(alpha: 0.2)
-                            : Colors.black.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.gold.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.menu_book_rounded,
-                            color: AppColors.gold,
-                            size: R.s(context, 18),
-                          ),
-                          SizedBox(width: R.s(context, 10)),
-                          Expanded(
-                            child: Text(
-                              entry.key,
-                              style: TextStyle(
-                                fontSize: R.f(context, 13),
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.softGold,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '${verses.length} ${appState.tr('ayahWord')}',
-                            style: TextStyle(
-                              fontSize: R.f(context, 11),
-                              color: AppColors.cream
-                                  .withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
+            height: MediaQuery.of(context).size.height * 0.55,
+            child: list.isEmpty
+                ? Center(
+                    child: Text(
+                      appState.tr('noResults'),
+                      style: TextStyle(
+                        color:
+                            AppColors.cream.withValues(alpha: 0.7),
                       ),
                     ),
+                  )
+                : ListView.builder(
+                    itemCount: list.length,
+                    itemBuilder: (context, i) {
+                      final surah = list[i];
+                      final selected =
+                          surah.number == widget.selectedNumber;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                            bottom: R.s(context, 6)),
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(
+                              context, surah.number),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: R.s(context, 10),
+                              vertical: R.s(context, 8),
+                            ),
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? AppColors.gold
+                                      .withValues(alpha: 0.2)
+                                  : Colors.black
+                                      .withValues(alpha: 0.2),
+                              borderRadius:
+                                  BorderRadius.circular(12),
+                              border: Border.all(
+                                color: selected
+                                    ? AppColors.gold
+                                    : AppColors.gold
+                                        .withValues(alpha: 0.3),
+                                width: selected ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                StarBadge(
+                                  number: surah.number,
+                                  size: R.s(context, 34),
+                                ),
+                                SizedBox(width: R.s(context, 10)),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        surah.nameAr,
+                                        style: TextStyle(
+                                          fontSize:
+                                              R.f(context, 13.5),
+                                          fontWeight:
+                                              FontWeight.w700,
+                                          color: AppColors
+                                              .softGold,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${surah.nameEn} • ${surah.count} ${appState.tr('ayahWord')}',
+                                        style: TextStyle(
+                                          fontSize:
+                                              R.f(context, 10.5),
+                                          color: AppColors.cream
+                                              .withValues(
+                                                  alpha: 0.7),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (selected)
+                                  Icon(
+                                    Icons
+                                        .check_circle_rounded,
+                                    color: AppColors.gold,
+                                    size:
+                                        R.s(context, 20),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              }).toList(),
-            ),
           ),
         ],
       ),
