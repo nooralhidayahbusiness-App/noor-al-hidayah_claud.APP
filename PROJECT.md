@@ -1,13 +1,13 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-09-30 | **الإصدار:** Beta 1.5
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-10-01 | **الإصدار:** Beta 1.7
 
 ---
 
 ## 📌 نظرة عامة
 
 ### التقنيات
-- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API** + **flutter_compass** + **flutter_map** + **flutter_local_notifications** + **audioplayers**.
+- **Flutter** + **Firebase Auth** + **Firestore** + **SharedPreferences** + **HTTP API** + **flutter_compass** + **flutter_map** + **flutter_local_notifications** + **audioplayers** + **record** + **Google Gemini AI**.
 - **Codespaces + GitHub** للتطوير، **GitHub Pages** للنشر.
 
 ### المالك
@@ -53,18 +53,21 @@ lib/
 │   ├── responsive
 │   ├── reciter_prefs, fonts, validators, navigation
 │   ├── quran_prefs, divine_names, firebase_options, strings_prayer
+│   ├── secrets.dart           (محمي — .gitignore)
 │   └── i18n/
 │       ├── fr.dart, ur.dart, ne.dart, id.dart, ms.dart
 ├── data/
 │   ├── questions, adhkar, duas, haram, makruh, currencies, store_items
 │   ├── adhan_reciters, adhan_timings
+│   └── ai_teacher_data
 ├── models/
-│   ├── quran, saved_location, mosque
+│   ├── quran, saved_location, mosque, reciter
 ├── services/
 │   ├── auth_service, user_service, storage_service
 │   ├── location_service, quran_audio_service, tafsir_service, share_service
 │   ├── metals_service, khatm_service, qibla_service, mosques_service
 │   ├── notification_service, adhan_service
+│   ├── gemini_service, recitation_service
 ├── screens/
 │   ├── splash, welcome, login, register, location
 │   ├── home_shell
@@ -77,6 +80,7 @@ lib/
 │   ├── haram_screen, prohibition_detail_screen
 │   ├── qibla_screen, mosques_screen
 │   ├── adhan_screen
+│   ├── ai_teacher_screen, recitation_learning_screen
 │   └── tabs/ (home_tab, quran_browser_tab, community_tab, more_tab, soon_tabs)
 └── widgets/
     ├── app_branding, animated_vip_background, themed_background
@@ -84,24 +88,22 @@ lib/
     ├── glass_card, star_badge, ornament_medallion
     ├── auth_widgets, glow_sparks, islamic_pattern
     ├── ai_teacher_card, prayer_widgets, daily_cards, avatar_picker
+    └── reciter_picker_sheet
 ```
 
 ---
 
 ## 🌍 اللغات المدعومة (7 لغات)
 
-| # | اللغة | الكود | الاتجاه | الملف |
-|---|-------|------|---------|-------|
-| 1 | العربية | `ar` | RTL | `app_state.dart` |
-| 2 | English | `en` | LTR | `app_state.dart` |
-| 3 | Français | `fr` | LTR | `i18n/fr.dart` |
-| 4 | اردو | `ur` | RTL | `i18n/ur.dart` |
-| 5 | नेपाली | `ne` | LTR | `i18n/ne.dart` |
-| 6 | Bahasa Indonesia | `id` | LTR | `i18n/id.dart` |
-| 7 | Bahasa Melayu | `ms` | LTR | `i18n/ms.dart` |
-
-- **دالة `appState.setLanguage(code)`** للتبديل.
-- **قائمة اختيار في شاشة الإعدادات** (7 لغات + علامة ✓ على المختارة).
+| # | اللغة | الكود | الاتجاه |
+|---|-------|------|---------|
+| 1 | العربية | `ar` | RTL |
+| 2 | English | `en` | LTR |
+| 3 | Français | `fr` | LTR |
+| 4 | اردو | `ur` | RTL |
+| 5 | नेपाली | `ne` | LTR |
+| 6 | Bahasa Indonesia | `id` | LTR |
+| 7 | Bahasa Melayu | `ms` | LTR |
 
 ---
 
@@ -114,8 +116,8 @@ users/{uid}/
 ├── profile: { name, bio, isPublic, country, verified, verifiedType, faceScanDone }
 ├── stats: { points, level, streak, lastActiveDate, challengesCompleted,
 │            totalCorrectAnswers, quranKhatmas, aiTeacherScore, redeemedCoupons }
-├── inventory: { backgrounds, voices, adhans, adhanBackgrounds, themes,
-│                activeBackground, activeVoice, activeAdhan,
+├── inventory: { backgrounds, adhans, adhanBackgrounds, themes,
+│                activeBackground, activeAdhan,
 │                activeAdhanBackground, activeTheme }
 ├── settings: { language, theme, notifications{...} }
 └── progress: {
@@ -124,7 +126,8 @@ users/{uid}/
       quran:      { khatmActive, startDate, endDate, totalPages, pagesPerDay,
                     pagesRead, lastReadDate, lastReadPage, streak, history,
                     completedKhatmas }
-      aiTeacher:  {}
+      aiTeacher:  { lastRecitationSurah, lastRecitationAyah,
+                    recitationSessions, lastRecitationTime, history }
     }
 ```
 
@@ -147,7 +150,6 @@ service cloud.firestore {
 ### 1) الحسابات + Auto-login
 - [x] تسجيل/دخول/خروج Firebase
 - [x] `authService.isOwner`
-- [x] مزامنة كاملة
 - [x] Auto-login
 
 ### 2) الملف الشخصي
@@ -157,7 +159,6 @@ service cloud.firestore {
 
 ### 3) النقاط والمستويات
 - [x] addPoints / incrementStats / setStats
-- [x] مستوى تلقائي (100 نقطة/مستوى)
 - [x] كود `NAH2026` = 1000 نقطة
 
 ### 4) التحديات
@@ -165,10 +166,10 @@ service cloud.firestore {
 - [x] 20 نقطة/إجابة، Streak تلقائي
 
 ### 5) المتجر
-- [x] 5 تبويبات: خلفيات/قراء/مؤذنون/خلفيات أذان/ثيمات
-- [x] 10 خلفيات + 7 قراء + 7 مؤذنين + 9 ثيمات + 8 خلفيات أذان
-- [x] VIP animations + شارات
-- [x] "مشترياتي"
+- [x] 4 تبويبات: خلفيات/مؤذنون/خلفيات أذان/ثيمات
+- [x] **كل القراء مجانيون الآن** (أُزيلوا من المتجر)
+- [x] 10 خلفيات + 7 مؤذنين + 9 ثيمات + 8 خلفيات أذان
+- [x] VIP animations + "مشترياتي"
 
 ### 6) الخلفيات والثيمات
 - [x] AppBackground + AnimatedVipBackground + ThemedBackground
@@ -195,69 +196,72 @@ service cloud.firestore {
 ### 16) القبلة — بوصلة + مسافة إلى مكة
 
 ### 17) المساجد القريبة
-- [x] خريطة OpenStreetMap + Overpass API.
-- [x] 60% خريطة + 40% قائمة قابلة للتمرير.
-- [x] فلترة النطاق (1/3/5/10 كم).
-- [x] زر التوجيه (Google/Apple Maps).
-- [x] يعمل على APK/iOS — على الويب قد يفشل بسبب CORS.
+- [x] خريطة OpenStreetMap + Overpass API
+- [x] 60% خريطة + 40% قائمة
+- [x] يعمل على APK/iOS — على الويب قد يفشل بسبب CORS
 
 ### 18) شاشة الإعدادات (كامل)
 - [x] قسم الحساب
-- [x] إشعارات الصلاة (5 مفاتيح + الأذان + التذكيرات اليومية)
-- [x] تذكير قبل الأذان (0/5/10/15/20 دقيقة)
-- [x] المظهر (اللغة + الثيمات)
-- [x] القرآن (القارئ + التقدم التلقائي)
+- [x] إشعارات الصلاة + تذكير قبل الأذان (0/5/10/15/20 دقيقة)
+- [x] 3 تذكيرات يومية (تحدي 9ص، ورد 6ص، آية 7ص)
+- [x] المظهر (اللغة + الثيمات) + اختيار القارئ
 - [x] حول التطبيق
-- [x] زر تسجيل الخروج
-- [x] حفظ الإعدادات في Firestore
+- [x] تسجيل الخروج
 
 ### 19) الإشعارات (كامل)
-- [x] `flutter_local_notifications` + `timezone` + `flutter_timezone`.
-- [x] إشعارات 5 صلوات (قابلة للتفعيل/الإيقاف).
-- [x] تذكير قبل الأذان.
-- [x] 3 تذكيرات يومية: التحدي (9ص)، الورد (6ص)، آية اليوم (7ص).
-- [x] طلب الصلاحيات تلقائياً.
-- [x] إعادة الجدولة عند التغيير.
-- [x] payload → يفتح شاشة الأذان عند الضغط.
+- [x] `flutter_local_notifications` + `timezone` + `flutter_timezone`
+- [x] إشعارات 5 صلوات + 3 تذكيرات يومية
+- [x] payload → يفتح شاشة الأذان عند الضغط
 
 ### 20) شاشة الأذان (كامل)
-- [x] 10 مؤذنين بروابط MP3 مباشرة (`adhan_reciters.dart`).
-- [x] تشغيل تلقائي عند فتح الشاشة (`adhan_service.dart`).
-- [x] نص متحرك يتبع الصوت (توقيتات في `adhan_timings.dart`).
-- [x] سطرين بحد أقصى: السابق باهت + الحالي بارز بتوهج.
-- [x] زر القبلة + إيقاف/تشغيل + تأجيل + "صليت".
-- [x] خلفية من المتجر (8 خلفيات).
-- [x] تظهر تلقائياً عند الضغط على الإشعار.
-- [x] fallback للويب (بدون صوت/إشعار).
+- [x] 10 مؤذنين بروابط MP3 مباشرة
+- [x] نص متحرك يتبع الصوت (VIP فقط)
+- [x] زر القبلة + إيقاف/تشغيل + تأجيل + "صليت"
+- [x] 8 خلفيات أذان في المتجر
 
 ### 21) خلفيات الأذان (8 في المتجر)
-- [x] 5 عادية (400-700 نقطة).
-- [x] 3 VIP (2000 نقطة) مع animations + نص متحرك.
-- [x] تبويب جديد في المتجر: "خلفيات الأذان".
-- [x] شارة `VIP` + `ANIMATION`.
+- [x] 5 عادية + 3 VIP (2000 نقطة)
+- [x] شارة VIP + ANIMATION
 
 ### 22) اللغات (7 لغات كاملة)
-- [x] العربية + English + Français + اردو + नेपाली + Bahasa Indonesia + Bahasa Melayu.
-- [x] ملفات `i18n/*.dart` للغات الجديدة.
-- [x] `appState.setLanguage(code)` + دعم RTL للأوردو.
-- [x] قائمة اختيار اللغة في الإعدادات (7 لغات).
+- [x] العربية + English + Français + اردو + नेपाली + Bahasa Indonesia + Bahasa Melayu
 
-### 23) الإسناد
-- [x] قسم Flaticon في تبويب المزيد + شاشة الإعدادات.
+### 23) المعلم الذكي (AI) — كامل ⭐
+- [x] محادثة نصية مع Gemini (`gemini-flash-latest`).
+- [x] شارة BETA في بطاقة المعلم + في الشاشة.
+- [x] 6 أقسام تعليمية: تجويد، تصحيح تلاوة، تفسير، خطة حفظ، معاني، سؤال حر.
+- [x] **شاشة تعلّم التلاوة التفاعلية**:
+  - تعرض الآية + الترجمة.
+  - تشغّل صوت القارئ (كل القراء مجاناً).
+  - تسجّل صوت المستخدم (mic).
+  - ترسل التسجيل لـ Gemini → تحليل + نسبة دقة + نجوم + نصائح.
+- [x] فهرس **114 سورة** مع بحث.
+- [x] اختيار القارئ من قائمة كل القراء (مجاناً).
+- [x] حفظ التقدم: آخر سورة وآية في `progress.aiTeacher`.
+- [x] حفظ عدد جلسات التلاوة.
+- [x] يعمل كامل على APK/iOS — على الويب الميكروفون محدود.
+
+### 24) الإسناد
+- [x] قسم Flaticon في تبويب المزيد + الإعدادات.
 
 ---
 
 ## ⏳ قيد التنفيذ
 
-### 🔥 الأولوية القادمة (بالترتيب)
-1. [ ] **المعلم الذكي (AI) كامل** — مع خطة مجانية + شارة Beta ← التالي
-2. [ ] **شاشة المجتمع** (نشر + تفاعل) — **⚠️ تذكير: جعل `community.png` ذهبي**
+### 🔥 الأولوية القادمة
+1. [ ] **شاشة المجتمع** (نشر + تفاعل)
+   - **⚠️ تذكير مهم: عند بناء الشاشة، جعل `community.png` ذهبي بأمر Python قبل البدء.**
+
+### إضافات مقترحة للمعلم (لاحقاً)
+- [ ] **إحصائيات المعلم**: عدد الجلسات + متوسط الدقة + التقدم الأسبوعي.
+- [ ] نقاط على كل جلسة تلاوة (10-30 نقطة).
 
 ### لاحقاً
 - [ ] الوضع النهاري/الليلي
 - [ ] زر "وثّق حسابي" للمستخدم العادي
 - [ ] شاشة "الصدقة" منفصلة
 - [ ] إعادة محاولة CORS proxy للمساجد على الويب
+- [ ] الميكروفون على الويب (يحتاج HTTPS + CORS fixes)
 
 ---
 
@@ -270,18 +274,18 @@ service cloud.firestore {
 ### APIs خارجية (مجانية)
 - **أسعار الذهب/الفضة:** `https://data-asg.goldprice.org/dbXRates/USD`
 - **أسعار الصرف:** `https://open.er-api.com/v6/USD`
-- **المساجد:** Overpass API.
-- **الأذان:** `islamcan.com/audio/adhan/azanN.mp3` (10 ملفات).
-- **AI Teacher:** (قيد البحث — خطة مجانية).
+- **المساجد:** Overpass API
+- **الأذان:** `islamcan.com/audio/adhan/azanN.mp3` (10 ملفات)
+- **Gemini AI:** `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`
 
 ### أصول الصور
 **assets/icons/**: Setting, challenge, coupon, more, store, community, true.me, true.users, adhan  
 **assets/images/**: Me, logo, avatar_man, avatar_woman  
-**assets/images/backgrounds/**: backgroundv2 (default), _blue, _orange, _brown, _dark, _purple, _olive, vip1, vip2, vip3  
+**assets/images/backgrounds/**: backgroundv2, _blue, _orange, _brown, _dark, _purple, _olive, vip1, vip2, vip3  
 **assets/images/adhan_backgrounds/**: adhan_bg_1..5, adhan_bg_vip_1..3
 
 ### pubspec.yaml — Dependencies المهمة
-`firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`, `flutter_compass`, `flutter_map`, `latlong2`, `url_launcher`, `flutter_local_notifications`, `timezone`, `flutter_timezone`, `audioplayers`.
+`firebase_core`, `firebase_auth`, `cloud_firestore`, `google_fonts`, `shared_preferences`, `geolocator`, `http`, `wakelock_plus`, `flutter_compass`, `flutter_map`, `latlong2`, `url_launcher`, `flutter_local_notifications`, `timezone`, `flutter_timezone`, `audioplayers`, `record`, `path_provider`, `permission_handler`.
 
 ### Git Workflow
 ```
@@ -312,7 +316,7 @@ git add . && git commit -m "..." && git push
 ## 🎯 قواعد للمطور الجديد
 
 1. `flutter analyze` = "No issues found" قبل أي تعديل.
-2. **استبدال كامل** — لا تعديل بالقطع.
+2. **استبدال كامل** — لا تعديل بالقطع (الملفات كبيرة).
 3. ألوان → `ThemedColors` (لا `AppColors`).
 4. أحجام → `R.s()` / `R.f()`.
 5. Firestore تحت `users/{uid}`.
@@ -320,7 +324,8 @@ git add . && git commit -m "..." && git push
 7. الترجمات: `app_state.dart` (ar/en) + `i18n/*.dart` (fr/ur/ne/id/ms).
 8. الصور في `assets/`.
 9. ⚠️ تجنّب تكرار الأحرف العربية في `currencies.dart`.
-10. اختبار: `flutter analyze` + `bash tool/preview.sh`.
+10. ⚠️ **`lib/core/secrets.dart` محمي** — لا يرفع على GitHub.
+11. اختبار: `flutter analyze` + `bash tool/preview.sh`.
 
 ### القاعدة الذهبية:
 بعد كل ميزة: `git add . && git commit && git push` + تحديث `PROJECT.md`.
@@ -349,7 +354,7 @@ git add . && git commit -m "..." && git push
 
 ### المبادئ
 1. ملف واحد لكل ميزة.
-2. **استبدال كامل**.
+2. **استبدال كامل — لا تعديل بالقطع.**
 3. لا حفظ قبل `flutter analyze` = `No issues found!` + اختبار.
 4. `PROJECT.md` يُحدّث بعد كل ميزة.
 5. خطوات صغيرة.
@@ -381,4 +386,4 @@ flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8095 --web-renderer 
 2. لا استبدال جزئي.
 3. لا انتقال بدون تحديث `PROJECT.md`.
 
-**آخر تحديث لهذا القسم:** 2026-09-30 — ثابت ولا يُحذف.
+**آخر تحديث لهذا القسم:** 2026-10-01 — ثابت ولا يُحذف.
