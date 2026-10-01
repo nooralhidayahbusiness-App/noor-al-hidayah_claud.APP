@@ -5,10 +5,6 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 
 /// صورة بروفايل مع حلقة ذهبية دوّارة وتوهج نابض.
-///
-/// - حساباتك الشخصية → Me.png
-/// - حسابات نور الهداية الرسمية → logo.png
-/// - المستخدم العادي → avatar_man.png / avatar_woman.png
 class ProfileAvatar extends StatefulWidget {
   const ProfileAvatar({
     super.key,
@@ -51,9 +47,10 @@ class _ProfileAvatarState extends State<ProfileAvatar>
     final e = widget.email.toLowerCase();
     if (_meEmails.contains(e)) return 'assets/images/Me.png';
     if (_logoEmails.contains(e)) return 'assets/images/logo.png';
+    // الصور الفعلية في المشروع
     return widget.avatar == 'woman'
-        ? 'assets/images/avatar_woman.png'
-        : 'assets/images/avatar_man.png';
+        ? 'assets/images/hijab.png'
+        : 'assets/images/arabian.png';
   }
 
   @override
