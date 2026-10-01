@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'recitation_learning_screen.dart';
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
@@ -288,6 +288,68 @@ class _AiTeacherScreenState extends State<AiTeacherScreen> {
         R.s(context, 16),
       ),
       children: [
+        SizedBox(height: R.s(context, 10)),
+GestureDetector(
+  onTap: () => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => const RecitationLearningScreen(),
+    ),
+  ),
+  child: GlassCard(
+    ornament: false,
+    child: Row(
+      children: [
+        Container(
+          width: R.s(context, 44),
+          height: R.s(context, 44),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.gold.withValues(alpha: 0.2),
+            border: Border.all(
+              color: AppColors.gold,
+              width: 1.5,
+            ),
+          ),
+          child: Icon(
+            Icons.mic_rounded,
+            color: AppColors.gold,
+            size: R.s(context, 22),
+          ),
+        ),
+        SizedBox(width: R.s(context, 10)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                appState.tr('recitationTitle'),
+                style: TextStyle(
+                  fontSize: R.f(context, 13),
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.softGold,
+                ),
+              ),
+              SizedBox(height: R.s(context, 2)),
+              Text(
+                appState.tr('recitationDesc'),
+                style: TextStyle(
+                  fontSize: R.f(context, 10.5),
+                  color:
+                      AppColors.cream.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Icon(
+          Icons.arrow_forward_ios_rounded,
+          color: AppColors.gold.withValues(alpha: 0.7),
+          size: R.s(context, 14),
+        ),
+      ],
+    ),
+  ),
+),
         GlassCard(
           ornament: false,
           child: Column(
