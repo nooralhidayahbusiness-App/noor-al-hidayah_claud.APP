@@ -1139,6 +1139,12 @@ class _ReciterSelectorSheet extends StatelessWidget {
   final List<String> ownedIds;
   final String selectedId;
 
+  int _priceOf(String id) {
+    if (id == 'default') return 0;
+    final item = findItem('voice', id);
+    return item?.price ?? 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1188,8 +1194,9 @@ class _ReciterSelectorSheet extends StatelessWidget {
               itemCount: kReciters.length,
               itemBuilder: (context, i) {
                 final r = kReciters[i];
-                final owned = ownedIds.contains(r.id) || r.price == 0;
+                final owned = ownedIds.contains(r.id) || r.id == 'default';
                 final selected = r.id == selectedId;
+                final price = _priceOf(r.id);
                 return Padding(
                   padding: EdgeInsets.only(bottom: R.s(context, 6)),
                   child: GestureDetector(
@@ -1271,7 +1278,7 @@ class _ReciterSelectorSheet extends StatelessWidget {
                                       ),
                                       SizedBox(width: R.s(context, 3)),
                                       Text(
-                                        '${r.price} ${appState.tr('points')}',
+                                        '$price ${appState.tr('points')}',
                                         style: TextStyle(
                                           fontSize:
                                               R.f(context, 10.5),
