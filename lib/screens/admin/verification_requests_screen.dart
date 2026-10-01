@@ -1,34 +1,27 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
-import '../core/app_state.dart';
-import '../core/profile_state.dart';
-import '../core/responsive.dart';
-import '../core/theme.dart';
-import '../services/user_service.dart';
-import '../services/verification_service.dart';
-import '../widgets/auth_widgets.dart';
-import '../widgets/glass_card.dart';
-import '../widgets/themed_background.dart';
+import '../../core/app_state.dart';
+import '../../core/responsive.dart';
+import '../../core/theme.dart';
+import '../../services/verification_service.dart';
+import '../../widgets/glass_card.dart';
+import '../../widgets/themed_background.dart';
 
-class VerificationRequestScreen extends StatefulWidget {
-  const VerificationRequestScreen({super.key});
+class VerificationRequestsScreen extends StatefulWidget {
+  const VerificationRequestsScreen({super.key});
 
   @override
-  State<VerificationRequestScreen> createState() =>
-      _VerificationRequestScreenState();
+  State<VerificationRequestsScreen> createState() =>
+      _VerificationRequestsScreenState();
 }
 
-class _VerificationRequestScreenState
-    extends State<VerificationRequestScreen> {
-  Uint8List? _pickedBytes;
-  bool _sending = false;
+class _VerificationRequestsScreenState
+    extends State<VerificationRequestsScreen> {
   bool _loading = true;
-  String _currentStatus = 'none'; // none | pending | verified
-  String _currentType = 'none'; // none | user | me | owner
+  List<VerificationRequest> _requests = [];
+  String? _busyUid;
 
   @override
   void initState() {
@@ -38,83 +31,47 @@ class _VerificationRequestScreenState
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    try {
-      final profile = await userService.loadProfile();
-      final type = (profile['verifiedType'] as String?) ?? 'none';
-      final verified = (profile['verified'] as bool?) ?? false;
-
-      String status = 'none';
-      if (verified && (type == 'user' || type == 'me' || type == 'owner')) {
-        status = 'verified';
-      } else {
-        final pending = await verificationService.hasPendingRequest();
-        if (pending) status = 'pending';
-      }
-
-      if (mounted) {
-        setState(() {
-          _currentStatus = status;
-          _currentType = type;
-          _loading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+    final list = await verificationService.loadPendingRequests();
+    if (mounted) {
+      setState(() {
+        _requests = list;
+        _loading = false;
+      });
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _approve(VerificationRequest req, String type) async {
+    setState(() => _busyUid = req.uid);
     try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 400,
-        maxHeight: 400,
-        imageQuality: 60,
+      await verificationService.approve(
+        targetUid: req.uid,
+        type: type,
       );
-      if (picked == null) return;
-      final bytes = await picked.readAsBytes();
       if (mounted) {
-        setState(() => _pickedBytes = bytes);
+        _showSnack(
+          type == 'me'
+              ? appState.tr('adminApprovedMe')
+              : appState.tr('adminApprovedUser'),
+        );
       }
+      await _load();
     } catch (e) {
-      if (mounted) {
-        _showSnack('${appState.tr('verificationPhotoRequired')}: $e',
-            error: true);
-      }
-    }
-  }
-
-  Future<void> _send() async {
-    if (_pickedBytes == null) {
-      _showSnack(appState.tr('verificationPhotoRequired'), error: true);
-      return;
-    }
-
-    setState(() => _sending = true);
-    try {
-      final base64Str = base64Encode(_pickedBytes!);
-      final name = profileState.name.isEmpty
-          ? 'User'
-          : profileState.name;
-      final gender = profileState.avatar ?? 'man';
-
-      await verificationService.submitRequest(
-        photoBase64: base64Str,
-        name: name,
-        gender: gender,
-      );
-
-      if (mounted) {
-        _showSnack(appState.tr('verificationSent'));
-        await _load();
-      }
-    } catch (e) {
-      if (mounted) {
-        _showSnack('Error: $e', error: true);
-      }
+      if (mounted) _showSnack('Error: $e', error: true);
     } finally {
-      if (mounted) setState(() => _sending = false);
+      if (mounted) setState(() => _busyUid = null);
+    }
+  }
+
+  Future<void> _reject(VerificationRequest req) async {
+    setState(() => _busyUid = req.uid);
+    try {
+      await verificationService.reject(targetUid: req.uid);
+      if (mounted) _showSnack(appState.tr('adminRejected'));
+      await _load();
+    } catch (e) {
+      if (mounted) _showSnack('Error: $e', error: true);
+    } finally {
+      if (mounted) setState(() => _busyUid = null);
     }
   }
 
@@ -159,7 +116,7 @@ class _VerificationRequestScreenState
                     ),
                     const Spacer(),
                     Text(
-                      appState.tr('verificationRequest'),
+                      appState.tr('adminVerificationRequests'),
                       style: TextStyle(
                         fontSize: R.f(context, 15),
                         fontWeight: FontWeight.w700,
@@ -176,7 +133,39 @@ class _VerificationRequestScreenState
                     ? const Center(
                         child: CircularProgressIndicator(
                             color: AppColors.gold))
-                    : _buildBody(),
+                    : _requests.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding:
+                                  EdgeInsets.all(R.s(context, 20)),
+                              child: Text(
+                                appState.tr('adminNoRequests'),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: R.f(context, 14),
+                                  color: AppColors.cream
+                                      .withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.all(R.s(context, 14)),
+                            itemCount: _requests.length,
+                            itemBuilder: (context, i) => Padding(
+                              padding: EdgeInsets.only(
+                                  bottom: R.s(context, 10)),
+                              child: _RequestCard(
+                                request: _requests[i],
+                                busy: _busyUid == _requests[i].uid,
+                                onApproveUser: () =>
+                                    _approve(_requests[i], 'user'),
+                                onApproveMe: () =>
+                                    _approve(_requests[i], 'me'),
+                                onReject: () => _reject(_requests[i]),
+                              ),
+                            ),
+                          ),
               ),
             ],
           ),
@@ -184,208 +173,194 @@ class _VerificationRequestScreenState
       ),
     );
   }
+}
 
-  Widget _buildBody() {
-    // حالة: موثّق مسبقاً
-    if (_currentStatus == 'verified') {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(R.s(context, 24)),
-          child: GlassCard(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.verified_rounded,
-                  color: AppColors.gold,
-                  size: R.s(context, 60),
-                ),
-                SizedBox(height: R.s(context, 12)),
-                Text(
-                  appState.tr('verificationAlreadyVerified'),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: R.f(context, 16),
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.softGold,
-                  ),
-                ),
-                SizedBox(height: R.s(context, 8)),
-                Text(
-                  _currentType == 'me' || _currentType == 'owner'
-                      ? '⭐ ${appState.tr('adminApproveMe')}'
-                      : '✓ ${appState.tr('adminApproveUser')}',
-                  style: TextStyle(
-                    fontSize: R.f(context, 13),
-                    color: AppColors.gold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+class _RequestCard extends StatelessWidget {
+  const _RequestCard({
+    required this.request,
+    required this.busy,
+    required this.onApproveUser,
+    required this.onApproveMe,
+    required this.onReject,
+  });
 
-    // حالة: قيد المراجعة
-    if (_currentStatus == 'pending') {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(R.s(context, 24)),
-          child: GlassCard(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.hourglass_top_rounded,
-                  color: AppColors.gold,
-                  size: R.s(context, 60),
-                ),
-                SizedBox(height: R.s(context, 12)),
-                Text(
-                  appState.tr('verificationPending'),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: R.f(context, 16),
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.softGold,
-                  ),
-                ),
-                SizedBox(height: R.s(context, 8)),
-                Text(
-                  appState.tr('verificationPendingDesc'),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: R.f(context, 12.5),
-                    color: AppColors.cream.withValues(alpha: 0.75),
-                    height: 1.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+  final VerificationRequest request;
+  final bool busy;
+  final VoidCallback onApproveUser;
+  final VoidCallback onApproveMe;
+  final VoidCallback onReject;
 
-    // حالة: غير موثّق → نموذج
-    return ListView(
-      padding: EdgeInsets.all(R.s(context, 20)),
-      children: [
-        GlassCard(
-          child: Column(
+  @override
+  Widget build(BuildContext context) {
+    final genderAr = request.gender == 'woman' ? 'امرأة' : 'رجل';
+    final date = request.requestedDate;
+
+    return GlassCard(
+      ornament: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              Icon(
-                Icons.verified_user_outlined,
-                color: AppColors.gold,
-                size: R.s(context, 54),
-              ),
-              SizedBox(height: R.s(context, 12)),
-              Text(
-                appState.tr('verificationRequest'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: R.f(context, 16),
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.softGold,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: R.s(context, 70),
+                  height: R.s(context, 70),
+                  color: Colors.black.withValues(alpha: 0.3),
+                  child: request.photoBase64.isEmpty
+                      ? Icon(
+                          Icons.person,
+                          color: AppColors.gold,
+                          size: R.s(context, 30),
+                        )
+                      : Image.memory(
+                          base64Decode(request.photoBase64),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Icon(
+                            Icons.person,
+                            color: AppColors.gold,
+                            size: R.s(context, 30),
+                          ),
+                        ),
                 ),
               ),
-              SizedBox(height: R.s(context, 8)),
-              Text(
-                appState.tr('verificationRequestDesc'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: R.f(context, 12.5),
-                  color: AppColors.cream.withValues(alpha: 0.75),
-                  height: 1.6,
+              SizedBox(width: R.s(context, 12)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      request.name.isEmpty ? 'User' : request.name,
+                      style: TextStyle(
+                        fontSize: R.f(context, 14),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.softGold,
+                      ),
+                    ),
+                    SizedBox(height: R.s(context, 3)),
+                    Text(
+                      request.email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: R.f(context, 10.5),
+                        color: AppColors.cream.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    SizedBox(height: R.s(context, 3)),
+                    Text(
+                      '$genderAr • ${date.day}/${date.month}/${date.year}',
+                      style: TextStyle(
+                        fontSize: R.f(context, 10.5),
+                        color: AppColors.gold.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-        SizedBox(height: R.s(context, 20)),
+          SizedBox(height: R.s(context, 12)),
 
-        // اختيار الصورة
-        GestureDetector(
-          onTap: _pickImage,
-          child: Container(
-            height: R.s(context, 200),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.5),
-                width: 1.5,
+          if (busy)
+            const Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.gold,
+                ),
               ),
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionBtn(
+                    icon: Icons.verified_rounded,
+                    label: appState.tr('adminApproveUser'),
+                    color: AppColors.gold,
+                    onTap: onApproveUser,
+                  ),
+                ),
+                SizedBox(width: R.s(context, 6)),
+                Expanded(
+                  child: _ActionBtn(
+                    icon: Icons.workspace_premium_rounded,
+                    label: appState.tr('adminApproveMe'),
+                    color: const Color(0xFFFFA000),
+                    onTap: onApproveMe,
+                  ),
+                ),
+                SizedBox(width: R.s(context, 6)),
+                _ActionBtn(
+                  icon: Icons.close_rounded,
+                  label: appState.tr('adminReject'),
+                  color: const Color(0xFFD32F2F),
+                  iconOnly: true,
+                  onTap: onReject,
+                ),
+              ],
             ),
-            child: _pickedBytes == null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.add_a_photo_rounded,
-                        color: AppColors.gold,
-                        size: R.s(context, 46),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionBtn extends StatelessWidget {
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.iconOnly = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  final bool iconOnly;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: R.s(context, 8),
+          vertical: R.s(context, 10),
+        ),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color, width: 1.2),
+        ),
+        child: iconOnly
+            ? Icon(icon, color: color, size: R.s(context, 20))
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: color, size: R.s(context, 16)),
+                  SizedBox(width: R.s(context, 4)),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: R.f(context, 10.5),
+                        fontWeight: FontWeight.w700,
+                        color: color,
                       ),
-                      SizedBox(height: R.s(context, 10)),
-                      Text(
-                        appState.tr('verificationUploadPhoto'),
-                        style: TextStyle(
-                          fontSize: R.f(context, 13),
-                          color: AppColors.softGold,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  )
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(17),
-                    child: Image.memory(
-                      _pickedBytes!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
                     ),
                   ),
-          ),
-        ),
-
-        SizedBox(height: R.s(context, 22)),
-
-        // زر الإرسال
-        ElevatedButton.icon(
-          onPressed: _sending ? null : _send,
-          icon: _sending
-              ? SizedBox(
-                  width: R.s(context, 18),
-                  height: R.s(context, 18),
-                  child: const CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.deepGreen,
-                  ),
-                )
-              : Icon(
-                  Icons.send_rounded,
-                  size: R.s(context, 20),
-                ),
-          label: Text(
-            appState.tr('verificationSend'),
-            style: TextStyle(
-              fontSize: R.f(context, 15),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.gold,
-            foregroundColor: AppColors.deepGreen,
-            minimumSize: Size.fromHeight(R.s(context, 56)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            elevation: 6,
-            shadowColor: AppColors.gold,
-          ),
-        ),
-      ],
+                ],
+              ),
+      ),
     );
   }
 }
