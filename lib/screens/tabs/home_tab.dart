@@ -10,7 +10,6 @@ import '../../core/prayer_state.dart';
 import '../../core/profile_state.dart';
 import '../../core/responsive.dart';
 import '../../core/theme.dart';
-import '../../widgets/auth_widgets.dart';
 import '../../widgets/ai_teacher_card.dart';
 import '../../widgets/avatar_picker.dart';
 import '../../widgets/daily_cards.dart';
