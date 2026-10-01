@@ -6,11 +6,13 @@ import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
+import '../services/verification_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/themed_background.dart';
 import '../widgets/verified_badge.dart';
 import 'edit_profile_screen.dart';
+import 'verification_request_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -23,6 +25,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Map<String, dynamic> _stats = {};
   Map<String, dynamic> _profile = {};
   bool _loading = true;
+  bool _hasPendingRequest = false;
 
   @override
   void initState() {
@@ -37,23 +40,42 @@ class _AccountScreenState extends State<AccountScreen> {
         userService.loadStats(),
         userService.loadProfile(),
       ]);
+      bool pending = false;
+      try {
+        pending = await verificationService.hasPendingRequest();
+      } catch (_) {}
       if (mounted) {
         setState(() {
           _stats = results[0];
           _profile = results[1];
+          _hasPendingRequest = pending;
+          _loading = false;
         });
       }
     } catch (e) {
       debugPrint('AccountScreen load error: $e');
-    } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   String _verifiedType() {
     final vt = _profile['verifiedType'] as String?;
-    if (vt == 'owner' || vt == 'user') return vt!;
+    if (vt == 'owner' || vt == 'me' || vt == 'user') return vt!;
     return 'none';
+  }
+
+  bool _isVerified() {
+    final t = _verifiedType();
+    return t == 'owner' || t == 'me' || t == 'user';
+  }
+
+  Future<void> _openVerification() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const VerificationRequestScreen(),
+      ),
+    );
+    await _load();
   }
 
   Future<void> _signOut() async {
@@ -151,6 +173,8 @@ class _AccountScreenState extends State<AccountScreen> {
                               SizedBox(height: R.s(context, 12)),
                               _buildLevelProgress(
                                   points, level, nextLevelPoints, progress),
+                              SizedBox(height: R.s(context, 14)),
+                              _buildVerificationSection(),
                               SizedBox(height: R.s(context, 14)),
                               _buildActions(),
                               SizedBox(height: R.s(context, 14)),
@@ -330,6 +354,112 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationSection() {
+    // إذا موثّق → ما فيه زر
+    if (_isVerified()) {
+      return const SizedBox.shrink();
+    }
+
+    // إذا عنده طلب قيد المراجعة
+    if (_hasPendingRequest) {
+      return GlassCard(
+        ornament: false,
+        child: Row(
+          children: [
+            Icon(
+              Icons.hourglass_top_rounded,
+              color: AppColors.gold,
+              size: R.s(context, 22),
+            ),
+            SizedBox(width: R.s(context, 10)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    appState.tr('verificationPending'),
+                    style: TextStyle(
+                      fontSize: R.f(context, 13),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.softGold,
+                    ),
+                  ),
+                  SizedBox(height: R.s(context, 2)),
+                  Text(
+                    appState.tr('verificationPendingDesc'),
+                    style: TextStyle(
+                      fontSize: R.f(context, 10.5),
+                      color: AppColors.cream.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // غير موثّق → زر طلب
+    return GestureDetector(
+      onTap: _openVerification,
+      child: GlassCard(
+        ornament: false,
+        child: Row(
+          children: [
+            Container(
+              width: R.s(context, 40),
+              height: R.s(context, 40),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.gold.withValues(alpha: 0.15),
+                border: Border.all(
+                  color: AppColors.gold.withValues(alpha: 0.6),
+                ),
+              ),
+              child: Icon(
+                Icons.verified_user_rounded,
+                color: AppColors.gold,
+                size: R.s(context, 20),
+              ),
+            ),
+            SizedBox(width: R.s(context, 10)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    appState.tr('verificationRequest'),
+                    style: TextStyle(
+                      fontSize: R.f(context, 13),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.softGold,
+                    ),
+                  ),
+                  SizedBox(height: R.s(context, 2)),
+                  Text(
+                    appState.tr('verificationRequestDesc'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: R.f(context, 10.5),
+                      color: AppColors.cream.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: R.s(context, 18),
+              color: AppColors.softGold.withValues(alpha: 0.7),
+            ),
+          ],
+        ),
       ),
     );
   }
