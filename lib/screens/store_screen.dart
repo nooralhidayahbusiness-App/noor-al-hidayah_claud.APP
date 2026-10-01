@@ -21,7 +21,7 @@ class StoreScreen extends StatefulWidget {
 
 class _StoreScreenState extends State<StoreScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 5, vsync: this);
+  late final TabController _tabs = TabController(length: 4, vsync: this);
 
   bool _loading = true;
   int _points = 0;
@@ -65,7 +65,6 @@ class _StoreScreenState extends State<StoreScreen>
 
   String _listKey(String type) => switch (type) {
         'background' => 'backgrounds',
-        'voice' => 'voices',
         'adhan' => 'adhans',
         'adhanBackground' => 'adhanBackgrounds',
         'theme' => 'themes',
@@ -74,7 +73,6 @@ class _StoreScreenState extends State<StoreScreen>
 
   String _activeKey(String type) => switch (type) {
         'background' => 'activeBackground',
-        'voice' => 'activeVoice',
         'adhan' => 'activeAdhan',
         'adhanBackground' => 'activeAdhanBackground',
         'theme' => 'activeTheme',
@@ -95,9 +93,6 @@ class _StoreScreenState extends State<StoreScreen>
     switch (item.type) {
       case 'background':
         await themeState.setBackground(item.id);
-        break;
-      case 'voice':
-        await themeState.setReciter(item.id);
         break;
       case 'adhan':
         await themeState.setAdhan(item.id);
@@ -295,7 +290,6 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
                 tabs: [
                   Tab(text: appState.tr('tabBackgrounds')),
-                  Tab(text: appState.tr('tabVoices')),
                   Tab(text: appState.tr('tabAdhans')),
                   Tab(text: appState.tr('tabAdhanBgs')),
                   Tab(text: appState.tr('tabThemes')),
@@ -310,7 +304,6 @@ class _StoreScreenState extends State<StoreScreen>
                         controller: _tabs,
                         children: [
                           _buildGrid('background'),
-                          _buildGrid('voice'),
                           _buildGrid('adhan'),
                           _buildGrid('adhanBackground'),
                           _buildGrid('theme'),
