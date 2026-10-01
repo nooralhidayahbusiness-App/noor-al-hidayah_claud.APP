@@ -110,8 +110,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                             ),
                           ),
                           SizedBox(height: R.s(context, 14)),
-
-                          // طلبات التوثيق
                           GestureDetector(
                             onTap: _openRequests,
                             child: GlassCard(
@@ -159,7 +157,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                                               : appState.tr(
                                                   'adminNoRequests'),
                                           style: TextStyle(
-                                            fontSize: R.f(context, 11.5),
+                                            fontSize:
+                                                R.f(context, 11.5),
                                             color: _pending > 0
                                                 ? AppColors.gold
                                                 : AppColors.cream
