@@ -4,11 +4,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/store_items.dart';
+
 import '../core/app_state.dart';
 import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
+import '../data/store_items.dart';
 import '../models/quran.dart';
 import '../models/reciter.dart';
 import '../services/auth_service.dart';
@@ -109,7 +110,6 @@ class _RecitationLearningScreenState
     } catch (_) {}
   }
 
-  // ============ التنقل ============
   void _goToAyah(int newIndex) {
     if (newIndex < 0 || newIndex >= _surah.ayahs.length) return;
     setState(() {
@@ -151,7 +151,6 @@ class _RecitationLearningScreenState
     }
   }
 
-  // ============ الصوت ============
   Future<void> _togglePlayReciter() async {
     if (_playing) {
       await _player.stop();
@@ -170,7 +169,6 @@ class _RecitationLearningScreenState
     }
   }
 
-  // ============ التسجيل ============
   Future<void> _startRecording() async {
     if (_playing) {
       await _player.stop();
@@ -265,7 +263,6 @@ class _RecitationLearningScreenState
     return 0;
   }
 
-  // ============ اختيار السورة والقارئ ============
   Future<void> _openSurahSelector() async {
     if (_data == null) return;
     final selected = await showModalBottomSheet<int>(
@@ -583,7 +580,6 @@ class _RecitationLearningScreenState
             size: R.s(context, 28),
           ),
         ),
-
         _RoundButton(
           icon: _playing
               ? Icons.stop_rounded
@@ -593,13 +589,11 @@ class _RecitationLearningScreenState
           iconColor: AppColors.deepGreen,
           onTap: _togglePlayReciter,
         ),
-
         _RecordButton(
           recording: _recording,
           onStart: _startRecording,
           onStop: _stopRecording,
         ),
-
         IconButton(
           onPressed: _nextAyah,
           icon: Icon(
@@ -642,7 +636,6 @@ class _RecitationLearningScreenState
 
   Widget _buildAnalysisCard() {
     final showRating = _stars > 0 || _accuracy > 0;
-
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -691,7 +684,6 @@ class _RecitationLearningScreenState
               ],
             ),
           if (showRating) SizedBox(height: R.s(context, 10)),
-
           Text(
             _analysisResult!,
             textDirection: appState.isArabic
@@ -703,9 +695,7 @@ class _RecitationLearningScreenState
               color: AppColors.cream,
             ),
           ),
-
           SizedBox(height: R.s(context, 10)),
-
           Row(
             children: [
               Expanded(
@@ -756,7 +746,6 @@ class _RecitationLearningScreenState
   }
 }
 
-// ==================== الأزرار ====================
 class _RoundButton extends StatelessWidget {
   const _RoundButton({
     required this.icon,
@@ -922,7 +911,6 @@ class _RecordButtonState extends State<_RecordButton>
   }
 }
 
-// ==================== منتقي السور (114) ====================
 class _SurahSelectorSheet extends StatefulWidget {
   const _SurahSelectorSheet({
     required this.data,
@@ -958,7 +946,6 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
   @override
   Widget build(BuildContext context) {
     final list = widget.data.surahs.where(_matches).toList();
-
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.deepGreen,
@@ -1011,9 +998,8 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
               ),
               filled: true,
               fillColor: Colors.black.withValues(alpha: 0.25),
-              contentPadding: EdgeInsets.symmetric(
-                vertical: R.s(context, 10),
-              ),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: R.s(context, 10)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
@@ -1022,8 +1008,7 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    const BorderSide(color: AppColors.gold),
+                borderSide: const BorderSide(color: AppColors.gold),
               ),
             ),
           ),
@@ -1035,8 +1020,7 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
                     child: Text(
                       appState.tr('noResults'),
                       style: TextStyle(
-                        color:
-                            AppColors.cream.withValues(alpha: 0.7),
+                        color: AppColors.cream.withValues(alpha: 0.7),
                       ),
                     ),
                   )
@@ -1047,11 +1031,11 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
                       final selected =
                           surah.number == widget.selectedNumber;
                       return Padding(
-                        padding: EdgeInsets.only(
-                            bottom: R.s(context, 6)),
+                        padding:
+                            EdgeInsets.only(bottom: R.s(context, 6)),
                         child: GestureDetector(
-                          onTap: () => Navigator.pop(
-                              context, surah.number),
+                          onTap: () =>
+                              Navigator.pop(context, surah.number),
                           child: Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: R.s(context, 10),
@@ -1063,8 +1047,7 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
                                       .withValues(alpha: 0.2)
                                   : Colors.black
                                       .withValues(alpha: 0.2),
-                              borderRadius:
-                                  BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: selected
                                     ? AppColors.gold
@@ -1088,22 +1071,17 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
                                       Text(
                                         surah.nameAr,
                                         style: TextStyle(
-                                          fontSize:
-                                              R.f(context, 13.5),
-                                          fontWeight:
-                                              FontWeight.w700,
-                                          color:
-                                              AppColors.softGold,
+                                          fontSize: R.f(context, 13.5),
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.softGold,
                                         ),
                                       ),
                                       Text(
                                         '${surah.nameEn} • ${surah.count} ${appState.tr('ayahWord')}',
                                         style: TextStyle(
-                                          fontSize:
-                                              R.f(context, 10.5),
+                                          fontSize: R.f(context, 10.5),
                                           color: AppColors.cream
-                                              .withValues(
-                                                  alpha: 0.7),
+                                              .withValues(alpha: 0.7),
                                         ),
                                       ),
                                     ],
@@ -1129,7 +1107,6 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
   }
 }
 
-// ==================== منتقي القراء (كل القراء) ====================
 class _ReciterSelectorSheet extends StatelessWidget {
   const _ReciterSelectorSheet({
     required this.ownedIds,
@@ -1233,11 +1210,11 @@ class _ReciterSelectorSheet extends StatelessWidget {
                             height: R.s(context, 36),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.gold
-                                  .withValues(alpha: owned ? 0.15 : 0.08),
+                              color: AppColors.gold.withValues(
+                                  alpha: owned ? 0.15 : 0.08),
                               border: Border.all(
-                                color: AppColors.gold
-                                    .withValues(alpha: owned ? 0.6 : 0.3),
+                                color: AppColors.gold.withValues(
+                                    alpha: owned ? 0.6 : 0.3),
                               ),
                             ),
                             child: Icon(
@@ -1280,8 +1257,7 @@ class _ReciterSelectorSheet extends StatelessWidget {
                                       Text(
                                         '$price ${appState.tr('points')}',
                                         style: TextStyle(
-                                          fontSize:
-                                              R.f(context, 10.5),
+                                          fontSize: R.f(context, 10.5),
                                           color: AppColors.gold
                                               .withValues(alpha: 0.7),
                                           fontWeight: FontWeight.w600,
