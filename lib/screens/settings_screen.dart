@@ -8,10 +8,12 @@ import '../core/theme_state.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../services/user_service.dart';
+import '../services/verification_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/reciter_picker_sheet.dart';
 import '../widgets/themed_background.dart';
 import 'account_screen.dart';
+import 'admin/admin_panel_screen.dart';
 import 'store_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -24,6 +26,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
   Map<String, bool> _notifications = {};
+  bool _isOwner = false;
+  int _pendingVerifications = 0;
 
   static const _defaultNotifs = <String, bool>{
     'fajr': true,
@@ -62,10 +66,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
       final before =
           (notifs['adhanBeforeMinutes'] as num?)?.toInt() ?? 0;
+
+      // هل هذا الحساب مالك؟
+      final ownerFlag = authService.isOwner;
+      int pending = 0;
+      if (ownerFlag) {
+        try {
+          pending = await verificationService.pendingCount();
+        } catch (_) {}
+      }
+
       if (mounted) {
         setState(() {
           _notifications = loaded;
           _adhanBeforeMinutes = before;
+          _isOwner = ownerFlag;
+          _pendingVerifications = pending;
           _loading = false;
         });
       }
@@ -112,6 +128,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _openAccount() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AccountScreen()),
+    );
+    if (mounted) _load();
+  }
+
+  Future<void> _openAdminPanel() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
     );
     if (mounted) _load();
   }
@@ -332,6 +355,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           R.s(context, 20),
                         ),
                         children: [
+                          // لوحة التحكم (للمالك فقط)
+                          if (_isOwner) ...[
+                            _SectionHeader(
+                                title: appState.tr('adminPanel')),
+                            GestureDetector(
+                              onTap: _openAdminPanel,
+                              child: GlassCard(
+                                ornament: false,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: R.s(context, 40),
+                                      height: R.s(context, 40),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.gold
+                                            .withValues(alpha: 0.15),
+                                        border: Border.all(
+                                          color: AppColors.gold
+                                              .withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons
+                                            .admin_panel_settings_rounded,
+                                        color: AppColors.gold,
+                                        size: R.s(context, 20),
+                                      ),
+                                    ),
+                                    SizedBox(width: R.s(context, 10)),
+                                    Expanded(
+                                      child: Text(
+                                        appState.tr('adminPanel'),
+                                        style: TextStyle(
+                                          fontSize: R.f(context, 13.5),
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.softGold,
+                                        ),
+                                      ),
+                                    ),
+                                    if (_pendingVerifications > 0)
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: R.s(context, 10),
+                                          vertical: R.s(context, 4),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              const Color(0xFFD32F2F),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          '$_pendingVerifications',
+                                          style: TextStyle(
+                                            fontSize: R.f(context, 11),
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    SizedBox(width: R.s(context, 4)),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: AppColors.softGold
+                                          .withValues(alpha: 0.7),
+                                      size: R.s(context, 18),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: R.s(context, 14)),
+                          ],
+
                           _SectionHeader(
                               title: appState.tr('settingsAccount')),
                           GlassCard(
