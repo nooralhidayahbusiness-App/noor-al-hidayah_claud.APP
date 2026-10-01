@@ -396,6 +396,7 @@ const Map<String, String> _ar = {
 'recitationAudioError': 'تعذّر تشغيل الصوت',
 'recitationTooLong': 'التسجيل طويل جداً (15 ميجا كحد أقصى)',
 'recitationChooseSurah': 'اختر سورة',
+'recitationNextAyah': 'الآية التالية',
 };
 
 // =====================================================================
@@ -699,4 +700,5 @@ const Map<String, String> _en = {
 'recitationAudioError': 'Could not play audio',
 'recitationTooLong': 'Recording is too long (15 MB max)',
 'recitationChooseSurah': 'Choose surah',
+'recitationNextAyah': 'Next verse',
 };
