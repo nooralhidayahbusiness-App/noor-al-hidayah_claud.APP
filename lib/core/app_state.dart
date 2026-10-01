@@ -397,6 +397,8 @@ const Map<String, String> _ar = {
 'recitationTooLong': 'التسجيل طويل جداً (15 ميجا كحد أقصى)',
 'recitationChooseSurah': 'اختر سورة',
 'recitationNextAyah': 'الآية التالية',
+'recitationChooseReciter': 'اختر القارئ',
+'recitationOpenStore': 'تصفح متجر القراء',
 };
 
 // =====================================================================
@@ -701,4 +703,6 @@ const Map<String, String> _en = {
 'recitationTooLong': 'Recording is too long (15 MB max)',
 'recitationChooseSurah': 'Choose surah',
 'recitationNextAyah': 'Next verse',
+'recitationChooseReciter': 'Choose reciter',
+'recitationOpenStore': 'Browse reciters store',
 };
