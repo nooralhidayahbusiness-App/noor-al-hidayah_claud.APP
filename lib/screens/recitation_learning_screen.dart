@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,10 +29,13 @@ class _RecitationLearningScreenState
   int _currentIndex = 0;
   bool _recording = false;
   bool _analyzing = false;
+  bool _playing = false;
   String? _analysisResult;
   int _stars = 0;
   int _accuracy = 0;
   int _sessionsCount = 0;
+
+  final AudioPlayer _player = AudioPlayer();
 
   LearningVerse get _current => kLearningVerses[_currentIndex];
 
@@ -39,6 +43,16 @@ class _RecitationLearningScreenState
   void initState() {
     super.initState();
     _loadProgress();
+    _player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _playing = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    recitationService.cancel();
+    super.dispose();
   }
 
   Future<void> _loadProgress() async {
@@ -61,34 +75,20 @@ class _RecitationLearningScreenState
     } catch (_) {}
   }
 
-  Future<void> _playReciter() async {
-    // سنستخدم AudioPlayer الموجود في AdhanService أو نستخدم URL مباشر.
-    // هنا سنستخدم http للتحقق فقط، وفي التطبيق الحقيقي نستخدم audioplayers.
-    // البساطة: نستخدم UrlSource.
-    try {
-      // (يستدعي audioplayers من adhan_service)
-      // للتأكد من البساطة، نستخدم نفس الـ AudioPlayer في مكان آخر.
-      // سنستخدم AudioPlayer هنا مباشرة:
-      // ignore: avoid_print
-      print('Playing: ${_current.audioUrl}');
-      // (نشغّل عبر الدالة الموجودة في service آخر)
-      // لتجنب التكرار، نستخدم audioplayers مباشرة:
-      final player = _audioPlayer;
-      await player.stop();
-      await player.play(UrlSource(_current.audioUrl));
-    } catch (e) {
-      _showSnack('${appState.tr('recitationAudioError')}: $e');
+  Future<void> _togglePlayReciter() async {
+    if (_playing) {
+      await _player.stop();
+      if (mounted) setState(() => _playing = false);
+      return;
     }
-  }
-
-  // Audio player داخلي بسيط
-  final _player = _SimpleAudioPlayer();
-
-  @override
-  void dispose() {
-    _player.dispose();
-    recitationService.cancel();
-    super.dispose();
+    try {
+      await _player.stop();
+      await _player.play(UrlSource(_current.audioUrl));
+      if (mounted) setState(() => _playing = true);
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(appState.tr('recitationAudioError'), error: true);
+    }
   }
 
   Future<void> _startRecording() async {
@@ -173,8 +173,7 @@ class _RecitationLearningScreenState
   }
 
   int _extractAccuracy(String text) {
-    final match =
-        RegExp(r'(\d{1,3})\s*%').firstMatch(text);
+    final match = RegExp(r'(\d{1,3})\s*%').firstMatch(text);
     if (match != null) {
       final n = int.tryParse(match.group(1) ?? '') ?? 0;
       return n.clamp(0, 100);
@@ -267,8 +266,7 @@ class _RecitationLearningScreenState
                       _buildActions(),
                       SizedBox(height: R.s(context, 14)),
                       if (_analyzing) _buildAnalyzingCard(),
-                      if (_analysisResult != null)
-                        _buildAnalysisCard(),
+                      if (_analysisResult != null) _buildAnalysisCard(),
                     ],
                   ),
                 ),
@@ -430,8 +428,8 @@ class _RecitationLearningScreenState
 
   Widget _buildActions() {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        // السابق
         IconButton(
           onPressed: _currentIndex > 0 ? _prevVerse : null,
           icon: Icon(
@@ -442,29 +440,23 @@ class _RecitationLearningScreenState
             size: R.s(context, 28),
           ),
         ),
-        SizedBox(width: R.s(context, 4)),
 
-        // تشغيل القارئ
         _RoundButton(
-          icon: Icons.volume_up_rounded,
+          icon: _playing
+              ? Icons.stop_rounded
+              : Icons.volume_up_rounded,
           label: appState.tr('recitationListen'),
           color: AppColors.gold,
           iconColor: AppColors.deepGreen,
-          onTap: _playReciter,
+          onTap: _togglePlayReciter,
         ),
 
-        SizedBox(width: R.s(context, 10)),
-
-        // زر التسجيل
         _RecordButton(
           recording: _recording,
           onStart: _startRecording,
           onStop: _stopRecording,
         ),
 
-        SizedBox(width: R.s(context, 10)),
-
-        // التالي
         IconButton(
           onPressed: _currentIndex + 1 < kLearningVerses.length
               ? _nextVerse
@@ -516,7 +508,6 @@ class _RecitationLearningScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // رأس النتيجة
           if (showRating)
             Row(
               children: [
@@ -547,9 +538,7 @@ class _RecitationLearningScreenState
                     decoration: BoxDecoration(
                       color: AppColors.gold.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.gold,
-                      ),
+                      border: Border.all(color: AppColors.gold),
                     ),
                     child: Text(
                       '$_accuracy%',
@@ -564,7 +553,6 @@ class _RecitationLearningScreenState
             ),
           if (showRating) SizedBox(height: R.s(context, 10)),
 
-          // نص التحليل من Gemini
           Text(
             _analysisResult!,
             textDirection: appState.isArabic
@@ -579,7 +567,6 @@ class _RecitationLearningScreenState
 
           SizedBox(height: R.s(context, 10)),
 
-          // زر إعادة المحاولة
           TextButton.icon(
             onPressed: () => setState(() {
               _analysisResult = null;
@@ -717,9 +704,8 @@ class _RecordButtonState extends State<_RecordButton>
           child: AnimatedBuilder(
             animation: _pulse,
             builder: (context, _) {
-              final scale = widget.recording
-                  ? 1.0 + 0.08 * _pulse.value
-                  : 1.0;
+              final scale =
+                  widget.recording ? 1.0 + 0.08 * _pulse.value : 1.0;
               return Transform.scale(
                 scale: scale,
                 child: Container(
@@ -733,10 +719,9 @@ class _RecordButtonState extends State<_RecordButton>
                     boxShadow: [
                       BoxShadow(
                         color: widget.recording
-                            ? const Color(0xFFD32F2F)
-                                .withValues(alpha: 0.55 + 0.3 * _pulse.value)
-                            : AppColors.gold
-                                .withValues(alpha: 0.5),
+                            ? const Color(0xFFD32F2F).withValues(
+                                alpha: 0.55 + 0.3 * _pulse.value)
+                            : AppColors.gold.withValues(alpha: 0.5),
                         blurRadius: widget.recording ? 24 : 14,
                         spreadRadius: widget.recording ? 4 : 1,
                       ),
@@ -880,12 +865,3 @@ class _VerseSelectorSheet extends StatelessWidget {
     );
   }
 }
-
-// ==================== مشغل صوت بسيط ====================
-class _SimpleAudioPlayer {
-  Future<void> stop() async {}
-  Future<void> play(dynamic source) async {}
-  Future<void> dispose() async {}
-}
-
-final _audioPlayer = _SimpleAudioPlayer();
