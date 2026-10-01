@@ -9,6 +9,7 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../services/user_service.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/reciter_picker_sheet.dart';
 import '../widgets/themed_background.dart';
 import 'account_screen.dart';
 import 'store_screen.dart';
@@ -113,6 +114,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       MaterialPageRoute(builder: (_) => const AccountScreen()),
     );
     if (mounted) _load();
+  }
+
+  Future<void> _openReciterPicker() async {
+    final selected = await showReciterPicker(
+      context,
+      selectedId: reciterPrefs.reciterId,
+    );
+    if (selected == null || !mounted) return;
+    await reciterPrefs.setReciter(selected);
+    if (mounted) setState(() {});
   }
 
   Future<void> _signOut() async {
@@ -307,9 +318,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-
               SizedBox(height: R.s(context, 6)),
-
               Expanded(
                 child: _loading
                     ? const Center(
@@ -516,7 +525,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   icon: Icons.headphones_rounded,
                                   title: appState.tr('defaultReciter'),
                                   subtitle: reciterPrefs.reciter.nameAr,
-                                  onTap: _openStore,
+                                  onTap: _openReciterPicker,
                                 ),
                                 _Divider(),
                                 _ToggleRow(
