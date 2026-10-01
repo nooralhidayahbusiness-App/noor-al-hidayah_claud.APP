@@ -9,18 +9,16 @@ import '../core/app_state.dart';
 import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
-import '../data/store_items.dart';
 import '../models/quran.dart';
-import '../models/reciter.dart';
 import '../services/auth_service.dart';
 import '../services/gemini_service.dart';
 import '../services/quran_service.dart';
 import '../services/recitation_service.dart';
 import '../services/user_service.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/reciter_picker_sheet.dart';
 import '../widgets/star_badge.dart';
 import '../widgets/themed_background.dart';
-import 'store_screen.dart';
 
 class RecitationLearningScreen extends StatefulWidget {
   const RecitationLearningScreen({super.key});
@@ -286,37 +284,11 @@ class _RecitationLearningScreenState
   }
 
   Future<void> _openReciterSelector() async {
-    List<String> ownedIds = ['default'];
-    try {
-      final inv = await userService.loadInventory();
-      final list = (inv['voices'] as List?)?.cast<String>();
-      if (list != null && list.isNotEmpty) {
-        ownedIds = list;
-      }
-    } catch (_) {}
-
-    if (!mounted) return;
-
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _ReciterSelectorSheet(
-        ownedIds: ownedIds,
-        selectedId: reciterPrefs.reciterId,
-      ),
+    final selected = await showReciterPicker(
+      context,
+      selectedId: reciterPrefs.reciterId,
     );
-
     if (selected == null || !mounted) return;
-
-    if (selected == '__store__') {
-      await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const StoreScreen()),
-      );
-      if (mounted) setState(() {});
-      return;
-    }
-
     await reciterPrefs.setReciter(selected);
     if (mounted) setState(() {});
   }
@@ -1100,195 +1072,6 @@ class _SurahSelectorSheetState extends State<_SurahSelectorSheet> {
                       );
                     },
                   ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReciterSelectorSheet extends StatelessWidget {
-  const _ReciterSelectorSheet({
-    required this.ownedIds,
-    required this.selectedId,
-  });
-
-  final List<String> ownedIds;
-  final String selectedId;
-
-  int _priceOf(String id) {
-    if (id == 'default') return 0;
-    final item = findItem('voice', id);
-    return item?.price ?? 0;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.deepGreen,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        R.s(context, 14),
-        R.s(context, 12),
-        R.s(context, 14),
-        R.s(context, 14),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          SizedBox(height: R.s(context, 12)),
-          Text(
-            appState.tr('recitationChooseReciter'),
-            style: TextStyle(
-              fontSize: R.f(context, 14),
-              fontWeight: FontWeight.w700,
-              color: AppColors.softGold,
-            ),
-          ),
-          SizedBox(height: R.s(context, 6)),
-          Text(
-            appState.tr('recitationReciterHint'),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: R.f(context, 10.5),
-              color: AppColors.cream.withValues(alpha: 0.6),
-            ),
-          ),
-          SizedBox(height: R.s(context, 10)),
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.55,
-            child: ListView.builder(
-              itemCount: kReciters.length,
-              itemBuilder: (context, i) {
-                final r = kReciters[i];
-                final owned = ownedIds.contains(r.id) || r.id == 'default';
-                final selected = r.id == selectedId;
-                final price = _priceOf(r.id);
-                return Padding(
-                  padding: EdgeInsets.only(bottom: R.s(context, 6)),
-                  child: GestureDetector(
-                    onTap: () {
-                      if (owned) {
-                        Navigator.pop(context, r.id);
-                      } else {
-                        Navigator.pop(context, '__store__');
-                      }
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: R.s(context, 12),
-                        vertical: R.s(context, 12),
-                      ),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? AppColors.gold.withValues(alpha: 0.2)
-                            : (owned
-                                ? Colors.black.withValues(alpha: 0.2)
-                                : Colors.black.withValues(alpha: 0.35)),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: selected
-                              ? AppColors.gold
-                              : AppColors.gold.withValues(alpha: 0.3),
-                          width: selected ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: R.s(context, 36),
-                            height: R.s(context, 36),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.gold.withValues(
-                                  alpha: owned ? 0.15 : 0.08),
-                              border: Border.all(
-                                color: AppColors.gold.withValues(
-                                    alpha: owned ? 0.6 : 0.3),
-                              ),
-                            ),
-                            child: Icon(
-                              owned
-                                  ? Icons.record_voice_over_rounded
-                                  : Icons.lock_outline_rounded,
-                              color: AppColors.gold
-                                  .withValues(alpha: owned ? 1 : 0.5),
-                              size: R.s(context, 18),
-                            ),
-                          ),
-                          SizedBox(width: R.s(context, 10)),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  r.nameAr,
-                                  style: TextStyle(
-                                    fontSize: R.f(context, 13.5),
-                                    fontWeight: FontWeight.w700,
-                                    color: owned
-                                        ? AppColors.softGold
-                                        : AppColors.softGold
-                                            .withValues(alpha: 0.55),
-                                  ),
-                                ),
-                                if (!owned) ...[
-                                  SizedBox(height: R.s(context, 2)),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.stars_rounded,
-                                        color: AppColors.gold
-                                            .withValues(alpha: 0.7),
-                                        size: R.s(context, 11),
-                                      ),
-                                      SizedBox(width: R.s(context, 3)),
-                                      Text(
-                                        '$price ${appState.tr('points')}',
-                                        style: TextStyle(
-                                          fontSize: R.f(context, 10.5),
-                                          color: AppColors.gold
-                                              .withValues(alpha: 0.7),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          if (selected)
-                            Icon(
-                              Icons.check_circle_rounded,
-                              color: AppColors.gold,
-                              size: R.s(context, 22),
-                            )
-                          else if (!owned)
-                            Icon(
-                              Icons.store_rounded,
-                              color: AppColors.gold
-                                  .withValues(alpha: 0.7),
-                              size: R.s(context, 20),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
           ),
         ],
       ),
