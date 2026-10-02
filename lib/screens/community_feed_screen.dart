@@ -5,12 +5,13 @@ import '../services/community_service.dart';
 import '../core/responsive.dart';
 import '../widgets/post_card.dart';
 import 'create_post_screen.dart';
+import 'post_detail_screen.dart';
 
 class CommunityFeedScreen extends StatefulWidget {
   final String uid;
   final String userName;
   final String userEmail;
-  final String userAvatar; // 'man' | 'woman'
+  final String userAvatar;
   final bool userVerified;
 
   const CommunityFeedScreen({
@@ -36,9 +37,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
 
   final CommunityService _service = CommunityService();
 
-  // ============================================================
-  // BUILD
-  // ============================================================
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -56,9 +54,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     );
   }
 
-  // ============================================================
-  // FEED (Stream)
-  // ============================================================
   Widget _buildFeed(BuildContext context) {
     return StreamBuilder<List<Post>>(
       stream: _service.postsStream(),
@@ -105,9 +100,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     );
   }
 
-  // ============================================================
-  // FAB
-  // ============================================================
   Widget _buildFab(BuildContext context) {
     return FloatingActionButton(
       onPressed: _openCreatePost,
@@ -118,9 +110,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     );
   }
 
-  // ============================================================
-  // LOADING
-  // ============================================================
   Widget _buildLoading(BuildContext context) {
     return Center(
       child: Column(
@@ -140,9 +129,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     );
   }
 
-  // ============================================================
-  // EMPTY
-  // ============================================================
   Widget _buildEmpty(BuildContext context) {
     return Center(
       child: Padding(
@@ -187,9 +173,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     );
   }
 
-  // ============================================================
-  // ERROR
-  // ============================================================
   Widget _buildError(BuildContext context, String error) {
     return Center(
       child: Padding(
@@ -225,10 +208,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       ),
     );
   }
-
-  // ============================================================
-  // ACTIONS
-  // ============================================================
 
   Future<void> _onLike(Post post) async {
     try {
@@ -275,19 +254,27 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     }
   }
 
+  // ============================================================
+  // ✅ التعديل: ننتقل فعلياً إلى PostDetailScreen
+  // ============================================================
   void _openPostDetail(Post post) {
-    // ⏳ شاشة التفاصيل + التعليقات — راح نبنيها في الخطوة الجاية
-    _showSnack('تفاصيل المنشور — قريباً');
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PostDetailScreen(
+          post: post,
+          currentUid: widget.uid,
+          currentUserName: widget.userName,
+          currentUserAvatar: widget.userAvatar,
+          currentUserVerified: widget.userVerified,
+        ),
+      ),
+    );
   }
 
   void _onAuthorTap(Post post) {
-    // ⏳ صفحة البروفايل الكاملة — المرحلة 2
     _showSnack('بروفايل ${post.userName} — قريباً');
   }
 
-  // ============================================================
-  // MORE MENU
-  // ============================================================
   Future<void> _showMoreMenu(Post post) async {
     final isOwner = post.uid == widget.uid;
 
@@ -399,9 +386,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     );
   }
 
-  // ============================================================
-  // EDIT
-  // ============================================================
   Future<void> _showEditDialog(Post post) async {
     final controller = TextEditingController(text: post.text);
     final result = await showDialog<String>(
@@ -501,9 +485,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     }
   }
 
-  // ============================================================
-  // DELETE
-  // ============================================================
   Future<void> _confirmDelete(Post post) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -565,9 +546,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     }
   }
 
-  // ============================================================
-  // PIN
-  // ============================================================
   Future<void> _togglePin(Post post) async {
     try {
       await _service.togglePin(postId: post.id, uid: widget.uid);
@@ -579,9 +557,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     }
   }
 
-  // ============================================================
-  // SNACKBAR
-  // ============================================================
   void _showSnack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
