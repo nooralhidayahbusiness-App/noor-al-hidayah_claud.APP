@@ -5,17 +5,22 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 
 /// صورة بروفايل مع حلقة ذهبية دوّارة وتوهج نابض.
+/// - إذا فيه صورة توثيق → يعرضها.
+/// - إذا حساب المالك → Me.png / logo.png.
+/// - وإلا → صورة رجل / امرأة.
 class ProfileAvatar extends StatefulWidget {
   const ProfileAvatar({
     super.key,
     required this.email,
     required this.avatar,
     this.size = 100,
+    this.photoBytes,
   });
 
   final String email;
   final String avatar; // 'man' | 'woman'
   final double size;
+  final Uint8List? photoBytes;
 
   @override
   State<ProfileAvatar> createState() => _ProfileAvatarState();
@@ -43,11 +48,10 @@ class _ProfileAvatarState extends State<ProfileAvatar>
     duration: const Duration(seconds: 6),
   )..repeat();
 
-  String get _assetPath {
+  String? get _assetPath {
     final e = widget.email.toLowerCase();
     if (_meEmails.contains(e)) return 'assets/images/Me.png';
     if (_logoEmails.contains(e)) return 'assets/images/logo.png';
-    // الصور الفعلية في المشروع
     return widget.avatar == 'woman'
         ? 'assets/images/hijab.png'
         : 'assets/images/arabian.png';
@@ -60,6 +64,37 @@ class _ProfileAvatarState extends State<ProfileAvatar>
     super.dispose();
   }
 
+  Widget _buildImage() {
+    // أولوية 1: صورة التوثيق
+    if (widget.photoBytes != null && widget.photoBytes!.isNotEmpty) {
+      return Image.memory(
+        widget.photoBytes!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _fallback(),
+      );
+    }
+
+    // أولوية 2: صورة المالك / logo / رجل / امرأة
+    final path = _assetPath;
+    if (path != null) {
+      return Image.asset(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _fallback(),
+      );
+    }
+
+    return _fallback();
+  }
+
+  Widget _fallback() {
+    return Icon(
+      widget.avatar == 'woman' ? Icons.face_3 : Icons.face_6,
+      size: widget.size * 0.6,
+      color: AppColors.gold,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.size;
@@ -69,7 +104,6 @@ class _ProfileAvatarState extends State<ProfileAvatar>
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // توهج خارجي نابض
           AnimatedBuilder(
             animation: _glow,
             builder: (context, _) {
@@ -91,7 +125,6 @@ class _ProfileAvatarState extends State<ProfileAvatar>
               );
             },
           ),
-          // حلقة ذهبية دوّارة
           AnimatedBuilder(
             animation: _rotate,
             builder: (context, _) {
@@ -116,7 +149,6 @@ class _ProfileAvatarState extends State<ProfileAvatar>
               );
             },
           ),
-          // الصورة
           Container(
             width: s,
             height: s,
@@ -124,17 +156,7 @@ class _ProfileAvatarState extends State<ProfileAvatar>
               shape: BoxShape.circle,
               color: Color(0xFF0A1F17),
             ),
-            child: ClipOval(
-              child: Image.asset(
-                _assetPath,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Icon(
-                  widget.avatar == 'woman' ? Icons.face_3 : Icons.face_6,
-                  size: s * 0.6,
-                  color: AppColors.gold,
-                ),
-              ),
-            ),
+            child: ClipOval(child: _buildImage()),
           ),
         ],
       ),
