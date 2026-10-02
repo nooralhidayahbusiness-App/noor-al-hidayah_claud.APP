@@ -52,6 +52,8 @@ class _AccountScreenState extends State<AccountScreen> {
           _loading = false;
         });
       }
+      // تحديث ProfileState أيضاً
+      await profileState.refresh();
     } catch (e) {
       debugPrint('AccountScreen load error: $e');
       if (mounted) setState(() => _loading = false);
@@ -201,6 +203,7 @@ class _AccountScreenState extends State<AccountScreen> {
             email: email,
             avatar: avatar,
             size: R.s(context, 78),
+            photoBytes: profileState.photoBytes,
           ),
           SizedBox(height: R.s(context, 8)),
           Row(
@@ -359,12 +362,8 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Widget _buildVerificationSection() {
-    // إذا موثّق → ما فيه زر
-    if (_isVerified()) {
-      return const SizedBox.shrink();
-    }
+    if (_isVerified()) return const SizedBox.shrink();
 
-    // إذا عنده طلب قيد المراجعة
     if (_hasPendingRequest) {
       return GlassCard(
         ornament: false,
@@ -404,7 +403,6 @@ class _AccountScreenState extends State<AccountScreen> {
       );
     }
 
-    // غير موثّق → زر طلب
     return GestureDetector(
       onTap: _openVerification,
       child: GlassCard(
