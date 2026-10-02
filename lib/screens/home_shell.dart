@@ -11,7 +11,7 @@ import '../core/theme_state.dart';
 import '../services/notification_service.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/asset_icon.dart';
-import '../widgets/auth_widgets.dart';
+import '../widgets/language_picker_sheet.dart';
 import 'challenge_screen.dart';
 import 'settings_screen.dart';
 import 'tabs/community_tab.dart';
@@ -37,7 +37,6 @@ class _HomeShellState extends State<HomeShell> {
     profileState.load();
     reciterPrefs.load();
     themeState.load();
-    // جدولة الإشعارات بعد 3 ثواني (بعد تحميل البيانات)
     Future.delayed(const Duration(seconds: 3), () async {
       if (!mounted) return;
       final prayers = notificationService.collectPrayerTimes();
@@ -92,7 +91,14 @@ class _HomeShellState extends State<HomeShell> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const AuthLanguageButton(),
+                        // ✅ زر اللغة: أيقونة فقط — يفتح قائمة الـ7 لغات
+                        IconButton(
+                          onPressed: () => showLanguagePicker(context),
+                          tooltip: currentLanguageLabel(),
+                          color: AppColors.softGold,
+                          iconSize: R.s(context, 24),
+                          icon: const Icon(Icons.language),
+                        ),
                       ],
                     ),
                   ),
