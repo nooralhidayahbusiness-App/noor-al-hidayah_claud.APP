@@ -1,6 +1,6 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-تطبيق إسلامي شامل. **آخر تحديث:** 2026-10-02 | **الإصدار:** Beta 1.8
+تطبيق إسلامي شامل. **آخر تحديث:** 2026-10-02 | **الإصدار:** Beta 1.9
 
 ---
 
@@ -107,6 +107,8 @@ lib/
 │   ├── adhan_reciters, adhan_timings, ai_teacher_data
 ├── models/
 │   ├── quran, saved_location, mosque, reciter
+│   ├── post.dart              ← (جديد — Community)
+│   ├── comment.dart           ← (جديد — Community)
 ├── services/
 │   ├── auth_service, user_service, storage_service
 │   ├── location_service, quran_audio_service, tafsir_service, share_service
@@ -114,6 +116,7 @@ lib/
 │   ├── notification_service, adhan_service
 │   ├── gemini_service, recitation_service
 │   ├── verification_service
+│   ├── community_service.dart ← (جديد — Community)
 ├── screens/
 │   ├── splash, welcome, login, register, location
 │   ├── home_shell
@@ -179,9 +182,33 @@ verification_requests/{uid}/
 ├── requestedAt: timestamp
 ├── status: "pending" | "approved_user" | "approved_me" | "rejected"
 ├── reviewedAt, reviewedBy
+
+posts/{postId}/
+├── uid, userName, userAvatar, userVerified
+├── text: string (max 500)
+├── createdAt: timestamp
+├── editedAt: timestamp?
+├── likes: [uid1, uid2, ...]
+├── likesCount: int
+├── commentsCount: int
+├── repostsCount: int
+├── repostOf: string? (postId الأصلي)
+├── originalAuthorUid, originalAuthorName, originalAuthorAvatar
+├── isPinned: bool
+├── isDeleted: bool (soft delete)
+├── mentions: [userName1, ...]
+├── hashtags: [tag1, ...]
+└── comments/{commentId}/
+    ├── uid, userName, userAvatar, userVerified
+    ├── text: string (max 300)
+    ├── createdAt: timestamp
+    ├── editedAt: timestamp?
+    ├── likes: [uid1, uid2, ...]
+    ├── likesCount: int
+    └── isDeleted: bool
 ```
 
-### Firestore Rules (الكاملة)
+### Firestore Rules (الكاملة — تم نشرها)
 ```
 rules_version = '2';
 service cloud.firestore {
@@ -197,14 +224,65 @@ service cloud.firestore {
              ];
     }
 
+    // المستخدمون
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
       allow read, update: if isOwner();
     }
 
+    // طلبات التوثيق
     match /verification_requests/{userId} {
       allow read, create: if request.auth != null && request.auth.uid == userId;
       allow read, update, delete: if isOwner();
+    }
+
+    // المجتمع: المنشورات
+    match /posts/{postId} {
+      allow read: if request.auth != null;
+
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500;
+
+      allow update: if request.auth != null && (
+        (
+          resource.data.uid == request.auth.uid
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 500
+        )
+        ||
+        (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['likes', 'likesCount', 'commentsCount'])
+        )
+      );
+
+      allow delete: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+
+      // التعليقات
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+
+        allow create: if request.auth != null
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 300;
+
+        allow update: if request.auth != null && (
+          resource.data.uid == request.auth.uid
+          ||
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['likes', 'likesCount'])
+        );
+
+        allow delete: if request.auth != null
+          && resource.data.uid == request.auth.uid;
+      }
     }
   }
 }
@@ -340,9 +418,11 @@ service cloud.firestore {
 
 ---
 
-## ⏳ المراحل التالية
+## 🚧 المراحل الجارية
 
-### 🌱 المرحلة 1: المنشورات (Community Feed)
+### 🌱 المرحلة 1: المنشورات (Community Feed) — قيد التنفيذ
+**الحالة:** تم إنجاز **الأساس** (Models + Service + Rules)، والباقي شاشات و widgets.
+
 **الفكرة:**
 - المستخدم ينشر منشورات **نصية فقط** (بدون صور/فيديو).
 - عرض المنشورات من الأحدث للأقدم.
@@ -351,42 +431,35 @@ service cloud.firestore {
 - Pin 📌 (تثبيت منشور واحد في أعلى ملفك).
 - **منشور المطور الترحيبي** (يظهر لكل مستخدم أول مرة).
 
-**الملفات المطلوبة:**
-- `lib/models/post.dart` — نموذج المنشور.
-- `lib/services/community_service.dart` — خدمة Firestore.
-- `lib/screens/community_feed_screen.dart` — الشاشة.
-- `lib/screens/create_post_screen.dart` — إنشاء منشور.
-- `lib/screens/post_detail_screen.dart` — تفاصيل + تعليقات.
-- `lib/widgets/post_card.dart` — بطاقة منشور.
+**ما تم إنجازه:**
+- ✅ `lib/models/post.dart` — نموذج المنشور (with likes/mentions/hashtags/repost/pin/softDelete).
+- ✅ `lib/models/comment.dart` — نموذج التعليق.
+- ✅ `lib/services/community_service.dart` — خدمة Firestore كاملة:
+  - Streams: `postsStream`, `userPostsStream`, `postStream`, `commentsStream`.
+  - إنشاء/تعديل/حذف: `createPost`, `editPost`, `deletePost` (soft).
+  - تفاعلات: `toggleLike` (transaction), `togglePin` (منشور واحد/مستخدم), `repost`.
+  - تعليقات: `addComment`, `deleteComment` (مع تحديث `commentsCount`).
+- ✅ Firestore Rules جديدة لـ `posts` و `comments` (تم نشرها).
 
-**بنية Firestore الجديدة:**
-```
-posts/{postId}/
-├── uid, userName, userAvatar, userVerified
-├── text: string
-├── createdAt: timestamp
-├── likes: [uid1, uid2, ...]
-├── commentsCount: int
-├── repostOf: string? (postId الأصلي)
-├── originalAuthorName, originalAuthorUid
-└── isPinned: bool
+**ما تبقّى:**
+- ⏳ `lib/widgets/post_card.dart` — بطاقة عرض منشور.
+- ⏳ `lib/screens/community_feed_screen.dart` — الشاشة الرئيسية.
+- ⏳ `lib/screens/create_post_screen.dart` — إنشاء منشور.
+- ⏳ `lib/screens/post_detail_screen.dart` — تفاصيل + تعليقات.
+- ⏳ ربط `community_tab.dart` بالشاشة الجديدة.
+- ⏳ منشور المطور الترحيبي.
 
-posts/{postId}/comments/{commentId}/
-├── uid, userName, userAvatar, userVerified
-├── text, createdAt
-```
-
-**قواعد Firestore:** نحتاج نضيف rules للـ `posts` و `comments`.
+**بنية Firestore:** (انظر قسم بنية Firestore أعلاه — `posts/{postId}` + `comments`).
 
 ---
+
+## ⏳ المراحل التالية
 
 ### 🌱 المرحلة 2: صفحة البروفايل الكاملة
 - عرض بيانات المستخدم + منشوراته.
 - زر Pin (إذا هو بروفايلك).
 - عرض التوثيق + شعاره.
 - Private Mode للموثّقين.
-
----
 
 ### 🌱 المرحلة 3: المحادثات (Chat)
 **الفكرة:**
@@ -403,15 +476,11 @@ chats/{chatId}/
 └── messages/{msgId}/ {uid, text, createdAt}
 ```
 
----
-
 ### 🌱 المرحلة 4: إحصائيات المعلم
 - عدد الجلسات.
 - متوسط الدقة.
 - التقدم الأسبوعي.
 - نقاط على كل جلسة تلاوة.
-
----
 
 ### 🌱 المرحلة 5: إضافات مستقبلية
 - **الوضع النهاري/الليلي** (نهاري: أبيض + ذهبي).
