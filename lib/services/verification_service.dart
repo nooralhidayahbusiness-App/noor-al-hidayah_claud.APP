@@ -110,20 +110,39 @@ class VerificationService {
     }
   }
 
+  /// الموافقة — ينسخ الصورة أيضاً إلى ملف المستخدم.
   Future<void> approve({
     required String targetUid,
     required String type,
   }) async {
     final myEmail = FirebaseAuth.instance.currentUser?.email ?? '';
+
+    // 1) اجلب صورة الطلب
+    String photoBase64 = '';
+    try {
+      final reqSnap = await _db
+          .collection('verification_requests')
+          .doc(targetUid)
+          .get();
+      photoBase64 = (reqSnap.data()?['photoBase64'] as String?) ?? '';
+    } catch (_) {}
+
+    // 2) حدّث ملف المستخدم (verifiedType + الصورة)
+    final Map<String, dynamic> profileData = {
+      'verified': true,
+      'verifiedType': type,
+      'verifiedAt': DateTime.now().millisecondsSinceEpoch,
+      'verifiedBy': myEmail,
+    };
+    if (photoBase64.isNotEmpty) {
+      profileData['photoBase64'] = photoBase64;
+    }
+
     await _db.collection('users').doc(targetUid).set({
-      'profile': {
-        'verified': true,
-        'verifiedType': type,
-        'verifiedAt': DateTime.now().millisecondsSinceEpoch,
-        'verifiedBy': myEmail,
-      }
+      'profile': profileData,
     }, SetOptions(merge: true));
 
+    // 3) حدّث الطلب
     await _db
         .collection('verification_requests')
         .doc(targetUid)
@@ -151,6 +170,7 @@ class VerificationService {
       'profile': {
         'verified': false,
         'verifiedType': 'none',
+        'photoBase64': FieldValue.delete(),
       }
     }, SetOptions(merge: true));
 
