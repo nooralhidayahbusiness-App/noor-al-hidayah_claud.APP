@@ -6,6 +6,7 @@ import '../services/community_service.dart';
 import '../core/responsive.dart';
 import '../widgets/post_card.dart';
 import 'create_post_screen.dart';
+import 'user_profile_screen.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Post post;
@@ -68,9 +69,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     if (len != _commentLen) setState(() => _commentLen = len);
   }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -104,9 +102,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  // ============================================================
-  // AppBar
-  // ============================================================
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: _green,
@@ -134,9 +129,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  // ============================================================
-  // Body
-  // ============================================================
   Widget _buildBody(BuildContext context, Post post) {
     return SingleChildScrollView(
       controller: _scrollCtrl,
@@ -152,7 +144,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             onComment: () => _commentFocus.requestFocus(),
             onRepost: () => _onRepost(post),
             onMore: () => _showMoreMenu(post),
-            onAuthorTap: () => _showSnack('بروفايل ${post.userName} — قريباً'),
+            onAuthorTap: () => _onAuthorTap(post),
           ),
           Divider(
             color: _gold.withValues(alpha: 0.2),
@@ -167,9 +159,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  // ============================================================
-  // Comments Header
-  // ============================================================
   Widget _buildCommentsHeader(BuildContext context, Post post) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: R.s(context, 16)),
@@ -204,9 +193,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  // ============================================================
-  // Comments List (Stream)
-  // ============================================================
   Widget _buildCommentsList(BuildContext context, Post post) {
     return StreamBuilder<List<Comment>>(
       stream: _service.commentsStream(post.id),
@@ -248,6 +234,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               comment: c,
               currentUid: widget.currentUid,
               onDelete: () => _confirmDeleteComment(c),
+              onAuthorTap: () => _onAuthorTapUid(c.uid),
             );
           },
         );
@@ -283,9 +270,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  // ============================================================
-  // Comment Input
-  // ============================================================
   Widget _buildCommentInput(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(R.s(context, 10)),
@@ -378,9 +362,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  // ============================================================
-  // SEND COMMENT
-  // ============================================================
   Future<void> _sendComment() async {
     if (!_canSend) return;
     setState(() => _isSending = true);
@@ -414,9 +395,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  // ============================================================
-  // DELETE COMMENT
-  // ============================================================
   Future<void> _confirmDeleteComment(Comment c) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -477,9 +455,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  // ============================================================
-  // ACTIONS
-  // ============================================================
   Future<void> _onLike(Post post) async {
     try {
       await _service.toggleLike(postId: post.id, uid: widget.currentUid);
@@ -509,9 +484,23 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  // ============================================================
-  // MORE MENU
-  // ============================================================
+  // ✅ التعديل: يفتح البروفايل
+  void _onAuthorTap(Post post) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UserProfileScreen(profileUid: post.uid),
+      ),
+    );
+  }
+
+  void _onAuthorTapUid(String uid) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UserProfileScreen(profileUid: uid),
+      ),
+    );
+  }
+
   Future<void> _showMoreMenu(Post post) async {
     final isOwner = post.uid == widget.currentUid;
 
@@ -621,9 +610,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  // ============================================================
-  // EDIT POST
-  // ============================================================
   Future<void> _showEditDialog(Post post) async {
     final controller = TextEditingController(text: post.text);
     final result = await showDialog<String>(
@@ -719,9 +705,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  // ============================================================
-  // DELETE POST
-  // ============================================================
   Future<void> _confirmDeletePost(Post post) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -779,9 +762,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  // ============================================================
-  // PIN
-  // ============================================================
   Future<void> _togglePin(Post post) async {
     try {
       await _service.togglePin(postId: post.id, uid: widget.currentUid);
@@ -791,9 +771,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  // ============================================================
-  // SNACK
-  // ============================================================
   void _showSnack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -817,11 +794,13 @@ class _CommentTile extends StatelessWidget {
   final Comment comment;
   final String currentUid;
   final VoidCallback onDelete;
+  final VoidCallback? onAuthorTap;
 
   const _CommentTile({
     required this.comment,
     required this.currentUid,
     required this.onDelete,
+    this.onAuthorTap,
   });
 
   static const Color _gold = Color(0xFFD4AF37);
@@ -851,20 +830,28 @@ class _CommentTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                _buildAvatar(context),
+                GestureDetector(
+                  onTap: onAuthorTap,
+                  child: _buildAvatar(context),
+                ),
                 SizedBox(width: R.s(context, 8)),
                 Expanded(
                   child: Row(
                     children: [
                       Flexible(
-                        child: Text(
-                          comment.userName.isEmpty ? 'مستخدم' : comment.userName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: _cream,
-                            fontSize: R.f(context, 12),
-                            fontWeight: FontWeight.bold,
+                        child: GestureDetector(
+                          onTap: onAuthorTap,
+                          child: Text(
+                            comment.userName.isEmpty
+                                ? 'مستخدم'
+                                : comment.userName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _cream,
+                              fontSize: R.f(context, 12),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
