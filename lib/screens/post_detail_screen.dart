@@ -85,7 +85,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 child: StreamBuilder<Post?>(
                   stream: _service.postStream(widget.post.id),
                   builder: (context, postSnap) {
-                    // إذا انحذف المنشور، نرجع للخلف
                     if (postSnap.hasData && postSnap.data == null) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) Navigator.of(context).pop();
@@ -148,7 +147,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           PostCard(
             post: post,
             currentUid: widget.currentUid,
-            onTap: null, // ما نعمل شي لأننا في التفاصيل
+            onTap: null,
             onLike: () => _onLike(post),
             onComment: () => _commentFocus.requestFocus(),
             onRepost: () => _onRepost(post),
@@ -331,7 +330,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ),
                   border: InputBorder.none,
                   isDense: true,
-                  counterText: '', // نخفي العدّاد الافتراضي
+                  counterText: '',
                 ),
               ),
             ),
@@ -826,7 +825,6 @@ class _CommentTile extends StatelessWidget {
   });
 
   static const Color _gold = Color(0xFFD4AF37);
-  static const Color _softGold = Color(0xFFF1DC9A);
   static const Color _deepGreen = Color(0xFF041F18);
   static const Color _green = Color(0xFF0B3D2E);
   static const Color _emerald = Color(0xFF14664C);
