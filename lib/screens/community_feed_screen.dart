@@ -1,0 +1,599 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/post.dart';
+import '../services/community_service.dart';
+import '../core/responsive.dart';
+import '../widgets/post_card.dart';
+import 'create_post_screen.dart';
+
+class CommunityFeedScreen extends StatefulWidget {
+  final String uid;
+  final String userName;
+  final String userEmail;
+  final String userAvatar; // 'man' | 'woman'
+  final bool userVerified;
+
+  const CommunityFeedScreen({
+    super.key,
+    required this.uid,
+    required this.userName,
+    required this.userEmail,
+    required this.userAvatar,
+    required this.userVerified,
+  });
+
+  @override
+  State<CommunityFeedScreen> createState() => _CommunityFeedScreenState();
+}
+
+class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
+  static const Color _gold = Color(0xFFD4AF37);
+  static const Color _softGold = Color(0xFFF1DC9A);
+  static const Color _deepGreen = Color(0xFF041F18);
+  static const Color _green = Color(0xFF0B3D2E);
+  static const Color _emerald = Color(0xFF14664C);
+  static const Color _cream = Color(0xFFFFF8E7);
+
+  final CommunityService _service = CommunityService();
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Stack(
+        children: [
+          Positioned.fill(child: _buildFeed(context)),
+          Positioned(
+            bottom: R.s(context, 16),
+            left: R.s(context, 16),
+            child: _buildFab(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // FEED (Stream)
+  // ============================================================
+  Widget _buildFeed(BuildContext context) {
+    return StreamBuilder<List<Post>>(
+      stream: _service.postsStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return _buildLoading(context);
+        }
+        if (snapshot.hasError) {
+          return _buildError(context, snapshot.error.toString());
+        }
+        final posts = snapshot.data ?? [];
+        if (posts.isEmpty) {
+          return _buildEmpty(context);
+        }
+        return RefreshIndicator(
+          onRefresh: () async {
+            await Future.delayed(const Duration(milliseconds: 300));
+          },
+          color: _gold,
+          backgroundColor: _green,
+          child: ListView.builder(
+            padding: EdgeInsets.only(
+              top: R.s(context, 8),
+              bottom: R.s(context, 90),
+            ),
+            itemCount: posts.length,
+            itemBuilder: (context, i) {
+              final post = posts[i];
+              return PostCard(
+                post: post,
+                currentUid: widget.uid,
+                onTap: () => _openPostDetail(post),
+                onLike: () => _onLike(post),
+                onComment: () => _openPostDetail(post),
+                onRepost: () => _onRepost(post),
+                onMore: () => _showMoreMenu(post),
+                onAuthorTap: () => _onAuthorTap(post),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // FAB
+  // ============================================================
+  Widget _buildFab(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: _openCreatePost,
+      backgroundColor: _gold,
+      foregroundColor: _deepGreen,
+      elevation: 6,
+      child: const Icon(Icons.edit, size: 24),
+    );
+  }
+
+  // ============================================================
+  // LOADING
+  // ============================================================
+  Widget _buildLoading(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(color: _gold),
+          SizedBox(height: R.s(context, 14)),
+          Text(
+            'جارٍ التحميل...',
+            style: TextStyle(
+              color: _cream.withValues(alpha: 0.7),
+              fontSize: R.f(context, 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // EMPTY
+  // ============================================================
+  Widget _buildEmpty(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(R.s(context, 24)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.all(R.s(context, 18)),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _green.withValues(alpha: 0.5),
+                border: Border.all(color: _gold.withValues(alpha: 0.4)),
+              ),
+              child: Icon(
+                Icons.forum_outlined,
+                size: R.s(context, 42),
+                color: _gold,
+              ),
+            ),
+            SizedBox(height: R.s(context, 16)),
+            Text(
+              'لا توجد منشورات بعد',
+              style: TextStyle(
+                color: _softGold,
+                fontSize: R.f(context, 16),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: R.s(context, 6)),
+            Text(
+              'كن أول من يشارك فائدة أو دعاء',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _cream.withValues(alpha: 0.6),
+                fontSize: R.f(context, 13),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // ERROR
+  // ============================================================
+  Widget _buildError(BuildContext context, String error) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(R.s(context, 24)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: R.s(context, 42),
+              color: Colors.redAccent,
+            ),
+            SizedBox(height: R.s(context, 12)),
+            Text(
+              'حدث خطأ في تحميل المنشورات',
+              style: TextStyle(
+                color: _softGold,
+                fontSize: R.f(context, 14),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: R.s(context, 6)),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _cream.withValues(alpha: 0.55),
+                fontSize: R.f(context, 11),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // ACTIONS
+  // ============================================================
+
+  Future<void> _onLike(Post post) async {
+    try {
+      await _service.toggleLike(postId: post.id, uid: widget.uid);
+    } catch (e) {
+      _showSnack('فشل الإعجاب: $e');
+    }
+  }
+
+  Future<void> _openCreatePost() async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => CreatePostScreen(
+          uid: widget.uid,
+          userName: widget.userName,
+          userAvatar: widget.userAvatar,
+          userVerified: widget.userVerified,
+        ),
+      ),
+    );
+    if (result == true && mounted) {
+      _showSnack('تم النشر بنجاح');
+    }
+  }
+
+  Future<void> _onRepost(Post post) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => CreatePostScreen(
+          uid: widget.uid,
+          userName: widget.userName,
+          userAvatar: widget.userAvatar,
+          userVerified: widget.userVerified,
+          repostOf: post.id,
+          originalAuthorUid: post.uid,
+          originalAuthorName: post.userName,
+          originalAuthorAvatar: post.userAvatar,
+          repostPreviewText: post.text,
+        ),
+      ),
+    );
+    if (result == true && mounted) {
+      _showSnack('تمت إعادة النشر');
+    }
+  }
+
+  void _openPostDetail(Post post) {
+    // ⏳ شاشة التفاصيل + التعليقات — راح نبنيها في الخطوة الجاية
+    _showSnack('تفاصيل المنشور — قريباً');
+  }
+
+  void _onAuthorTap(Post post) {
+    // ⏳ صفحة البروفايل الكاملة — المرحلة 2
+    _showSnack('بروفايل ${post.userName} — قريباً');
+  }
+
+  // ============================================================
+  // MORE MENU
+  // ============================================================
+  Future<void> _showMoreMenu(Post post) async {
+    final isOwner = post.uid == widget.uid;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: _green,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _menuHandle(),
+              if (isOwner) ...[
+                _menuItem(
+                  context: sheetContext,
+                  icon: Icons.edit_outlined,
+                  label: 'تعديل المنشور',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _showEditDialog(post);
+                  },
+                ),
+                _menuItem(
+                  context: sheetContext,
+                  icon: post.isPinned
+                      ? Icons.push_pin_outlined
+                      : Icons.push_pin,
+                  label: post.isPinned ? 'إلغاء التثبيت' : 'تثبيت المنشور',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _togglePin(post);
+                  },
+                ),
+              ],
+              _menuItem(
+                context: sheetContext,
+                icon: Icons.copy_outlined,
+                label: 'نسخ النص',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  Clipboard.setData(ClipboardData(text: post.text));
+                  _showSnack('تم نسخ النص');
+                },
+              ),
+              if (isOwner)
+                _menuItem(
+                  context: sheetContext,
+                  icon: Icons.delete_outline,
+                  label: 'حذف المنشور',
+                  color: Colors.redAccent,
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _confirmDelete(post);
+                  },
+                ),
+              SizedBox(height: R.s(context, 8)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _menuHandle() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: R.s(context, 10)),
+      width: 40,
+      height: 4,
+      decoration: BoxDecoration(
+        color: _gold.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+
+  Widget _menuItem({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    final c = color ?? _cream;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: R.s(context, 20),
+          vertical: R.s(context, 14),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: c, size: R.s(context, 20)),
+            SizedBox(width: R.s(context, 14)),
+            Text(
+              label,
+              style: TextStyle(
+                color: c,
+                fontSize: R.f(context, 14),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // EDIT
+  // ============================================================
+  Future<void> _showEditDialog(Post post) async {
+    final controller = TextEditingController(text: post.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: _green,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(color: _gold.withValues(alpha: 0.4)),
+            ),
+            title: Text(
+              'تعديل المنشور',
+              style: TextStyle(color: _softGold, fontSize: R.f(context, 15)),
+            ),
+            content: TextField(
+              controller: controller,
+              maxLines: null,
+              minLines: 4,
+              maxLength: 500,
+              autofocus: true,
+              style: TextStyle(
+                color: _cream,
+                fontSize: R.f(context, 14),
+                height: 1.4,
+              ),
+              decoration: InputDecoration(
+                hintText: 'نص المنشور...',
+                hintStyle: TextStyle(
+                  color: _cream.withValues(alpha: 0.4),
+                  fontSize: R.f(context, 13),
+                ),
+                counterStyle: TextStyle(
+                  color: _cream.withValues(alpha: 0.55),
+                  fontSize: R.f(context, 11),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: _gold.withValues(alpha: 0.3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _gold, width: 1.5),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(
+                  'إلغاء',
+                  style: TextStyle(
+                    color: _cream.withValues(alpha: 0.7),
+                    fontSize: R.f(context, 13),
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final txt = controller.text.trim();
+                  if (txt.isEmpty) return;
+                  Navigator.of(dialogContext).pop(txt);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _gold,
+                  foregroundColor: _deepGreen,
+                ),
+                child: Text(
+                  'حفظ',
+                  style: TextStyle(
+                    fontSize: R.f(context, 13),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    controller.dispose();
+
+    if (result == null || result.isEmpty) return;
+    if (result == post.text) return;
+
+    try {
+      await _service.editPost(
+        postId: post.id,
+        uid: widget.uid,
+        newText: result,
+      );
+      if (mounted) _showSnack('تم تعديل المنشور');
+    } catch (e) {
+      _showSnack('فشل التعديل: $e');
+    }
+  }
+
+  // ============================================================
+  // DELETE
+  // ============================================================
+  Future<void> _confirmDelete(Post post) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: _green,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(color: _gold.withValues(alpha: 0.4)),
+            ),
+            title: Text(
+              'حذف المنشور',
+              style: TextStyle(color: _softGold, fontSize: R.f(context, 15)),
+            ),
+            content: Text(
+              'هل أنت متأكد من حذف هذا المنشور؟ لا يمكن التراجع.',
+              style: TextStyle(color: _cream, fontSize: R.f(context, 13)),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(
+                  'إلغاء',
+                  style: TextStyle(
+                    color: _cream.withValues(alpha: 0.7),
+                    fontSize: R.f(context, 13),
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(
+                  'حذف',
+                  style: TextStyle(
+                    fontSize: R.f(context, 13),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _service.deletePost(postId: post.id, uid: widget.uid);
+      if (mounted) _showSnack('تم حذف المنشور');
+    } catch (e) {
+      _showSnack('فشل الحذف: $e');
+    }
+  }
+
+  // ============================================================
+  // PIN
+  // ============================================================
+  Future<void> _togglePin(Post post) async {
+    try {
+      await _service.togglePin(postId: post.id, uid: widget.uid);
+      if (mounted) {
+        _showSnack(post.isPinned ? 'تم إلغاء التثبيت' : 'تم تثبيت المنشور');
+      }
+    } catch (e) {
+      _showSnack('فشل العملية: $e');
+    }
+  }
+
+  // ============================================================
+  // SNACKBAR
+  // ============================================================
+  void _showSnack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: _emerald,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
