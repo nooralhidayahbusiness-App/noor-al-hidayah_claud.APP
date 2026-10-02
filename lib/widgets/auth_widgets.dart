@@ -5,6 +5,7 @@ import '../core/fonts.dart';
 import '../core/theme.dart';
 import 'app_branding.dart';
 import 'glass_card.dart';
+import 'language_picker_sheet.dart';
 
 const Color _errorColor = Color(0xFFFF8A80);
 
@@ -114,6 +115,7 @@ class AuthScaffold extends StatelessWidget {
   }
 }
 
+/// زر اللغة: أيقونة 🌐 فقط — يفتح قائمة السبع لغات
 class AuthLanguageButton extends StatelessWidget {
   const AuthLanguageButton({super.key});
 
@@ -121,15 +123,12 @@ class AuthLanguageButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: appState,
-      builder: (context, _) => OutlinedButton.icon(
-        onPressed: appState.toggleLanguage,
-        icon: const Icon(Icons.language, size: 18),
-        label: Text(appState.tr('switchLanguage')),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.softGold,
-          side: BorderSide(color: AppColors.gold.withValues(alpha: 0.6)),
-          shape: const StadiumBorder(),
-        ),
+      builder: (context, _) => IconButton(
+        onPressed: () => showLanguagePicker(context),
+        tooltip: currentLanguageLabel(),
+        color: AppColors.softGold,
+        iconSize: 24,
+        icon: const Icon(Icons.language),
       ),
     );
   }
