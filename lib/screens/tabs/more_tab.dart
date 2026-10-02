@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_flow.dart';
 import '../../core/app_state.dart';
+import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../widgets/glass_card.dart';
 import '../account_screen.dart';
@@ -30,9 +31,9 @@ class MoreTab extends StatelessWidget {
                   _MoreRow(
                     icon: Icons.language,
                     title: appState.tr('language'),
-                    trailing: appState.tr('switchLanguage'),
+                    trailing: _currentLanguageLabel(),
                     chevron: chevron,
-                    onTap: appState.toggleLanguage,
+                    onTap: () => _showLanguagePicker(context),
                   ),
                   divider(),
                   _MoreRow(
@@ -81,6 +82,151 @@ class MoreTab extends StatelessWidget {
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // اسم اللغة الحالية
+  // ============================================================
+  static String _currentLanguageLabel() {
+    switch (appState.languageCode) {
+      case 'ar':
+        return 'العربية';
+      case 'en':
+        return 'English';
+      case 'fr':
+        return 'Français';
+      case 'ur':
+        return 'اردو';
+      case 'ne':
+        return 'नेपाली';
+      case 'id':
+        return 'Bahasa Indonesia';
+      case 'ms':
+        return 'Bahasa Melayu';
+      default:
+        return 'العربية';
+    }
+  }
+
+  // ============================================================
+  // قائمة اختيار اللغة (7 لغات)
+  // ============================================================
+  static void _showLanguagePicker(BuildContext context) {
+    const languages = <MapEntry<String, String>>[
+      MapEntry('ar', 'العربية'),
+      MapEntry('en', 'English'),
+      MapEntry('fr', 'Français'),
+      MapEntry('ur', 'اردو'),
+      MapEntry('ne', 'नेपाली'),
+      MapEntry('id', 'Bahasa Indonesia'),
+      MapEntry('ms', 'Bahasa Melayu'),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return ListenableBuilder(
+          listenable: appState,
+          builder: (context, _) {
+            return Container(
+              padding: EdgeInsets.all(R.s(context, 16)),
+              decoration: const BoxDecoration(
+                color: AppColors.deepGreen,
+                borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    SizedBox(height: R.s(context, 12)),
+                    Text(
+                      appState.tr('languageChoose'),
+                      style: TextStyle(
+                        fontSize: R.f(context, 14),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.softGold,
+                      ),
+                    ),
+                    SizedBox(height: R.s(context, 12)),
+                    ...languages.map((lang) {
+                      final isSelected =
+                          appState.languageCode == lang.key;
+                      return Padding(
+                        padding:
+                            EdgeInsets.only(bottom: R.s(context, 6)),
+                        child: GestureDetector(
+                          onTap: () {
+                            appState.setLanguage(lang.key);
+                            Navigator.of(sheetContext).pop();
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: R.s(context, 12),
+                              vertical: R.s(context, 12),
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.gold
+                                      .withValues(alpha: 0.2)
+                                  : Colors.black
+                                      .withValues(alpha: 0.2),
+                              borderRadius:
+                                  BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.gold
+                                    : AppColors.gold
+                                        .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    lang.value,
+                                    style: TextStyle(
+                                      fontSize: R.f(context, 14),
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? AppColors.gold
+                                          : AppColors.cream,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.gold,
+                                    size: R.s(context, 20),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    SizedBox(height: R.s(context, 8)),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
