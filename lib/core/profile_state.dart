@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -5,7 +8,6 @@ import '../services/auth_service.dart';
 import '../services/user_service.dart';
 
 /// حالة الملف الشخصي: الصورة، الاسم، النبذة، خصوصية الحساب.
-/// تُحفظ محلياً + في Firestore.
 class ProfileState extends ChangeNotifier {
   static const _keyAvatar = 'profile_avatar';
   static const _keyName = 'profile_name';
@@ -16,24 +18,31 @@ class ProfileState extends ChangeNotifier {
   String name = '';
   String bio = '';
   bool isPublic = true;
+  Uint8List? photoBytes; // الصورة الموثّقة (إن وُجدت)
   bool _loaded = false;
 
   Future<void> load() async {
     if (_loaded) return;
     _loaded = true;
 
-    // 1) من Firestore
     try {
       if (authService.isSignedIn) {
         final data = await authService.loadUserData();
         if (data != null) {
-          // الصورة قد تكون في الجذر (توافق للخلف) أو داخل profile
           avatar = (data['avatar'] as String?) ??
               ((data['profile'] as Map?)?['avatar'] as String?);
           final p = (data['profile'] as Map?) ?? {};
           name = (p['name'] as String?) ?? '';
           bio = (p['bio'] as String?) ?? '';
           isPublic = (p['isPublic'] as bool?) ?? true;
+
+          // صورة التوثيق
+          final b64 = p['photoBase64'] as String?;
+          if (b64 != null && b64.isNotEmpty) {
+            try {
+              photoBytes = base64Decode(b64);
+            } catch (_) {}
+          }
 
           final prefs = await SharedPreferences.getInstance();
           if (avatar != null) await prefs.setString(_keyAvatar, avatar!);
@@ -48,7 +57,7 @@ class ProfileState extends ChangeNotifier {
       debugPrint('ProfileState.load remote error: $e');
     }
 
-    // 2) من الجهاز (خطة بديلة)
+    // fallback
     final prefs = await SharedPreferences.getInstance();
     avatar = prefs.getString(_keyAvatar);
     name = prefs.getString(_keyName) ?? '';
@@ -60,12 +69,9 @@ class ProfileState extends ChangeNotifier {
   Future<void> setAvatar(String value) async {
     avatar = value;
     notifyListeners();
-
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyAvatar, value);
-
     try {
-      // نحفظها في الجذر وفي profile (توافق + بنية جديدة)
       await authService.saveUserData({'avatar': value});
       await userService.saveProfile();
     } catch (e) {
@@ -97,6 +103,12 @@ class ProfileState extends ChangeNotifier {
     } catch (e) {
       debugPrint('ProfileState.updateProfile remote error: $e');
     }
+  }
+
+  /// يُعاد تحميل البيانات (بعد الموافقة على التوثيق).
+  Future<void> refresh() async {
+    _loaded = false;
+    await load();
   }
 }
 
