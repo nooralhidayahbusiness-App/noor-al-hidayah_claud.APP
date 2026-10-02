@@ -13,28 +13,31 @@ class CommunityService {
   // ============================================================
 
   /// Stream كل المنشورات (الأحدث أولاً)
+  /// نرتّب في Dart → لا يحتاج Composite Index
   Stream<List<Post>> postsStream({int limit = 100}) {
-    return _posts
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => Post.fromMap(d.id, d.data()))
-            .where((p) => !p.isDeleted)
-            .toList());
+    return _posts.snapshots().map((snap) {
+      final list = snap.docs
+          .map((d) => Post.fromMap(d.id, d.data()))
+          .where((p) => !p.isDeleted)
+          .toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (list.length > limit) return list.sublist(0, limit);
+      return list;
+    });
   }
 
   /// Stream منشورات مستخدم معيّن (لصفحة البروفايل)
+  /// نرتّب في Dart → لا يحتاج Composite Index
   Stream<List<Post>> userPostsStream(String uid, {int limit = 100}) {
-    return _posts
-        .where('uid', isEqualTo: uid)
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => Post.fromMap(d.id, d.data()))
-            .where((p) => !p.isDeleted)
-            .toList());
+    return _posts.where('uid', isEqualTo: uid).snapshots().map((snap) {
+      final list = snap.docs
+          .map((d) => Post.fromMap(d.id, d.data()))
+          .where((p) => !p.isDeleted)
+          .toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (list.length > limit) return list.sublist(0, limit);
+      return list;
+    });
   }
 
   /// Stream منشور واحد
@@ -89,7 +92,6 @@ class CommunityService {
 
     await ref.set(post.toMap());
 
-    // إذا إعادة نشر — نزيد العدّاد عند المنشور الأصلي
     if (repostOf != null) {
       await _posts.doc(repostOf).update({
         'repostsCount': FieldValue.increment(1),
@@ -168,6 +170,7 @@ class CommunityService {
   }
 
   /// تثبيت / إلغاء تثبيت منشور — منشور واحد فقط مثبّت لكل مستخدم
+  /// نرتّب في Dart → لا يحتاج Composite Index
   Future<void> togglePin({
     required String postId,
     required String uid,
@@ -182,21 +185,21 @@ class CommunityService {
 
     final currentlyPinned = data['isPinned'] == true;
 
-    // لو المنشور مثبّت → إلغاء التثبيت فقط
     if (currentlyPinned) {
       await ref.update({'isPinned': false});
       return;
     }
 
-    // إلغاء تثبيت أي منشور آخر لنفس المستخدم ثم تثبيت هذا
-    final pinned = await _posts
-        .where('uid', isEqualTo: uid)
-        .where('isPinned', isEqualTo: true)
-        .get();
+    // نجيب كل منشورات المستخدم (بدون where على isPinned)
+    final userPosts = await _posts.where('uid', isEqualTo: uid).get();
 
     final batch = _db.batch();
-    for (final doc in pinned.docs) {
-      batch.update(doc.reference, {'isPinned': false});
+    for (final doc in userPosts.docs) {
+      if (doc.id == postId) continue;
+      final isPinned = doc.data()['isPinned'] == true;
+      if (isPinned) {
+        batch.update(doc.reference, {'isPinned': false});
+      }
     }
     batch.update(ref, {'isPinned': true});
     await batch.commit();
@@ -234,16 +237,21 @@ class CommunityService {
   // COMMENTS
   // ============================================================
 
+  /// تعليقات المنشور (الأقدم أولاً)
+  /// نرتّب في Dart → لا يحتاج Composite Index
   Stream<List<Comment>> commentsStream(String postId) {
     return _posts
         .doc(postId)
         .collection('comments')
-        .orderBy('createdAt', descending: false)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => Comment.fromMap(d.id, d.data()))
-            .where((c) => !c.isDeleted)
-            .toList());
+        .map((snap) {
+      final list = snap.docs
+          .map((d) => Comment.fromMap(d.id, d.data()))
+          .where((c) => !c.isDeleted)
+          .toList();
+      list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      return list;
+    });
   }
 
   Future<String> addComment({
