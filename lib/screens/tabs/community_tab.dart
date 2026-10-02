@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
+import '../community_feed_screen.dart';
 import 'channel_view.dart';
-import 'soon_tabs.dart';
 
 enum _Section { community, channel }
 
@@ -62,13 +64,7 @@ class _CommunityTabState extends State<CommunityTab> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: _section == _Section.community
-                    ? const ComingSoonView(
-                        key: ValueKey('community'),
-                        icon: Icons.groups_rounded,
-                        titleKey: 'tabCommunity',
-                        messageKey: 'communitySoon',
-                        imagePath: 'assets/icons/community.png',
-                      )
+                    ? const _CommunitySection(key: ValueKey('community'))
                     : const ChannelView(key: ValueKey('channel')),
               ),
             ),
@@ -79,6 +75,151 @@ class _CommunityTabState extends State<CommunityTab> {
   }
 }
 
+// ============================================================
+// _CommunitySection — يحمّل بيانات المستخدم ثم يعرض الشاشة
+// ============================================================
+class _CommunitySection extends StatelessWidget {
+  const _CommunitySection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const _CommunityAuthError();
+    }
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        // لسا يحمّل
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.gold),
+          );
+        }
+
+        // خطأ
+        if (snapshot.hasError) {
+          return _CommunityError(message: snapshot.error.toString());
+        }
+
+        final data = snapshot.data?.data() ?? {};
+        final profile =
+            (data['profile'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+
+        // الاسم: من profile.name أولاً، وإلا displayName
+        final rawName = (profile['name'] as String?)?.trim();
+        final userName = (rawName != null && rawName.isNotEmpty)
+            ? rawName
+            : (user.displayName?.trim().isNotEmpty == true
+                ? user.displayName!
+                : 'مستخدم');
+
+        // نوع الأفاتار: 'man' | 'woman'
+        final userAvatar = (data['avatar'] as String?) ?? 'man';
+
+        // التوثيق
+        final userVerified = (profile['verified'] as bool?) ?? false;
+
+        return CommunityFeedScreen(
+          uid: user.uid,
+          userName: userName,
+          userEmail: user.email ?? '',
+          userAvatar: userAvatar,
+          userVerified: userVerified,
+        );
+      },
+    );
+  }
+}
+
+// ============================================================
+// حالات الخطأ
+// ============================================================
+class _CommunityAuthError extends StatelessWidget {
+  const _CommunityAuthError();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.lock_outline,
+              color: AppColors.gold,
+              size: 42,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'يجب تسجيل الدخول لعرض المجتمع',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.softGold,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CommunityError extends StatelessWidget {
+  final String message;
+
+  const _CommunityError({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              color: Colors.redAccent,
+              size: 42,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'تعذّر تحميل بيانات المستخدم',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.softGold,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.cream.withValues(alpha: 0.6),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _SwitchButton
+// ============================================================
 class _SwitchButton extends StatelessWidget {
   const _SwitchButton({
     required this.label,
