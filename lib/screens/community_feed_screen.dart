@@ -6,6 +6,7 @@ import '../core/responsive.dart';
 import '../widgets/post_card.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
+import 'user_profile_screen.dart';
 
 class CommunityFeedScreen extends StatefulWidget {
   final String uid;
@@ -254,9 +255,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     }
   }
 
-  // ============================================================
-  // ✅ التعديل: ننتقل فعلياً إلى PostDetailScreen
-  // ============================================================
   void _openPostDetail(Post post) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -271,8 +269,22 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     );
   }
 
+  // ✅ التعديل: يفتح البروفايل
   void _onAuthorTap(Post post) {
-    _showSnack('بروفايل ${post.userName} — قريباً');
+    if (post.uid == widget.uid) {
+      // يفتح بروفايله هو
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => UserProfileScreen(profileUid: widget.uid),
+        ),
+      );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UserProfileScreen(profileUid: post.uid),
+      ),
+    );
   }
 
   Future<void> _showMoreMenu(Post post) async {
