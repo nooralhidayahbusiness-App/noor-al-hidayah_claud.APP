@@ -12,6 +12,7 @@ import '../widgets/post_card.dart';
 import '../widgets/profile_avatar.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
+import 'verification_request_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String profileUid;
@@ -226,9 +227,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // ============================================================
   Widget _buildActionButton(BuildContext context, UserBrief user) {
     if (_isOwnProfile) {
-      // صاحب الحساب:
-      // - لو موثّق → ما نعرض شي (الشارة جنب الاسم)
-      // - لو غير موثّق → زر "وثّق الآن"
       if (user.verified) return const SizedBox.shrink();
       return Center(
         child: OutlinedButton.icon(
@@ -259,7 +257,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       );
     }
 
-    // بروفايل شخص آخر → زر المتابعة
     if (_currentUid == null) return const SizedBox.shrink();
     return Center(
       child: StreamBuilder<bool>(
@@ -327,7 +324,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // RTL: children[0] = يظهر على اليمين = المتابعون (followers)
         _CountTile(
           label: 'المتابعون',
           stream: _followService.followersCountStream(user.uid),
@@ -339,7 +335,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           margin: EdgeInsets.symmetric(horizontal: R.s(context, 18)),
           color: AppColors.gold.withValues(alpha: 0.3),
         ),
-        // children[1] = يظهر على اليسار = المتابَعون (following)
         _CountTile(
           label: 'يتابعهم',
           stream: _followService.followingCountStream(user.uid),
@@ -349,9 +344,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Divider
-  // ============================================================
   Widget _buildDivider(BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: R.s(context, 16)),
@@ -464,9 +456,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
             SizedBox(height: R.s(context, 8)),
             Text(
-              _isOwnProfile
-                  ? 'لم تنشر شيئاً بعد'
-                  : 'لا توجد منشورات بعد',
+              _isOwnProfile ? 'لم تنشر شيئاً بعد' : 'لا توجد منشورات بعد',
               style: TextStyle(
                 color: AppColors.cream.withValues(alpha: 0.6),
                 fontSize: R.f(context, 12),
@@ -513,8 +503,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // Actions
   // ============================================================
   void _openVerificationScreen() {
-    // ⏳ لو الـ VerificationRequestScreen يحتاج بارامترات
-    //    راح يطلع خطأ في flutter analyze — ارجع لي فيه.
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const VerificationRequestScreen(),
@@ -536,7 +524,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Future<void> _onRepost(Post post) async {
     if (_currentUser == null || _currentUid == null) return;
-    final result = await Navigator.of(context).push<bool(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => CreatePostScreen(
           uid: _currentUid!,
@@ -572,7 +560,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   void _onAuthorTap(Post post) {
-    if (post.uid == widget.profileUid) return; // نفس الشخص — ما نسوي شي
+    if (post.uid == widget.profileUid) return;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => UserProfileScreen(profileUid: post.uid),
