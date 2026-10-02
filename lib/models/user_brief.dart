@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 /// نموذج مختصر لبيانات مستخدم — يُستخدم في:
 /// - قائمة المتابعين/المتابَعين
 /// - البطاقات في المجتمع
@@ -9,6 +12,7 @@ class UserBrief {
   final String avatar; // 'man' | 'woman'
   final bool verified;
   final String bio;
+  final String photoBase64;
 
   const UserBrief({
     required this.uid,
@@ -17,6 +21,7 @@ class UserBrief {
     required this.avatar,
     required this.verified,
     required this.bio,
+    required this.photoBase64,
   });
 
   factory UserBrief.fromMap(String uid, Map<String, dynamic> map) {
@@ -28,12 +33,23 @@ class UserBrief {
       avatar: (map['avatar'] as String?) ?? 'man',
       verified: (profile['verified'] as bool?) ?? false,
       bio: (profile['bio'] as String?) ?? '',
+      photoBase64: (profile['photoBase64'] as String?) ?? '',
     );
   }
 
   static String _cleanName(String? raw) {
     final t = (raw ?? '').trim();
     return t.isEmpty ? 'مستخدم' : t;
+  }
+
+  /// بايتات صورة التوثيق — جاهزة للعرض في ProfileAvatar
+  Uint8List? get photoBytes {
+    if (photoBase64.isEmpty) return null;
+    try {
+      return base64Decode(photoBase64);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// قيم افتراضية عند عدم وجود بيانات
@@ -44,5 +60,6 @@ class UserBrief {
         avatar: 'man',
         verified: false,
         bio: '',
+        photoBase64: '',
       );
 }
