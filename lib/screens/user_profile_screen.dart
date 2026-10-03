@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../models/post.dart';
@@ -45,36 +46,38 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (mounted) setState(() => _currentUser = data);
   }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: AppColors.deepGreen,
-        appBar: _buildAppBar(),
-        body: StreamBuilder<UserBrief?>(
-          stream: _followService.userBriefStream(widget.profileUid),
-          builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting &&
-                !snap.hasData) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.gold),
-              );
-            }
-            if (snap.hasError) {
-              return _buildError('تعذّر تحميل البروفايل');
-            }
-            final user = snap.data;
-            if (user == null) {
-              return _buildError('المستخدم غير موجود');
-            }
-            return _buildContent(context, user);
-          },
-        ),
-      ),
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        return Directionality(
+          textDirection: appState.direction,
+          child: Scaffold(
+            backgroundColor: AppColors.deepGreen,
+            appBar: _buildAppBar(),
+            body: StreamBuilder<UserBrief?>(
+              stream: _followService.userBriefStream(widget.profileUid),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting &&
+                    !snap.hasData) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.gold),
+                  );
+                }
+                if (snap.hasError) {
+                  return _buildError(appState.tr('cProfileLoadError'));
+                }
+                final user = snap.data;
+                if (user == null) {
+                  return _buildError(appState.tr('cUserNotFound'));
+                }
+                return _buildContent(context, user);
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -85,7 +88,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       iconTheme: const IconThemeData(color: AppColors.cream),
       centerTitle: true,
       title: Text(
-        _isOwnProfile ? 'حسابي' : 'البروفايل',
+        _isOwnProfile
+            ? appState.tr('cMyAccount')
+            : appState.tr('cProfile'),
         style: TextStyle(
           color: AppColors.softGold,
           fontSize: R.f(context, 16),
@@ -102,9 +107,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Content
-  // ============================================================
   Widget _buildContent(BuildContext context, UserBrief user) {
     return ListView(
       padding: EdgeInsets.only(bottom: R.s(context, 24)),
@@ -129,9 +131,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Avatar
-  // ============================================================
   Widget _buildAvatarSection(BuildContext context, UserBrief user) {
     return Center(
       child: GestureDetector(
@@ -169,9 +168,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Name + Verified Badge
-  // ============================================================
   Widget _buildNameSection(BuildContext context, UserBrief user) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: R.s(context, 24)),
@@ -204,9 +200,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Bio
-  // ============================================================
   Widget _buildBioSection(BuildContext context, String bio) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: R.s(context, 32)),
@@ -222,9 +215,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Action Button: "وثّق الآن" (own) أو "متابعة/متابَع" (others)
-  // ============================================================
   Widget _buildActionButton(BuildContext context, UserBrief user) {
     if (_isOwnProfile) {
       if (user.verified) return const SizedBox.shrink();
@@ -236,7 +226,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             size: R.s(context, 18),
           ),
           label: Text(
-            'وثّق الآن',
+            appState.tr('cVerifyNow'),
             style: TextStyle(
               fontSize: R.f(context, 14),
               fontWeight: FontWeight.bold,
@@ -280,7 +270,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         size: R.s(context, 18),
       ),
       label: Text(
-        isFollowing ? 'متابَع' : 'متابعة',
+        isFollowing
+            ? appState.tr('cFollowingState')
+            : appState.tr('cFollow'),
         style: TextStyle(
           fontSize: R.f(context, 14),
           fontWeight: FontWeight.bold,
@@ -313,21 +305,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         followingUid: widget.profileUid,
       );
     } catch (e) {
-      _showSnack('فشل العملية: $e');
+      _showSnack('${appState.tr('cOperationFailed')}: $e');
     }
   }
 
-  // ============================================================
-  // Counts: Followers (right) | Following (left) — RTL
-  // ============================================================
   Widget _buildCountsRow(BuildContext context, UserBrief user) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _CountTile(
-          label: 'المتابعون',
+          label: appState.tr('cFollowers'),
           stream: _followService.followersCountStream(user.uid),
-          onTap: () => _showSnack('قائمة المتابعين — قريباً'),
+          onTap: () => _showSnack(appState.tr('cFollowersListSoon')),
         ),
         Container(
           width: 1,
@@ -336,9 +325,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           color: AppColors.gold.withValues(alpha: 0.3),
         ),
         _CountTile(
-          label: 'يتابعهم',
+          label: appState.tr('cFollowing'),
           stream: _followService.followingCountStream(user.uid),
-          onTap: () => _showSnack('قائمة المتابَعين — قريباً'),
+          onTap: () => _showSnack(appState.tr('cFollowingListSoon')),
         ),
       ],
     );
@@ -352,9 +341,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Posts Header
-  // ============================================================
   Widget _buildPostsHeader(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -372,7 +358,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           SizedBox(width: R.s(context, 6)),
           Text(
-            _isOwnProfile ? 'منشوراتي' : 'المنشورات',
+            _isOwnProfile ? appState.tr('cMyPosts') : appState.tr('cPosts'),
             style: TextStyle(
               color: AppColors.softGold,
               fontSize: R.f(context, 14),
@@ -384,9 +370,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Posts List
-  // ============================================================
   Widget _buildPostsList(BuildContext context, UserBrief user) {
     return StreamBuilder<List<Post>>(
       stream: _communityService.userPostsStream(user.uid),
@@ -408,7 +391,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             padding: EdgeInsets.all(R.s(context, 20)),
             child: Center(
               child: Text(
-                'تعذّر تحميل المنشورات',
+                appState.tr('cLoadPostsError'),
                 style: TextStyle(
                   color: Colors.redAccent,
                   fontSize: R.f(context, 12),
@@ -456,7 +439,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
             SizedBox(height: R.s(context, 8)),
             Text(
-              _isOwnProfile ? 'لم تنشر شيئاً بعد' : 'لا توجد منشورات بعد',
+              _isOwnProfile
+                  ? appState.tr('cNoMyPostsYet')
+                  : appState.tr('cNoPostsYet'),
               style: TextStyle(
                 color: AppColors.cream.withValues(alpha: 0.6),
                 fontSize: R.f(context, 12),
@@ -468,9 +453,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Error state
-  // ============================================================
   Widget _buildError(String msg) {
     return Center(
       child: Padding(
@@ -499,9 +481,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Actions
-  // ============================================================
   void _openVerificationScreen() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -518,7 +497,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         uid: _currentUid!,
       );
     } catch (e) {
-      _showSnack('فشل الإعجاب: $e');
+      _showSnack('${appState.tr('cLikeFailed')}: $e');
     }
   }
 
@@ -540,7 +519,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ),
     );
     if (result == true && mounted) {
-      _showSnack('تمت إعادة النشر');
+      _showSnack(appState.tr('cRepostSuccess'));
     }
   }
 
