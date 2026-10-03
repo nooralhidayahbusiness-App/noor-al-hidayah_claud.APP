@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/app_flow.dart';
 import '../core/app_state.dart';
 import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
@@ -67,7 +68,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final before =
           (notifs['adhanBeforeMinutes'] as num?)?.toInt() ?? 0;
 
-      // هل هذا الحساب مالك؟
       final ownerFlag = authService.isOwner;
       int pending = 0;
       if (ownerFlag) {
@@ -149,6 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) setState(() {});
   }
 
+  // ✅ التعديل: بعد signOut → ننتقل لشاشة "ابدأ الآن"
   Future<void> _signOut() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -178,7 +179,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (confirm == true) {
       await authService.signOut();
-      if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+      if (mounted) {
+        await goAfterSignOut(context);
+      }
     }
   }
 
@@ -355,7 +358,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           R.s(context, 20),
                         ),
                         children: [
-                          // لوحة التحكم (للمالك فقط)
                           if (_isOwner) ...[
                             _SectionHeader(
                                 title: appState.tr('adminPanel')),
