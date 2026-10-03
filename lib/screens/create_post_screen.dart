@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../services/community_service.dart';
+
+import '../core/app_state.dart';
 import '../core/responsive.dart';
+import '../services/community_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final String uid;
@@ -56,14 +58,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void initState() {
     super.initState();
     _controller.addListener(_onTextChanged);
-    // للإعادة النشر: نعرض النص الأصلي في الحقل (المستخدم يقدر يعدّله أو يضيف تعليق)
     if (_isRepost && widget.repostPreviewText != null) {
       _controller.text = widget.repostPreviewText!;
       _controller.selection = TextSelection.fromPosition(
         TextPosition(offset: _controller.text.length),
       );
     }
-    // فتح الكيبورد تلقائياً
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focus.requestFocus();
     });
@@ -102,13 +102,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       );
 
       if (!mounted) return;
-      Navigator.of(context).pop(true); // true = تم النشر
+      Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isPosting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('فشل النشر: ${e.toString()}'),
+          content: Text('${appState.tr('cCommentFailed')}: $e'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -117,42 +117,44 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _deepGreen,
-        appBar: _buildAppBar(),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(R.s(context, 14)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildAuthorRow(context),
-                      SizedBox(height: R.s(context, 14)),
-                      _buildTextField(context),
-                      if (_isRepost) ...[
-                        SizedBox(height: R.s(context, 14)),
-                        _buildRepostNote(context),
-                      ],
-                    ],
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        return Directionality(
+          textDirection: appState.direction,
+          child: Scaffold(
+            backgroundColor: _deepGreen,
+            appBar: _buildAppBar(),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(R.s(context, 14)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildAuthorRow(context),
+                          SizedBox(height: R.s(context, 14)),
+                          _buildTextField(context),
+                          if (_isRepost) ...[
+                            SizedBox(height: R.s(context, 14)),
+                            _buildRepostNote(context),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                  _buildBottomBar(context),
+                ],
               ),
-              _buildBottomBar(context),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  // ============================================================
-  // AppBar
-  // ============================================================
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: _green,
@@ -162,7 +164,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         onPressed: () => Navigator.of(context).pop(false),
       ),
       title: Text(
-        _isRepost ? 'إعادة نشر' : 'منشور جديد',
+        _isRepost ? appState.tr('cRepostTitle') : appState.tr('cCreatePost'),
         style: TextStyle(
           color: _softGold,
           fontSize: R.f(context, 16),
@@ -180,9 +182,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
-  // ============================================================
-  // صف الكاتب
-  // ============================================================
   Widget _buildAuthorRow(BuildContext context) {
     final initial = widget.userName.isNotEmpty
         ? widget.userName.characters.first.toUpperCase()
@@ -220,7 +219,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             children: [
               Flexible(
                 child: Text(
-                  widget.userName.isEmpty ? 'مستخدم' : widget.userName,
+                  widget.userName.isEmpty
+                      ? appState.tr('cUserNotFound')
+                      : widget.userName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -241,9 +242,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
-  // ============================================================
-  // حقل النص
-  // ============================================================
   Widget _buildTextField(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(R.s(context, 12)),
@@ -267,8 +265,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
         decoration: InputDecoration(
           hintText: _isRepost
-              ? 'أضف تعليقاً (اختياري) أو عدّل النص...'
-              : 'بمَ تفكر؟ شارك فائدة أو دعاء...',
+              ? appState.tr('cRepostHint')
+              : appState.tr('cPostHint'),
           hintStyle: TextStyle(
             color: _cream.withValues(alpha: 0.4),
             fontSize: R.f(context, 13),
@@ -285,11 +283,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
-  // ============================================================
-  // ملاحظة إعادة النشر
-  // ============================================================
   Widget _buildRepostNote(BuildContext context) {
-    final name = widget.originalAuthorName ?? 'مستخدم';
+    final name = widget.originalAuthorName ?? appState.tr('cUserNotFound');
     return Container(
       padding: EdgeInsets.all(R.s(context, 10)),
       decoration: BoxDecoration(
@@ -303,7 +298,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           SizedBox(width: R.s(context, 8)),
           Expanded(
             child: Text(
-              'إعادة نشر من $name',
+              '${appState.tr('cRepostFrom')} $name',
               style: TextStyle(
                 color: _softGold,
                 fontSize: R.f(context, 12),
@@ -316,9 +311,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
-  // ============================================================
-  // الشريط السفلي (زر النشر + العدّاد)
-  // ============================================================
   Widget _buildBottomBar(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(R.s(context, 12)),
@@ -332,7 +324,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         children: [
           Icon(
             Icons.text_fields,
-            color: _charCount > _maxChars ? Colors.redAccent : _cream.withValues(alpha: 0.5),
+            color: _charCount > _maxChars
+                ? Colors.redAccent
+                : _cream.withValues(alpha: 0.5),
             size: R.s(context, 18),
           ),
           SizedBox(width: R.s(context, 6)),
@@ -375,8 +369,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   ),
             label: Text(
               _isPosting
-                  ? 'جارٍ النشر...'
-                  : (_isRepost ? 'إعادة نشر' : 'نشر'),
+                  ? appState.tr('cPublishing')
+                  : (_isRepost
+                      ? appState.tr('cRepostAction')
+                      : appState.tr('cPublish')),
               style: TextStyle(
                 fontSize: R.f(context, 13),
                 fontWeight: FontWeight.bold,
