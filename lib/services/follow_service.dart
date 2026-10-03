@@ -1,8 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/user_brief.dart';
+import 'community_notification_service.dart';
 
 class FollowService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final CommunityNotificationService _notifService =
+      CommunityNotificationService();
 
   CollectionReference<Map<String, dynamic>> get _follows =>
       _db.collection('follows');
@@ -10,9 +14,6 @@ class FollowService {
   CollectionReference<Map<String, dynamic>> get _users =>
       _db.collection('users');
 
-  // ============================================================
-  // ID فريد لكل علاقة متابعة
-  // ============================================================
   String _docId(String followerUid, String followingUid) =>
       '${followerUid}_$followingUid';
 
@@ -27,12 +28,28 @@ class FollowService {
       throw ArgumentError('لا يمكن متابعة نفسك');
     }
     final ref = _follows.doc(_docId(followerUid, followingUid));
-    // set مع merge عشان ما يعمل overwrite لو موجود
     await ref.set({
       'followerUid': followerUid,
       'followingUid': followingUid,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    // إرسال إشعار للمستخدم المتابَع
+    try {
+      final me = await getUserBrief(followerUid);
+      if (me != null) {
+        await _notifService.create(
+          toUid: followingUid,
+          type: 'follow',
+          fromUid: followerUid,
+          fromName: me.name,
+          fromAvatar: me.avatar,
+          fromVerified: me.verified,
+        );
+      }
+    } catch (_) {
+      // لا نُفشل المتابعة بسبب الإشعار
+    }
   }
 
   Future<void> unfollow({
@@ -75,7 +92,6 @@ class FollowService {
     return snap.exists;
   }
 
-  /// Stream — يتحدّث تلقائياً
   Stream<bool> isFollowingStream({
     required String followerUid,
     required String followingUid,
@@ -87,7 +103,7 @@ class FollowService {
   }
 
   // ============================================================
-  // قوائم المتابعين / المتابَعين (Stream<List<UserBrief>>)
+  // قوائم المتابعين / المتابَعين
   // ============================================================
   Stream<List<UserBrief>> followersStream(String uid) {
     return _follows
@@ -116,7 +132,7 @@ class FollowService {
   }
 
   // ============================================================
-  // العدّادات (Stream<int>)
+  // العدّادات
   // ============================================================
   Stream<int> followersCountStream(String uid) {
     return _follows
@@ -138,7 +154,6 @@ class FollowService {
   Future<List<UserBrief>> _fetchUsers(List<String> uids) async {
     if (uids.isEmpty) return const [];
 
-    // Firestore whereIn max 10 → نقسم
     final result = <UserBrief>[];
     const chunkSize = 10;
     for (var i = 0; i < uids.length; i += chunkSize) {
@@ -156,14 +171,12 @@ class FollowService {
     return result;
   }
 
-  /// جلب مستخدم واحد
   Future<UserBrief?> getUserBrief(String uid) async {
     final snap = await _users.doc(uid).get();
     if (!snap.exists || snap.data() == null) return null;
     return UserBrief.fromMap(uid, snap.data()!);
   }
 
-  /// Stream مستخدم واحد — لشاشة البروفايل
   Stream<UserBrief?> userBriefStream(String uid) {
     return _users.doc(uid).snapshots().map((snap) {
       if (!snap.exists || snap.data() == null) return null;
