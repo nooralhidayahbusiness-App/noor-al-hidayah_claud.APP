@@ -8,7 +8,6 @@ class CommunityNotificationService {
   CollectionReference<Map<String, dynamic>> _items(String uid) =>
       _db.collection('notifications').doc(uid).collection('items');
 
-  /// Stream إشعارات المستخدم (الأحدث أولاً)
   Stream<List<CommunityNotification>> stream(String uid) {
     return _items(uid).snapshots().map((snap) {
       final list = snap.docs
@@ -19,22 +18,19 @@ class CommunityNotificationService {
     });
   }
 
-  /// عدد الإشعارات غير المقروءة
   Stream<int> unreadCountStream(String uid) {
     return _items(uid).snapshots().map((snap) {
       return snap.docs.where((d) => d.data()['isRead'] != true).length;
     });
   }
 
-  /// إنشاء إشعار بجلب بيانات المُرسل تلقائياً
-  /// (يُستخدم من community_service و follow_service)
+  /// إنشاء إشعار بجلب بيانات المُرسل تلقائياً (مع verifiedType)
   Future<void> createFromUser({
     required String toUid,
     required String type,
     required String fromUid,
     String? targetId,
   }) async {
-    // لا ترسل إشعاراً لنفسك
     if (toUid == fromUid || toUid.isEmpty || fromUid.isEmpty) return;
 
     try {
@@ -45,11 +41,10 @@ class CommunityNotificationService {
       final profile =
           (data['profile'] as Map<String, dynamic>?) ?? const {};
       final rawName = (profile['name'] as String?)?.trim();
-      final name = (rawName == null || rawName.isEmpty)
-          ? 'User'
-          : rawName;
+      final name = (rawName == null || rawName.isEmpty) ? 'User' : rawName;
       final avatar = (data['avatar'] as String?) ?? 'man';
       final verified = (profile['verified'] as bool?) ?? false;
+      final verifiedType = (profile['verifiedType'] as String?) ?? 'none';
 
       final ref = _items(toUid).doc();
       await ref.set({
@@ -58,16 +53,15 @@ class CommunityNotificationService {
         'fromName': name,
         'fromAvatar': avatar,
         'fromVerified': verified,
+        'fromVerifiedType': verifiedType,
         'targetId': targetId,
         'createdAt': FieldValue.serverTimestamp(),
         'isRead': false,
       });
-    } catch (_) {
-      // لا نُفشل العملية الأصلية بسبب الإشعار
-    }
+    } catch (_) {}
   }
 
-  /// إنشاء إشعار ببيانات صريحة (يُستخدم للمتابعة التي تُرسل اسم صاحبها)
+  /// إنشاء إشعار ببيانات صريحة
   Future<void> create({
     required String toUid,
     required String type,
@@ -75,6 +69,7 @@ class CommunityNotificationService {
     required String fromName,
     required String fromAvatar,
     required bool fromVerified,
+    String fromVerifiedType = 'none',
     String? targetId,
   }) async {
     if (toUid == fromUid || toUid.isEmpty || fromUid.isEmpty) return;
@@ -85,6 +80,7 @@ class CommunityNotificationService {
       'fromName': fromName,
       'fromAvatar': fromAvatar,
       'fromVerified': fromVerified,
+      'fromVerifiedType': fromVerifiedType,
       'targetId': targetId,
       'createdAt': FieldValue.serverTimestamp(),
       'isRead': false,
