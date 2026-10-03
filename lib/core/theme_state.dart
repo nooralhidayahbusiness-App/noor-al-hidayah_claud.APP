@@ -20,6 +20,11 @@ class ThemeState extends ChangeNotifier {
 
   ThemePalette get palette => paletteFor(themeId);
 
+  ThemeState() {
+    // ✅ يسجّل نفسه — عند signOut، يُصفَّر تلقائياً
+    authService.addSignOutHandler(reset);
+  }
+
   Future<void> load() async {
     if (_loaded) return;
     _loaded = true;
@@ -48,6 +53,29 @@ class ThemeState extends ChangeNotifier {
     themeId = prefs.getString(_themeKey) ?? 'default';
     adhanBackgroundId = prefs.getString(_adhanBgKey) ?? 'default';
     notifyListeners();
+  }
+
+  /// ✅ يُصفَّر عند signOut — لتفادي تداخل البيانات بين الحسابات
+  Future<void> reset() async {
+    backgroundId = 'default';
+    reciterId = 'default';
+    adhanId = 'default';
+    themeId = 'default';
+    adhanBackgroundId = 'default';
+    _loaded = false;
+    notifyListeners();
+
+    // نمسح local prefs عشان لا تبقى بيانات الحساب القديم
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_bgKey);
+      await prefs.remove(_voiceKey);
+      await prefs.remove(_adhanKey);
+      await prefs.remove(_themeKey);
+      await prefs.remove(_adhanBgKey);
+    } catch (e) {
+      debugPrint('ThemeState.reset prefs error: $e');
+    }
   }
 
   Future<void> setBackground(String id) async {
