@@ -9,8 +9,8 @@ class CreatePostScreen extends StatefulWidget {
   final String userName;
   final String userAvatar;
   final bool userVerified;
+  final String userVerifiedType;
 
-  // إذا إعادة نشر
   final String? repostOf;
   final String? originalAuthorUid;
   final String? originalAuthorName;
@@ -23,6 +23,7 @@ class CreatePostScreen extends StatefulWidget {
     required this.userName,
     required this.userAvatar,
     required this.userVerified,
+    this.userVerifiedType = 'none',
     this.repostOf,
     this.originalAuthorUid,
     this.originalAuthorName,
@@ -94,6 +95,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         userName: widget.userName,
         userAvatar: widget.userAvatar,
         userVerified: widget.userVerified,
+        userVerifiedType: widget.userVerifiedType,
         text: _controller.text,
         repostOf: widget.repostOf,
         originalAuthorUid: widget.originalAuthorUid,
