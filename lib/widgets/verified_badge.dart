@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'asset_icon.dart';
 
-/// شعار التوثيق:
-/// - 'owner' أو 'me' → true.me.png (ذهبي مع لمعان)
-/// - 'user' → true.users.png (ذهبي عادي)
+/// شعار واحد:
+/// - 'owner' → owner.png (ذهبي مع لمعان)
+/// - 'premium' → premium.png (ذهبي مع لمعان)
+/// - 'me' → true.me.png (ذهبي مع لمعان)
+/// - 'user' → true.users.png (ذهبي بدون لمعان)
+/// - 'none' → لا شيء
 class VerifiedBadge extends StatefulWidget {
   const VerifiedBadge({
     super.key,
@@ -12,7 +15,7 @@ class VerifiedBadge extends StatefulWidget {
     this.size = 18,
   });
 
-  /// 'owner' | 'me' | 'user' | 'none'
+  /// 'owner' | 'premium' | 'me' | 'user' | 'none'
   final String type;
   final double size;
 
@@ -39,12 +42,18 @@ class _VerifiedBadgeState extends State<VerifiedBadge>
       return const SizedBox.shrink();
     }
 
-    final isSpecial = widget.type == 'owner' || widget.type == 'me';
-    final asset = isSpecial
-        ? 'assets/icons/true.me.png'
-        : 'assets/icons/true.users.png';
+    final isSpecial = widget.type == 'owner' ||
+        widget.type == 'premium' ||
+        widget.type == 'me';
 
-    // المالك والعلامة المميزة لهم لمعان
+    final asset = switch (widget.type) {
+      'owner' => 'assets/icons/owner.png',
+      'premium' => 'assets/icons/premium.png',
+      'me' => 'assets/icons/true.me.png',
+      'user' => 'assets/icons/true.users.png',
+      _ => 'assets/icons/true.users.png',
+    };
+
     if (isSpecial) {
       return AnimatedBuilder(
         animation: _shimmer,
