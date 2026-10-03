@@ -6,6 +6,7 @@ import '../../core/app_state.dart';
 import '../../core/theme.dart';
 import '../../models/user_brief.dart';
 import '../community_feed_screen.dart';
+import '../user_profile_screen.dart';
 import 'channel_view.dart';
 
 enum _Section { community, channel }
@@ -28,36 +29,44 @@ class _CommunityTabState extends State<CommunityTab> {
         return Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  color: AppColors.deepGreen.withValues(alpha: 0.65),
-                  border: Border.all(
-                    color: AppColors.gold.withValues(alpha: 0.3),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: AppColors.deepGreen.withValues(alpha: 0.65),
+                        border: Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _SwitchButton(
+                              label: appState.tr('tabCommunity'),
+                              active: _section == _Section.community,
+                              onTap: () => setState(
+                                  () => _section = _Section.community),
+                            ),
+                          ),
+                          Expanded(
+                            child: _SwitchButton(
+                              label: appState.tr('myChannel'),
+                              active: _section == _Section.channel,
+                              onTap: () => setState(
+                                  () => _section = _Section.channel),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _SwitchButton(
-                        label: appState.tr('tabCommunity'),
-                        active: _section == _Section.community,
-                        onTap: () =>
-                            setState(() => _section = _Section.community),
-                      ),
-                    ),
-                    Expanded(
-                      child: _SwitchButton(
-                        label: appState.tr('myChannel'),
-                        active: _section == _Section.channel,
-                        onTap: () =>
-                            setState(() => _section = _Section.channel),
-                      ),
-                    ),
-                  ],
-                ),
+                  const SizedBox(width: 8),
+                  const _MyProfileButton(),
+                ],
               ),
             ),
             Expanded(
@@ -69,6 +78,76 @@ class _CommunityTabState extends State<CommunityTab> {
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+// ============================================================
+// _MyProfileButton — زر دائري يفتح بروفايل المستخدم
+// ============================================================
+class _MyProfileButton extends StatelessWidget {
+  const _MyProfileButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data() ?? {};
+        final profile =
+            (data['profile'] as Map<String, dynamic>?) ?? const {};
+        final rawName = (profile['name'] as String?)?.trim();
+        final name = (rawName != null && rawName.isNotEmpty)
+            ? rawName
+            : (user.displayName?.trim().isNotEmpty == true
+                ? user.displayName!
+                : '?');
+        final initial = name.characters.first.toUpperCase();
+
+        return GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => UserProfileScreen(profileUid: user.uid),
+            ),
+          ),
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [AppColors.emerald, AppColors.deepGreen],
+              ),
+              border: Border.all(color: AppColors.gold, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gold.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: AppColors.gold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
         );
       },
     );
@@ -118,7 +197,6 @@ class _CommunitySection extends StatelessWidget {
 
         final userAvatar = (data['avatar'] as String?) ?? 'man';
 
-        // ✅ فحص إيميل المالك — يُفرض owner
         final email = (data['email'] as String?) ?? user.email ?? '';
         final isOwnerEmail = kOwnerEmails.contains(email.toLowerCase());
 
