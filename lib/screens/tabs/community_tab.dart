@@ -9,7 +9,6 @@ import 'channel_view.dart';
 
 enum _Section { community, channel }
 
-/// Bottom tab with two sections: the community and "قناتي".
 class CommunityTab extends StatefulWidget {
   const CommunityTab({super.key});
 
@@ -94,7 +93,6 @@ class _CommunitySection extends StatelessWidget {
           .doc(user.uid)
           .snapshots(),
       builder: (context, snapshot) {
-        // لسا يحمّل
         if (snapshot.connectionState == ConnectionState.waiting &&
             !snapshot.hasData) {
           return const Center(
@@ -102,7 +100,6 @@ class _CommunitySection extends StatelessWidget {
           );
         }
 
-        // خطأ
         if (snapshot.hasError) {
           return _CommunityError(message: snapshot.error.toString());
         }
@@ -111,7 +108,6 @@ class _CommunitySection extends StatelessWidget {
         final profile =
             (data['profile'] as Map<String, dynamic>?) ?? <String, dynamic>{};
 
-        // الاسم: من profile.name أولاً، وإلا displayName
         final rawName = (profile['name'] as String?)?.trim();
         final userName = (rawName != null && rawName.isNotEmpty)
             ? rawName
@@ -119,11 +115,10 @@ class _CommunitySection extends StatelessWidget {
                 ? user.displayName!
                 : 'مستخدم');
 
-        // نوع الأفاتار: 'man' | 'woman'
         final userAvatar = (data['avatar'] as String?) ?? 'man';
-
-        // التوثيق
         final userVerified = (profile['verified'] as bool?) ?? false;
+        final userVerifiedType =
+            (profile['verifiedType'] as String?) ?? 'none';
 
         return CommunityFeedScreen(
           uid: user.uid,
@@ -131,6 +126,7 @@ class _CommunitySection extends StatelessWidget {
           userEmail: user.email ?? '',
           userAvatar: userAvatar,
           userVerified: userVerified,
+          userVerifiedType: userVerifiedType,
         );
       },
     );
