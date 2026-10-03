@@ -16,6 +16,7 @@ class CommunityFeedScreen extends StatefulWidget {
   final String userEmail;
   final String userAvatar;
   final bool userVerified;
+  final String userVerifiedType;
 
   const CommunityFeedScreen({
     super.key,
@@ -24,6 +25,7 @@ class CommunityFeedScreen extends StatefulWidget {
     required this.userEmail,
     required this.userAvatar,
     required this.userVerified,
+    this.userVerifiedType = 'none',
   });
 
   @override
@@ -233,6 +235,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           userName: widget.userName,
           userAvatar: widget.userAvatar,
           userVerified: widget.userVerified,
+          userVerifiedType: widget.userVerifiedType,
         ),
       ),
     );
@@ -249,6 +252,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           userName: widget.userName,
           userAvatar: widget.userAvatar,
           userVerified: widget.userVerified,
+          userVerifiedType: widget.userVerifiedType,
           repostOf: post.id,
           originalAuthorUid: post.uid,
           originalAuthorName: post.userName,
@@ -271,6 +275,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           currentUserName: widget.userName,
           currentUserAvatar: widget.userAvatar,
           currentUserVerified: widget.userVerified,
+          currentUserVerifiedType: widget.userVerifiedType,
         ),
       ),
     );
