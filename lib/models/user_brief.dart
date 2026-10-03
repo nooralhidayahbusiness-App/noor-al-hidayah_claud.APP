@@ -11,6 +11,7 @@ class UserBrief {
   final String name;
   final String avatar; // 'man' | 'woman'
   final bool verified;
+  final String verifiedType; // 'owner' | 'me' | 'user' | 'none'
   final String bio;
   final String photoBase64;
 
@@ -20,6 +21,7 @@ class UserBrief {
     required this.name,
     required this.avatar,
     required this.verified,
+    required this.verifiedType,
     required this.bio,
     required this.photoBase64,
   });
@@ -32,6 +34,7 @@ class UserBrief {
       name: _cleanName(profile['name'] as String?),
       avatar: (map['avatar'] as String?) ?? 'man',
       verified: (profile['verified'] as bool?) ?? false,
+      verifiedType: (profile['verifiedType'] as String?) ?? 'none',
       bio: (profile['bio'] as String?) ?? '',
       photoBase64: (profile['photoBase64'] as String?) ?? '',
     );
@@ -42,7 +45,13 @@ class UserBrief {
     return t.isEmpty ? 'مستخدم' : t;
   }
 
-  /// بايتات صورة التوثيق — جاهزة للعرض في ProfileAvatar
+  /// نوع الشعار — لو غير معروف، نرجع 'user' (شعار عادي)
+  String get badgeType {
+    if (verifiedType == 'owner' || verifiedType == 'me') return verifiedType;
+    return 'user';
+  }
+
+  /// بايتات صورة التوثيق
   Uint8List? get photoBytes {
     if (photoBase64.isEmpty) return null;
     try {
@@ -52,13 +61,13 @@ class UserBrief {
     }
   }
 
-  /// قيم افتراضية عند عدم وجود بيانات
   static UserBrief empty(String uid) => UserBrief(
         uid: uid,
         email: '',
         name: 'مستخدم',
         avatar: 'man',
         verified: false,
+        verifiedType: 'none',
         bio: '',
         photoBase64: '',
       );
