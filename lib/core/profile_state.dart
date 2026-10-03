@@ -17,8 +17,13 @@ class ProfileState extends ChangeNotifier {
   String name = '';
   String bio = '';
   bool isPublic = true;
-  Uint8List? photoBytes; // الصورة الموثّقة (إن وُجدت)
+  Uint8List? photoBytes;
   bool _loaded = false;
+
+  ProfileState() {
+    // ✅ يسجّل نفسه — عند signOut، يُصفَّر تلقائياً
+    authService.addSignOutHandler(reset);
+  }
 
   Future<void> load() async {
     if (_loaded) return;
@@ -35,7 +40,6 @@ class ProfileState extends ChangeNotifier {
           bio = (p['bio'] as String?) ?? '';
           isPublic = (p['isPublic'] as bool?) ?? true;
 
-          // صورة التوثيق
           final b64 = p['photoBase64'] as String?;
           if (b64 != null && b64.isNotEmpty) {
             try {
@@ -56,13 +60,33 @@ class ProfileState extends ChangeNotifier {
       debugPrint('ProfileState.load remote error: $e');
     }
 
-    // fallback
     final prefs = await SharedPreferences.getInstance();
     avatar = prefs.getString(_keyAvatar);
     name = prefs.getString(_keyName) ?? '';
     bio = prefs.getString(_keyBio) ?? '';
     isPublic = prefs.getBool(_keyPublic) ?? true;
     notifyListeners();
+  }
+
+  /// ✅ يُصفَّر عند signOut
+  Future<void> reset() async {
+    avatar = null;
+    name = '';
+    bio = '';
+    isPublic = true;
+    photoBytes = null;
+    _loaded = false;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keyAvatar);
+      await prefs.remove(_keyName);
+      await prefs.remove(_keyBio);
+      await prefs.remove(_keyPublic);
+    } catch (e) {
+      debugPrint('ProfileState.reset prefs error: $e');
+    }
   }
 
   Future<void> setAvatar(String value) async {
