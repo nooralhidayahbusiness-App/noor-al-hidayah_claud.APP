@@ -7,6 +7,7 @@ import '../models/comment.dart';
 import '../models/post.dart';
 import '../services/community_service.dart';
 import '../widgets/post_card.dart';
+import '../widgets/verified_badge.dart';
 import 'create_post_screen.dart';
 import 'user_profile_screen.dart';
 
@@ -16,6 +17,7 @@ class PostDetailScreen extends StatefulWidget {
   final String currentUserName;
   final String currentUserAvatar;
   final bool currentUserVerified;
+  final String currentUserVerifiedType;
 
   const PostDetailScreen({
     super.key,
@@ -24,6 +26,7 @@ class PostDetailScreen extends StatefulWidget {
     required this.currentUserName,
     required this.currentUserAvatar,
     required this.currentUserVerified,
+    this.currentUserVerifiedType = 'none',
   });
 
   @override
@@ -380,6 +383,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         userName: widget.currentUserName,
         userAvatar: widget.currentUserAvatar,
         userVerified: widget.currentUserVerified,
+        userVerifiedType: widget.currentUserVerifiedType,
         text: _commentCtrl.text,
       );
       _commentCtrl.clear();
@@ -478,6 +482,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           userName: widget.currentUserName,
           userAvatar: widget.currentUserAvatar,
           userVerified: widget.currentUserVerified,
+          userVerifiedType: widget.currentUserVerifiedType,
           repostOf: post.id,
           originalAuthorUid: post.uid,
           originalAuthorName: post.userName,
@@ -872,9 +877,8 @@ class _CommentTile extends StatelessWidget {
                       ),
                       if (comment.userVerified) ...[
                         SizedBox(width: R.s(context, 3)),
-                        Icon(
-                          Icons.verified,
-                          color: _gold,
+                        VerifiedBadge(
+                          type: comment.badgeType,
                           size: R.s(context, 13),
                         ),
                       ],
