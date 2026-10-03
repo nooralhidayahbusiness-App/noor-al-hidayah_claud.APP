@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../screens/home_shell.dart';
 import '../screens/location_screen.dart';
+import '../screens/welcome_screen.dart';
 import '../services/storage_service.dart';
 import 'navigation.dart';
 
@@ -17,6 +18,14 @@ Future<void> goAfterAuth(BuildContext context) async {
       (route) => false,
     );
   }
+}
+
+/// Where to go after the user signs out.
+Future<void> goAfterSignOut(BuildContext context) async {
+  Navigator.of(context).pushAndRemoveUntil(
+    fadeRoute(const WelcomeScreen()),
+    (route) => false,
+  );
 }
 
 void openLocationPicker(BuildContext context) {
