@@ -7,7 +7,8 @@ class Comment {
   final String userName;
   final String userAvatar;
   final bool userVerified;
-  final String userVerifiedType; // 'owner' | 'me' | 'user' | 'none'
+  final String userVerifiedType;
+  final List<String> userBadges;
   final String text;
   final DateTime createdAt;
   final DateTime? editedAt;
@@ -23,6 +24,7 @@ class Comment {
     required this.userAvatar,
     required this.userVerified,
     this.userVerifiedType = 'none',
+    this.userBadges = const [],
     required this.text,
     required this.createdAt,
     this.editedAt,
@@ -40,6 +42,7 @@ class Comment {
       userAvatar: map['userAvatar'] ?? '',
       userVerified: map['userVerified'] ?? false,
       userVerifiedType: map['userVerifiedType'] ?? 'none',
+      userBadges: List<String>.from(map['userBadges'] ?? const []),
       text: map['text'] ?? '',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       editedAt: (map['editedAt'] as Timestamp?)?.toDate(),
@@ -57,6 +60,7 @@ class Comment {
       'userAvatar': userAvatar,
       'userVerified': userVerified,
       'userVerifiedType': userVerifiedType,
+      'userBadges': userBadges,
       'text': text,
       'createdAt': Timestamp.fromDate(createdAt),
       'editedAt': editedAt != null ? Timestamp.fromDate(editedAt!) : null,
@@ -81,6 +85,7 @@ class Comment {
       userAvatar: userAvatar,
       userVerified: userVerified,
       userVerifiedType: userVerifiedType,
+      userBadges: userBadges,
       text: text ?? this.text,
       createdAt: createdAt,
       editedAt: editedAt ?? this.editedAt,
@@ -94,8 +99,25 @@ class Comment {
   bool isOwner(String uid) => this.uid == uid;
   bool get isEdited => editedAt != null;
 
+  List<String> get badges {
+    if (userBadges.isNotEmpty) {
+      return userBadges;
+    }
+    if (!userVerified) {
+      return const [];
+    }
+    if (userVerifiedType == 'owner' ||
+        userVerifiedType == 'me' ||
+        userVerifiedType == 'user') {
+      return [userVerifiedType];
+    }
+    return const ['user'];
+  }
+
   String get badgeType {
-    if (!userVerified) return 'none';
+    if (!userVerified) {
+      return 'none';
+    }
     if (userVerifiedType == 'owner' ||
         userVerifiedType == 'me' ||
         userVerifiedType == 'user') {
