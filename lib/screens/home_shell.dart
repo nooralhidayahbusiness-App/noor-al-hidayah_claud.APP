@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../core/app_flow.dart';
@@ -8,11 +9,13 @@ import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
+import '../services/community_notification_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/language_picker_sheet.dart';
 import 'challenge_screen.dart';
+import 'notifications_screen.dart';
 import 'settings_screen.dart';
 import 'tabs/community_tab.dart';
 import 'tabs/home_tab.dart';
@@ -29,6 +32,8 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  final CommunityNotificationService _notifService =
+      CommunityNotificationService();
 
   @override
   void initState() {
@@ -77,6 +82,8 @@ class _HomeShellState extends State<HomeShell> {
                               Icons.edit_location_alt_outlined),
                         ),
                         const Spacer(),
+                        _buildNotifButton(context),
+                        SizedBox(width: R.s(context, 4)),
                         IconButton(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
@@ -91,7 +98,6 @@ class _HomeShellState extends State<HomeShell> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        // ✅ زر اللغة: أيقونة فقط — يفتح قائمة الـ7 لغات
                         IconButton(
                           onPressed: () => showLanguagePicker(context),
                           tooltip: currentLanguageLabel(),
@@ -123,6 +129,58 @@ class _HomeShellState extends State<HomeShell> {
             top: false,
             child: _BottomBar(index: _index, onSelected: _select),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNotifButton(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const SizedBox.shrink();
+
+    return StreamBuilder<int>(
+      stream: _notifService.unreadCountStream(uid),
+      builder: (context, snap) {
+        final count = snap.data ?? 0;
+        return Stack(
+          alignment: Alignment.topRight,
+          children: [
+            IconButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const NotificationsScreen(),
+                ),
+              ),
+              color: AppColors.softGold,
+              iconSize: R.s(context, 24),
+              icon: const Icon(Icons.notifications_none),
+            ),
+            if (count > 0)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  constraints: const BoxConstraints(minWidth: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD32F2F),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    count > 99 ? '99+' : count.toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
