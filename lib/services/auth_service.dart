@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 /// Readable error keys (translated in strings_prayer.dart), so the UI never
 /// shows Firebase's raw English error messages.
@@ -7,6 +8,9 @@ class AuthException implements Exception {
   const AuthException(this.key);
   final String key;
 }
+
+/// يُستدعى عند signOut — لتنظيف الحالات (State) الخاصة بالمستخدم.
+typedef SignOutHandler = Future<void> Function();
 
 class AuthService {
   AuthService._();
@@ -23,18 +27,31 @@ class AuthService {
     'nooralhidayahbusiness@gmail.com',
   ];
 
+  // ============================================================
+  // SignOut Handlers (callbacks)
+  // ============================================================
+  final List<SignOutHandler> _signOutHandlers = [];
+
+  void addSignOutHandler(SignOutHandler handler) {
+    if (!_signOutHandlers.contains(handler)) {
+      _signOutHandlers.add(handler);
+    }
+  }
+
   User? get currentUser => _auth.currentUser;
   bool get isSignedIn => _auth.currentUser != null;
   Stream<User?> get authChanges => _auth.authStateChanges();
 
   DocumentReference<Map<String, dynamic>> _userDoc(String uid) =>
       _db.collection('users').doc(uid);
-/// هل الإيميل الحالي من إيميلات المالك؟
-bool get isOwner {
-  final email = _auth.currentUser?.email?.toLowerCase();
-  if (email == null) return false;
-  return _ownerEmails.contains(email);
-}
+
+  /// هل الإيميل الحالي من إيميلات المالك؟
+  bool get isOwner {
+    final email = _auth.currentUser?.email?.toLowerCase();
+    if (email == null) return false;
+    return _ownerEmails.contains(email);
+  }
+
   Map<String, dynamic> _buildInitialProfile(String email) {
     final isOwner = _ownerEmails.contains(email.toLowerCase());
     return {
@@ -123,7 +140,17 @@ bool get isOwner {
     }
   }
 
-  Future<void> signOut() => _auth.signOut();
+  /// ✅ يسجّل خروج + ينظّف كل الحالات (State) عبر الـ handlers
+  Future<void> signOut() async {
+    await _auth.signOut();
+    for (final handler in _signOutHandlers) {
+      try {
+        await handler();
+      } catch (e) {
+        debugPrint('SignOut handler error: $e');
+      }
+    }
+  }
 
   /// Merges [data] into the current user's document (creates it if needed).
   Future<void> saveUserData(Map<String, dynamic> data) async {
