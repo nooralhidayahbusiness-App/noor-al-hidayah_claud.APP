@@ -53,6 +53,7 @@ class CommunityService {
     required String userName,
     required String userAvatar,
     required bool userVerified,
+    String userVerifiedType = 'none',
     required String text,
     String? repostOf,
     String? originalAuthorUid,
@@ -77,6 +78,7 @@ class CommunityService {
       userName: userName,
       userAvatar: userAvatar,
       userVerified: userVerified,
+      userVerifiedType: userVerifiedType,
       text: trimmed,
       createdAt: DateTime.now(),
       repostOf: repostOf,
@@ -94,7 +96,6 @@ class CommunityService {
         'repostsCount': FieldValue.increment(1),
       });
 
-      // إشعار صاحب المنشور الأصلي
       if (originalAuthorUid != null &&
           originalAuthorUid.isNotEmpty &&
           originalAuthorUid != uid) {
@@ -181,7 +182,6 @@ class CommunityService {
       didLike = !hasLiked;
     });
 
-    // إرسال إشعار (فقط عند الإعجاب، ليس عند الإلغاء)
     if (didLike && ownerUid != null && ownerUid!.isNotEmpty) {
       await _notif.createFromUser(
         toUid: ownerUid!,
@@ -231,6 +231,7 @@ class CommunityService {
     required String userName,
     required String userAvatar,
     required bool userVerified,
+    String userVerifiedType = 'none',
     String? comment,
   }) async {
     final originalSnap = await _posts.doc(originalPostId).get();
@@ -242,6 +243,7 @@ class CommunityService {
       userName: userName,
       userAvatar: userAvatar,
       userVerified: userVerified,
+      userVerifiedType: userVerifiedType,
       text: (comment == null || comment.trim().isEmpty)
           ? (original['text'] ?? '')
           : comment.trim(),
@@ -277,6 +279,7 @@ class CommunityService {
     required String userName,
     required String userAvatar,
     required bool userVerified,
+    String userVerifiedType = 'none',
     required String text,
   }) async {
     final trimmed = text.trim();
@@ -293,6 +296,7 @@ class CommunityService {
       userName: userName,
       userAvatar: userAvatar,
       userVerified: userVerified,
+      userVerifiedType: userVerifiedType,
       text: trimmed,
       createdAt: DateTime.now(),
     );
@@ -302,7 +306,6 @@ class CommunityService {
     batch.update(postRef, {'commentsCount': FieldValue.increment(1)});
     await batch.commit();
 
-    // إشعار صاحب المنشور
     try {
       final postSnap = await postRef.get();
       final ownerUid = postSnap.data()?['uid'] as String?;
