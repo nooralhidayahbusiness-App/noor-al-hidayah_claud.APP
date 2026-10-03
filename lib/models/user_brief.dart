@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-/// نموذج مختصر لبيانات مستخدم — يُستخدم في:
-/// - قائمة المتابعين/المتابَعين
-/// - البطاقات في المجتمع
-/// - الإشعارات
+/// الإيميلات الأربعة للمالك — تُعطى 'owner' دائماً بغض النظر عن Firestore
+const List<String> kOwnerEmails = [
+  'abdelrahmenbenromdhan11@gmail.com',
+  'vevocom888@gmail.com',
+  'nooralimanechannel@gmail.com',
+  'nooralhidayahbusiness@gmail.com',
+];
+
 class UserBrief {
   final String uid;
   final String email;
@@ -28,13 +32,21 @@ class UserBrief {
 
   factory UserBrief.fromMap(String uid, Map<String, dynamic> map) {
     final profile = (map['profile'] as Map<String, dynamic>?) ?? const {};
+    final email = (map['email'] as String?) ?? '';
+    final emailLower = email.toLowerCase();
+    final isOwnerEmail = kOwnerEmails.contains(emailLower);
+
     return UserBrief(
       uid: uid,
-      email: (map['email'] as String?) ?? '',
+      email: email,
       name: _cleanName(profile['name'] as String?),
       avatar: (map['avatar'] as String?) ?? 'man',
-      verified: (profile['verified'] as bool?) ?? false,
-      verifiedType: (profile['verifiedType'] as String?) ?? 'none',
+      // لو إيميل مالك → verified دائماً true
+      verified: isOwnerEmail || ((profile['verified'] as bool?) ?? false),
+      // لو إيميل مالك → verifiedType = 'owner' دائماً (نتخطى Firestore)
+      verifiedType: isOwnerEmail
+          ? 'owner'
+          : ((profile['verifiedType'] as String?) ?? 'none'),
       bio: (profile['bio'] as String?) ?? '',
       photoBase64: (profile['photoBase64'] as String?) ?? '',
     );
@@ -45,9 +57,14 @@ class UserBrief {
     return t.isEmpty ? 'مستخدم' : t;
   }
 
-  /// نوع الشعار — لو غير معروف، نرجع 'user' (شعار عادي)
+  /// نوع الشعار الفعلي — يفحص verified أولاً
   String get badgeType {
-    if (verifiedType == 'owner' || verifiedType == 'me') return verifiedType;
+    if (!verified) return 'none';
+    if (verifiedType == 'owner' ||
+        verifiedType == 'me' ||
+        verifiedType == 'user') {
+      return verifiedType;
+    }
     return 'user';
   }
 
