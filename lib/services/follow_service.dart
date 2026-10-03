@@ -17,9 +17,6 @@ class FollowService {
   String _docId(String followerUid, String followingUid) =>
       '${followerUid}_$followingUid';
 
-  // ============================================================
-  // المتابعة
-  // ============================================================
   Future<void> follow({
     required String followerUid,
     required String followingUid,
@@ -34,7 +31,6 @@ class FollowService {
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    // إرسال إشعار للمستخدم المتابَع
     try {
       final me = await getUserBrief(followerUid);
       if (me != null) {
@@ -45,11 +41,10 @@ class FollowService {
           fromName: me.name,
           fromAvatar: me.avatar,
           fromVerified: me.verified,
+          fromVerifiedType: me.verifiedType,
         );
       }
-    } catch (_) {
-      // لا نُفشل المتابعة بسبب الإشعار
-    }
+    } catch (_) {}
   }
 
   Future<void> unfollow({
@@ -80,9 +75,6 @@ class FollowService {
     }
   }
 
-  // ============================================================
-  // هل A يتابع B؟
-  // ============================================================
   Future<bool> checkIsFollowing({
     required String followerUid,
     required String followingUid,
@@ -102,9 +94,6 @@ class FollowService {
         .map((snap) => snap.exists);
   }
 
-  // ============================================================
-  // قوائم المتابعين / المتابَعين
-  // ============================================================
   Stream<List<UserBrief>> followersStream(String uid) {
     return _follows
         .where('followingUid', isEqualTo: uid)
@@ -131,9 +120,6 @@ class FollowService {
     });
   }
 
-  // ============================================================
-  // العدّادات
-  // ============================================================
   Stream<int> followersCountStream(String uid) {
     return _follows
         .where('followingUid', isEqualTo: uid)
@@ -148,9 +134,6 @@ class FollowService {
         .map((snap) => snap.docs.length);
   }
 
-  // ============================================================
-  // جلب دفعة users من uids
-  // ============================================================
   Future<List<UserBrief>> _fetchUsers(List<String> uids) async {
     if (uids.isEmpty) return const [];
 
