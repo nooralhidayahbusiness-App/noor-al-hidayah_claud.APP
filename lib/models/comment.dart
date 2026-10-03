@@ -7,6 +7,7 @@ class Comment {
   final String userName;
   final String userAvatar;
   final bool userVerified;
+  final String userVerifiedType; // 'owner' | 'me' | 'user' | 'none'
   final String text;
   final DateTime createdAt;
   final DateTime? editedAt;
@@ -21,6 +22,7 @@ class Comment {
     required this.userName,
     required this.userAvatar,
     required this.userVerified,
+    this.userVerifiedType = 'none',
     required this.text,
     required this.createdAt,
     this.editedAt,
@@ -37,6 +39,7 @@ class Comment {
       userName: map['userName'] ?? '',
       userAvatar: map['userAvatar'] ?? '',
       userVerified: map['userVerified'] ?? false,
+      userVerifiedType: map['userVerifiedType'] ?? 'none',
       text: map['text'] ?? '',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       editedAt: (map['editedAt'] as Timestamp?)?.toDate(),
@@ -53,6 +56,7 @@ class Comment {
       'userName': userName,
       'userAvatar': userAvatar,
       'userVerified': userVerified,
+      'userVerifiedType': userVerifiedType,
       'text': text,
       'createdAt': Timestamp.fromDate(createdAt),
       'editedAt': editedAt != null ? Timestamp.fromDate(editedAt!) : null,
@@ -76,6 +80,7 @@ class Comment {
       userName: userName,
       userAvatar: userAvatar,
       userVerified: userVerified,
+      userVerifiedType: userVerifiedType,
       text: text ?? this.text,
       createdAt: createdAt,
       editedAt: editedAt ?? this.editedAt,
@@ -88,4 +93,14 @@ class Comment {
   bool isLikedBy(String uid) => likes.contains(uid);
   bool isOwner(String uid) => this.uid == uid;
   bool get isEdited => editedAt != null;
+
+  String get badgeType {
+    if (!userVerified) return 'none';
+    if (userVerifiedType == 'owner' ||
+        userVerifiedType == 'me' ||
+        userVerifiedType == 'user') {
+      return userVerifiedType;
+    }
+    return 'user';
+  }
 }
