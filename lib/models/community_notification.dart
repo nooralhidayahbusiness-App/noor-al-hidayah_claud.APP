@@ -7,7 +7,8 @@ class CommunityNotification {
   final String fromName;
   final String fromAvatar;
   final bool fromVerified;
-  final String fromVerifiedType; // 'owner' | 'me' | 'user' | 'none'
+  final String fromVerifiedType;
+  final List<String> fromBadges;
   final String? targetId;
   final DateTime createdAt;
   final bool isRead;
@@ -20,6 +21,7 @@ class CommunityNotification {
     required this.fromAvatar,
     required this.fromVerified,
     this.fromVerifiedType = 'none',
+    this.fromBadges = const [],
     this.targetId,
     required this.createdAt,
     required this.isRead,
@@ -37,6 +39,7 @@ class CommunityNotification {
       fromAvatar: map['fromAvatar'] ?? 'man',
       fromVerified: map['fromVerified'] ?? false,
       fromVerifiedType: map['fromVerifiedType'] ?? 'none',
+      fromBadges: List<String>.from(map['fromBadges'] ?? const []),
       targetId: map['targetId'],
       createdAt:
           (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -52,14 +55,32 @@ class CommunityNotification {
       'fromAvatar': fromAvatar,
       'fromVerified': fromVerified,
       'fromVerifiedType': fromVerifiedType,
+      'fromBadges': fromBadges,
       'targetId': targetId,
       'createdAt': Timestamp.fromDate(createdAt),
       'isRead': isRead,
     };
   }
 
+  List<String> get badges {
+    if (fromBadges.isNotEmpty) {
+      return fromBadges;
+    }
+    if (!fromVerified) {
+      return const [];
+    }
+    if (fromVerifiedType == 'owner' ||
+        fromVerifiedType == 'me' ||
+        fromVerifiedType == 'user') {
+      return [fromVerifiedType];
+    }
+    return const ['user'];
+  }
+
   String get badgeType {
-    if (!fromVerified) return 'none';
+    if (!fromVerified) {
+      return 'none';
+    }
     if (fromVerifiedType == 'owner' ||
         fromVerifiedType == 'me' ||
         fromVerifiedType == 'user') {
