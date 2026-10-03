@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/post.dart';
-import '../models/comment.dart';
-import '../services/community_service.dart';
+
+import '../core/app_state.dart';
 import '../core/responsive.dart';
+import '../models/comment.dart';
+import '../models/post.dart';
+import '../services/community_service.dart';
 import '../widgets/post_card.dart';
 import 'create_post_screen.dart';
 import 'user_profile_screen.dart';
@@ -71,34 +73,39 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _deepGreen,
-        appBar: _buildAppBar(context),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: StreamBuilder<Post?>(
-                  stream: _service.postStream(widget.post.id),
-                  builder: (context, postSnap) {
-                    if (postSnap.hasData && postSnap.data == null) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) Navigator.of(context).pop();
-                      });
-                      return const SizedBox.shrink();
-                    }
-                    final post = postSnap.data ?? widget.post;
-                    return _buildBody(context, post);
-                  },
-                ),
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        return Directionality(
+          textDirection: appState.direction,
+          child: Scaffold(
+            backgroundColor: _deepGreen,
+            appBar: _buildAppBar(context),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: StreamBuilder<Post?>(
+                      stream: _service.postStream(widget.post.id),
+                      builder: (context, postSnap) {
+                        if (postSnap.hasData && postSnap.data == null) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) Navigator.of(context).pop();
+                          });
+                          return const SizedBox.shrink();
+                        }
+                        final post = postSnap.data ?? widget.post;
+                        return _buildBody(context, post);
+                      },
+                    ),
+                  ),
+                  _buildCommentInput(context),
+                ],
               ),
-              _buildCommentInput(context),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -111,7 +118,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Text(
-        'المنشور',
+        appState.tr('cPosts'),
         style: TextStyle(
           color: _softGold,
           fontSize: R.f(context, 16),
@@ -171,7 +178,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           ),
           SizedBox(width: R.s(context, 6)),
           Text(
-            'التعليقات',
+            appState.tr('cComments'),
             style: TextStyle(
               color: _softGold,
               fontSize: R.f(context, 14),
@@ -211,7 +218,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             padding: EdgeInsets.all(R.s(context, 20)),
             child: Center(
               child: Text(
-                'تعذّر تحميل التعليقات',
+                appState.tr('cCommentLoadError'),
                 style: TextStyle(
                   color: Colors.redAccent,
                   fontSize: R.f(context, 12),
@@ -258,7 +265,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ),
             SizedBox(height: R.s(context, 8)),
             Text(
-              'لا توجد تعليقات بعد — كن أول من يعلّق',
+              appState.tr('cNoComments'),
               style: TextStyle(
                 color: _cream.withValues(alpha: 0.6),
                 fontSize: R.f(context, 12),
@@ -307,7 +314,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   height: 1.4,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'اكتب تعليقاً...',
+                  hintText: appState.tr('cWriteComment'),
                   hintStyle: TextStyle(
                     color: _cream.withValues(alpha: 0.4),
                     fontSize: R.f(context, 12),
@@ -389,7 +396,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         });
       }
     } catch (e) {
-      _showSnack('فشل إرسال التعليق: $e');
+      _showSnack('${appState.tr('cCommentFailed')}: $e');
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -399,7 +406,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: appState.direction,
         child: AlertDialog(
           backgroundColor: _green,
           shape: RoundedRectangleBorder(
@@ -407,18 +414,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             side: BorderSide(color: _gold.withValues(alpha: 0.4)),
           ),
           title: Text(
-            'حذف التعليق',
+            appState.tr('cDeleteComment'),
             style: TextStyle(color: _softGold, fontSize: R.f(context, 15)),
           ),
           content: Text(
-            'هل أنت متأكد؟ لا يمكن التراجع.',
+            appState.tr('cDeleteConfirm'),
             style: TextStyle(color: _cream, fontSize: R.f(context, 13)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text(
-                'إلغاء',
+                appState.tr('cancel'),
                 style: TextStyle(
                   color: _cream.withValues(alpha: 0.7),
                   fontSize: R.f(context, 13),
@@ -432,7 +439,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 foregroundColor: Colors.white,
               ),
               child: Text(
-                'حذف',
+                appState.tr('cDeleteComment'),
                 style: TextStyle(
                   fontSize: R.f(context, 13),
                   fontWeight: FontWeight.bold,
@@ -451,7 +458,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         uid: widget.currentUid,
       );
     } catch (e) {
-      _showSnack('فشل الحذف: $e');
+      _showSnack('${appState.tr('cOperationFailed')}: $e');
     }
   }
 
@@ -459,7 +466,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     try {
       await _service.toggleLike(postId: post.id, uid: widget.currentUid);
     } catch (e) {
-      _showSnack('فشل الإعجاب: $e');
+      _showSnack('${appState.tr('cLikeFailed')}: $e');
     }
   }
 
@@ -480,11 +487,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       ),
     );
     if (result == true && mounted) {
-      _showSnack('تمت إعادة النشر');
+      _showSnack(appState.tr('cRepostSuccess'));
     }
   }
 
-  // ✅ التعديل: يفتح البروفايل
   void _onAuthorTap(Post post) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -511,54 +517,61 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _menuHandle(),
-              if (isOwner) ...[
+        return Directionality(
+          textDirection: appState.direction,
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _menuHandle(),
+                if (isOwner) ...[
+                  _menuItem(
+                    context: sheetContext,
+                    icon: Icons.edit_outlined,
+                    label: appState.tr('cEditPost'),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _showEditDialog(post);
+                    },
+                  ),
+                  _menuItem(
+                    context: sheetContext,
+                    icon: post.isPinned
+                        ? Icons.push_pin_outlined
+                        : Icons.push_pin,
+                    label: post.isPinned
+                        ? appState.tr('cUnpinPost')
+                        : appState.tr('cPinPost'),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _togglePin(post);
+                    },
+                  ),
+                ],
                 _menuItem(
                   context: sheetContext,
-                  icon: Icons.edit_outlined,
-                  label: 'تعديل المنشور',
+                  icon: Icons.copy_outlined,
+                  label: appState.tr('cCopyText'),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
-                    _showEditDialog(post);
+                    Clipboard.setData(ClipboardData(text: post.text));
+                    _showSnack(appState.tr('cTextCopied'));
                   },
                 ),
-                _menuItem(
-                  context: sheetContext,
-                  icon: post.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
-                  label: post.isPinned ? 'إلغاء التثبيت' : 'تثبيت المنشور',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _togglePin(post);
-                  },
-                ),
+                if (isOwner)
+                  _menuItem(
+                    context: sheetContext,
+                    icon: Icons.delete_outline,
+                    label: appState.tr('cDeletePost'),
+                    color: Colors.redAccent,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _confirmDeletePost(post);
+                    },
+                  ),
+                SizedBox(height: R.s(context, 8)),
               ],
-              _menuItem(
-                context: sheetContext,
-                icon: Icons.copy_outlined,
-                label: 'نسخ النص',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  Clipboard.setData(ClipboardData(text: post.text));
-                  _showSnack('تم نسخ النص');
-                },
-              ),
-              if (isOwner)
-                _menuItem(
-                  context: sheetContext,
-                  icon: Icons.delete_outline,
-                  label: 'حذف المنشور',
-                  color: Colors.redAccent,
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _confirmDeletePost(post);
-                  },
-                ),
-              SizedBox(height: R.s(context, 8)),
-            ],
+            ),
           ),
         );
       },
@@ -615,7 +628,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: appState.direction,
         child: AlertDialog(
           backgroundColor: _green,
           shape: RoundedRectangleBorder(
@@ -623,7 +636,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             side: BorderSide(color: _gold.withValues(alpha: 0.4)),
           ),
           title: Text(
-            'تعديل المنشور',
+            appState.tr('cEditPost'),
             style: TextStyle(color: _softGold, fontSize: R.f(context, 15)),
           ),
           content: TextField(
@@ -638,7 +651,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               height: 1.4,
             ),
             decoration: InputDecoration(
-              hintText: 'نص المنشور...',
+              hintText: appState.tr('cPostHint'),
               hintStyle: TextStyle(
                 color: _cream.withValues(alpha: 0.4),
                 fontSize: R.f(context, 13),
@@ -661,7 +674,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
-                'إلغاء',
+                appState.tr('cancel'),
                 style: TextStyle(
                   color: _cream.withValues(alpha: 0.7),
                   fontSize: R.f(context, 13),
@@ -679,7 +692,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 foregroundColor: _deepGreen,
               ),
               child: Text(
-                'حفظ',
+                appState.tr('save'),
                 style: TextStyle(
                   fontSize: R.f(context, 13),
                   fontWeight: FontWeight.bold,
@@ -699,9 +712,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         uid: widget.currentUid,
         newText: result,
       );
-      _showSnack('تم تعديل المنشور');
+      _showSnack(appState.tr('cPostEdited'));
     } catch (e) {
-      _showSnack('فشل التعديل: $e');
+      _showSnack('${appState.tr('cOperationFailed')}: $e');
     }
   }
 
@@ -709,7 +722,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: appState.direction,
         child: AlertDialog(
           backgroundColor: _green,
           shape: RoundedRectangleBorder(
@@ -717,18 +730,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             side: BorderSide(color: _gold.withValues(alpha: 0.4)),
           ),
           title: Text(
-            'حذف المنشور',
+            appState.tr('cDeletePost'),
             style: TextStyle(color: _softGold, fontSize: R.f(context, 15)),
           ),
           content: Text(
-            'هل أنت متأكد؟ لا يمكن التراجع.',
+            appState.tr('cDeletePostConfirm'),
             style: TextStyle(color: _cream, fontSize: R.f(context, 13)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text(
-                'إلغاء',
+                appState.tr('cancel'),
                 style: TextStyle(
                   color: _cream.withValues(alpha: 0.7),
                   fontSize: R.f(context, 13),
@@ -742,7 +755,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 foregroundColor: Colors.white,
               ),
               child: Text(
-                'حذف',
+                appState.tr('cDeletePost'),
                 style: TextStyle(
                   fontSize: R.f(context, 13),
                   fontWeight: FontWeight.bold,
@@ -758,16 +771,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       await _service.deletePost(postId: post.id, uid: widget.currentUid);
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      _showSnack('فشل الحذف: $e');
+      _showSnack('${appState.tr('cOperationFailed')}: $e');
     }
   }
 
   Future<void> _togglePin(Post post) async {
     try {
       await _service.togglePin(postId: post.id, uid: widget.currentUid);
-      _showSnack(post.isPinned ? 'تم إلغاء التثبيت' : 'تم تثبيت المنشور');
+      _showSnack(post.isPinned
+          ? appState.tr('cUnpinSuccess')
+          : appState.tr('cPinSuccess'));
     } catch (e) {
-      _showSnack('فشل العملية: $e');
+      _showSnack('${appState.tr('cOperationFailed')}: $e');
     }
   }
 
@@ -843,7 +858,7 @@ class _CommentTile extends StatelessWidget {
                           onTap: onAuthorTap,
                           child: Text(
                             comment.userName.isEmpty
-                                ? 'مستخدم'
+                                ? appState.tr('cUserNotFound')
                                 : comment.userName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -942,12 +957,22 @@ class _CommentTile extends StatelessWidget {
     final now = DateTime.now();
     final diff = now.difference(time);
 
-    if (diff.inSeconds < 60) return 'الآن';
-    if (diff.inMinutes < 60) return 'قبل ${diff.inMinutes} د';
-    if (diff.inHours < 24) return 'قبل ${diff.inHours} س';
-    if (diff.inDays < 7) return 'قبل ${diff.inDays} ي';
-    if (diff.inDays < 30) return 'قبل ${(diff.inDays / 7).floor()} أ';
-    if (diff.inDays < 365) return 'قبل ${(diff.inDays / 30).floor()} ش';
-    return 'قبل ${(diff.inDays / 365).floor()} س';
+    if (diff.inSeconds < 60) return appState.tr('cTimeNow');
+    if (diff.inMinutes < 60) {
+      return appState.trn('cTimeMinutesAgo', diff.inMinutes);
+    }
+    if (diff.inHours < 24) {
+      return appState.trn('cTimeHoursAgo', diff.inHours);
+    }
+    if (diff.inDays < 7) {
+      return appState.trn('cTimeDaysAgo', diff.inDays);
+    }
+    if (diff.inDays < 30) {
+      return appState.trn('cTimeWeeksAgo', (diff.inDays / 7).floor());
+    }
+    if (diff.inDays < 365) {
+      return appState.trn('cTimeMonthsAgo', (diff.inDays / 30).floor());
+    }
+    return appState.trn('cTimeYearsAgo', (diff.inDays / 365).floor());
   }
 }
