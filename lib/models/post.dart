@@ -7,6 +7,7 @@ class Post {
   final String userAvatar;
   final bool userVerified;
   final String userVerifiedType; // 'owner' | 'me' | 'user' | 'none'
+  final List<String> userBadges; // ['owner'] / ['premium','me'] / []
   final String text;
   final DateTime createdAt;
   final DateTime? editedAt;
@@ -16,7 +17,6 @@ class Post {
   final int commentsCount;
   final int repostsCount;
 
-  // إعادة النشر (repost)
   final String? repostOf;
   final String? originalAuthorUid;
   final String? originalAuthorName;
@@ -35,6 +35,7 @@ class Post {
     required this.userAvatar,
     required this.userVerified,
     this.userVerifiedType = 'none',
+    this.userBadges = const [],
     required this.text,
     required this.createdAt,
     this.editedAt,
@@ -60,6 +61,7 @@ class Post {
       userAvatar: map['userAvatar'] ?? '',
       userVerified: map['userVerified'] ?? false,
       userVerifiedType: map['userVerifiedType'] ?? 'none',
+      userBadges: List<String>.from(map['userBadges'] ?? const []),
       text: map['text'] ?? '',
       createdAt:
           (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -86,6 +88,7 @@ class Post {
       'userAvatar': userAvatar,
       'userVerified': userVerified,
       'userVerifiedType': userVerifiedType,
+      'userBadges': userBadges,
       'text': text,
       'createdAt': Timestamp.fromDate(createdAt),
       'editedAt': editedAt != null ? Timestamp.fromDate(editedAt!) : null,
@@ -121,6 +124,7 @@ class Post {
       userAvatar: userAvatar,
       userVerified: userVerified,
       userVerifiedType: userVerifiedType,
+      userBadges: userBadges,
       text: text ?? this.text,
       createdAt: createdAt,
       editedAt: editedAt ?? this.editedAt,
@@ -139,17 +143,37 @@ class Post {
     );
   }
 
-  // === Helpers ===
+  // ============================================================
+  // Helpers
+  // ============================================================
   bool isLikedBy(String uid) => likes.contains(uid);
   bool isOwner(String uid) => this.uid == uid;
   bool get isEdited => editedAt != null;
   bool get isRepost => repostOf != null;
 
-  /// نوع الشعار الفعلي — مع backward compat:
-  /// - لو مستخدم جديد فيه userVerifiedType محفوظ → نستخدمه
-  /// - لو مستخدم قديم (verified=true بدون نوع) → 'user'
+  /// قائمة الشارات المعروضة
+  /// - لو `userBadges` موجود → نستخدمه
+  /// - وإلا → نبني من `userVerifiedType` (backward compat)
+  List<String> get badges {
+    if (userBadges.isNotEmpty) {
+      return userBadges;
+    }
+    if (!userVerified) {
+      return const [];
+    }
+    if (userVerifiedType == 'owner' ||
+        userVerifiedType == 'me' ||
+        userVerifiedType == 'user') {
+      return [userVerifiedType];
+    }
+    return const ['user'];
+  }
+
+  /// نوع الشعار الفعلي (للتوافق)
   String get badgeType {
-    if (!userVerified) return 'none';
+    if (!userVerified) {
+      return 'none';
+    }
     if (userVerifiedType == 'owner' ||
         userVerifiedType == 'me' ||
         userVerifiedType == 'user') {
