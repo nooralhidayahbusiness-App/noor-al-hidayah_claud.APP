@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
+import '../../models/user_brief.dart';
 import '../community_feed_screen.dart';
 import 'channel_view.dart';
 
@@ -75,7 +76,7 @@ class _CommunityTabState extends State<CommunityTab> {
 }
 
 // ============================================================
-// _CommunitySection — يحمّل بيانات المستخدم ثم يعرض الشاشة
+// _CommunitySection
 // ============================================================
 class _CommunitySection extends StatelessWidget {
   const _CommunitySection({super.key});
@@ -116,14 +117,21 @@ class _CommunitySection extends StatelessWidget {
                 : 'مستخدم');
 
         final userAvatar = (data['avatar'] as String?) ?? 'man';
-        final userVerified = (profile['verified'] as bool?) ?? false;
-        final userVerifiedType =
-            (profile['verifiedType'] as String?) ?? 'none';
+
+        // ✅ فحص إيميل المالك — يُفرض owner
+        final email = (data['email'] as String?) ?? user.email ?? '';
+        final isOwnerEmail = kOwnerEmails.contains(email.toLowerCase());
+
+        final userVerified =
+            isOwnerEmail || ((profile['verified'] as bool?) ?? false);
+        final userVerifiedType = isOwnerEmail
+            ? 'owner'
+            : ((profile['verifiedType'] as String?) ?? 'none');
 
         return CommunityFeedScreen(
           uid: user.uid,
           userName: userName,
-          userEmail: user.email ?? '',
+          userEmail: email,
           userAvatar: userAvatar,
           userVerified: userVerified,
           userVerifiedType: userVerifiedType,
