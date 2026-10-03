@@ -7,9 +7,9 @@ import '../core/theme.dart';
 import '../models/community_notification.dart';
 import '../services/community_notification_service.dart';
 import '../widgets/profile_avatar.dart';
+import '../widgets/verified_badge.dart';
 import 'user_profile_screen.dart';
 
-// ===== ترجمات محلية =====
 const Map<String, Map<String, String>> _localTr = {
   'ar': {
     'title': 'الإشعارات',
@@ -38,7 +38,7 @@ const Map<String, Map<String, String>> _localTr = {
   'fr': {
     'title': 'Notifications',
     'empty': 'Aucune notification',
-    'emptyDesc': 'Elles apparaîtront ici quand quelqu\'un vous suit ou interagit avec vos posts',
+    'emptyDesc': "Elles apparaîtront ici quand quelqu'un vous suit ou interagit avec vos posts",
     'markAllRead': 'Tout marquer comme lu',
     'clearAll': 'Tout effacer',
     'clearAllConfirm': 'Supprimer toutes les notifications ?',
@@ -317,9 +317,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _onTap(CommunityNotification n) {
-    // تحديد كمقروء
     _service.markAllRead(_uid!);
-    // فتح البروفايل
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => UserProfileScreen(profileUid: n.fromUid),
@@ -435,9 +433,8 @@ class _NotifTile extends StatelessWidget {
                       ),
                       if (notif.fromVerified) ...[
                         SizedBox(width: R.s(context, 4)),
-                        Icon(
-                          Icons.verified,
-                          color: AppColors.gold,
+                        VerifiedBadge(
+                          type: notif.badgeType,
                           size: R.s(context, 14),
                         ),
                       ],
