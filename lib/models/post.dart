@@ -6,6 +6,7 @@ class Post {
   final String userName;
   final String userAvatar;
   final bool userVerified;
+  final String userVerifiedType; // 'owner' | 'me' | 'user' | 'none'
   final String text;
   final DateTime createdAt;
   final DateTime? editedAt;
@@ -16,7 +17,7 @@ class Post {
   final int repostsCount;
 
   // إعادة النشر (repost)
-  final String? repostOf; // postId الأصلي
+  final String? repostOf;
   final String? originalAuthorUid;
   final String? originalAuthorName;
   final String? originalAuthorAvatar;
@@ -33,6 +34,7 @@ class Post {
     required this.userName,
     required this.userAvatar,
     required this.userVerified,
+    this.userVerifiedType = 'none',
     required this.text,
     required this.createdAt,
     this.editedAt,
@@ -57,6 +59,7 @@ class Post {
       userName: map['userName'] ?? '',
       userAvatar: map['userAvatar'] ?? '',
       userVerified: map['userVerified'] ?? false,
+      userVerifiedType: map['userVerifiedType'] ?? 'none',
       text: map['text'] ?? '',
       createdAt:
           (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -82,6 +85,7 @@ class Post {
       'userName': userName,
       'userAvatar': userAvatar,
       'userVerified': userVerified,
+      'userVerifiedType': userVerifiedType,
       'text': text,
       'createdAt': Timestamp.fromDate(createdAt),
       'editedAt': editedAt != null ? Timestamp.fromDate(editedAt!) : null,
@@ -116,6 +120,7 @@ class Post {
       userName: userName,
       userAvatar: userAvatar,
       userVerified: userVerified,
+      userVerifiedType: userVerifiedType,
       text: text ?? this.text,
       createdAt: createdAt,
       editedAt: editedAt ?? this.editedAt,
@@ -140,8 +145,19 @@ class Post {
   bool get isEdited => editedAt != null;
   bool get isRepost => repostOf != null;
 
-  /// استخراج @mentions من نص المنشور (يخزن كـ userName مؤقتاً،
-  /// لاحقاً نحوّلهم لـ uid في community_service)
+  /// نوع الشعار الفعلي — مع backward compat:
+  /// - لو مستخدم جديد فيه userVerifiedType محفوظ → نستخدمه
+  /// - لو مستخدم قديم (verified=true بدون نوع) → 'user'
+  String get badgeType {
+    if (!userVerified) return 'none';
+    if (userVerifiedType == 'owner' ||
+        userVerifiedType == 'me' ||
+        userVerifiedType == 'user') {
+      return userVerifiedType;
+    }
+    return 'user';
+  }
+
   static List<String> extractMentions(String text) {
     final regex = RegExp(r'@([A-Za-z0-9_\u0600-\u06FF]+)');
     return regex
@@ -151,7 +167,6 @@ class Post {
         .toList();
   }
 
-  /// استخراج #hashtags من نص المنشور
   static List<String> extractHashtags(String text) {
     final regex = RegExp(r'#([A-Za-z0-9_\u0600-\u06FF]+)');
     return regex
