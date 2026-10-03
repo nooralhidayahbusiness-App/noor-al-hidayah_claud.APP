@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../models/post.dart';
+import 'verified_badge.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -26,7 +27,6 @@ class PostCard extends StatelessWidget {
     this.onAuthorTap,
   });
 
-  // ===== ألوان النظام =====
   static const Color _gold = Color(0xFFD4AF37);
   static const Color _softGold = Color(0xFFF1DC9A);
   static const Color _deepGreen = Color(0xFF041F18);
@@ -96,9 +96,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // شريط "مثبت"
-  // ============================================================
   Widget _buildPinnedBanner(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: R.s(context, 6)),
@@ -119,9 +116,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // شريط "إعادة نشر"
-  // ============================================================
   Widget _buildRepostBanner(BuildContext context) {
     final name = post.originalAuthorName ?? appState.tr('cUserNotFound');
     return Padding(
@@ -147,9 +141,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // الهيدر: الصورة + الاسم + الشعار + الوقت + زر المزيد
-  // ============================================================
   Widget _buildHeader(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,10 +172,9 @@ class PostCard extends StatelessWidget {
                   ),
                   if (post.userVerified) ...[
                     SizedBox(width: R.s(context, 4)),
-                    Icon(
-                      Icons.verified,
+                    VerifiedBadge(
+                      type: post.badgeType,
                       size: R.s(context, 15),
-                      color: _gold,
                     ),
                   ],
                 ],
@@ -236,9 +226,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // الأفاتار (حلقة ذهبية + أول حرف كبديل)
-  // ============================================================
   Widget _buildAvatar(BuildContext context) {
     final size = R.s(context, 42);
     final initial = post.userName.isNotEmpty
@@ -276,9 +263,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // نص المنشور
-  // ============================================================
   Widget _buildBody(BuildContext context) {
     return Text(
       post.text,
@@ -290,9 +274,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // شريط الأزرار: إعجاب / تعليق / إعادة نشر
-  // ============================================================
   Widget _buildActions(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(top: R.s(context, 8)),
@@ -381,11 +362,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // Helpers
-  // ============================================================
-
-  /// تنسيق الوقت بالعربية
   static String _formatTime(BuildContext context, DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
@@ -409,7 +385,6 @@ class PostCard extends StatelessWidget {
     return appState.trn('cTimeYearsAgo', (diff.inDays / 365).floor());
   }
 
-  /// تنسيق الأعداد (1.2K, 3.4M)
   static String _formatCount(int count) {
     if (count <= 0) return '';
     if (count < 1000) return count.toString();
