@@ -1,26 +1,33 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 
-/// صورة بروفايل مع حلقة ذهبية دوّارة وتوهج نابض.
-/// - إذا فيه صورة توثيق → يعرضها.
-/// - إذا حساب المالك → Me.png / logo.png.
-/// - وإلا → صورة رجل / امرأة.
+/// صورة بروفايل مع:
+/// - حلقة ذهبية دوّارة + توهج نابض
+/// - دعم 3 أنواع: symbol / custom / verification
+/// - تاج متحرك للمميز (Premium)
 class ProfileAvatar extends StatefulWidget {
   const ProfileAvatar({
     super.key,
     required this.email,
-    required this.avatar,
+    required this.avatar, // 'man' | 'woman'
     this.size = 100,
     this.photoBytes,
+    this.showCrown = false,
   });
 
   final String email;
-  final String avatar; // 'man' | 'woman'
+  final String avatar;
   final double size;
+
+  /// صورة (custom أو verification)
   final Uint8List? photoBytes;
+
+  /// عرض التاج (للمميز)
+  final bool showCrown;
 
   @override
   State<ProfileAvatar> createState() => _ProfileAvatarState();
@@ -65,7 +72,7 @@ class _ProfileAvatarState extends State<ProfileAvatar>
   }
 
   Widget _buildImage() {
-    // أولوية 1: صورة التوثيق
+    // أولوية 1: صورة مخصصة/توثيق
     if (widget.photoBytes != null && widget.photoBytes!.isNotEmpty) {
       return Image.memory(
         widget.photoBytes!,
@@ -74,7 +81,7 @@ class _ProfileAvatarState extends State<ProfileAvatar>
       );
     }
 
-    // أولوية 2: صورة المالك / logo / رجل / امرأة
+    // أولوية 2: صور المالك / logo / رجل / امرأة
     final path = _assetPath;
     if (path != null) {
       return Image.asset(
@@ -98,67 +105,166 @@ class _ProfileAvatarState extends State<ProfileAvatar>
   @override
   Widget build(BuildContext context) {
     final s = widget.size;
+    final crownSize = s * 0.42;
+    final topPad = widget.showCrown ? crownSize * 0.6 : 0.0;
+
     return SizedBox(
       width: s + 24,
-      height: s + 24,
+      height: s + 24 + topPad,
       child: Stack(
         alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
-          AnimatedBuilder(
-            animation: _glow,
-            builder: (context, _) {
-              final t = _glow.value;
-              return Container(
-                width: s + 8 + 8 * t,
-                height: s + 8 + 8 * t,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          AppColors.gold.withValues(alpha: 0.3 + 0.4 * t),
-                      blurRadius: 18 + 22 * t,
-                      spreadRadius: 1 + 4 * t,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          AnimatedBuilder(
-            animation: _rotate,
-            builder: (context, _) {
-              return Transform.rotate(
-                angle: _rotate.value * 2 * math.pi,
-                child: Container(
-                  width: s + 6,
-                  height: s + 6,
+          // ===== التاج (للمميز) =====
+          if (widget.showCrown)
+            Positioned(
+              top: 0,
+              child: _CrownWidget(size: crownSize),
+            ),
+
+          // ===== التوهج =====
+          Positioned(
+            top: topPad,
+            child: AnimatedBuilder(
+              animation: _glow,
+              builder: (context, _) {
+                final t = _glow.value;
+                return Container(
+                  width: s + 8 + 8 * t,
+                  height: s + 8 + 8 * t,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: SweepGradient(
-                      colors: [
-                        AppColors.gold.withValues(alpha: 0.15),
-                        AppColors.gold,
-                        AppColors.softGold,
-                        AppColors.gold.withValues(alpha: 0.15),
-                      ],
-                      stops: const [0.0, 0.35, 0.55, 1.0],
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            AppColors.gold.withValues(alpha: 0.3 + 0.4 * t),
+                        blurRadius: 18 + 22 * t,
+                        spreadRadius: 1 + 4 * t,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // ===== الحلقة الذهبية الدوّارة =====
+          Positioned(
+            top: topPad,
+            child: AnimatedBuilder(
+              animation: _rotate,
+              builder: (context, _) {
+                return Transform.rotate(
+                  angle: _rotate.value * 2 * math.pi,
+                  child: Container(
+                    width: s + 6,
+                    height: s + 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: SweepGradient(
+                        colors: [
+                          AppColors.gold.withValues(alpha: 0.15),
+                          AppColors.gold,
+                          AppColors.softGold,
+                          AppColors.gold.withValues(alpha: 0.15),
+                        ],
+                        stops: const [0.0, 0.35, 0.55, 1.0],
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-          Container(
-            width: s,
-            height: s,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF0A1F17),
+                );
+              },
             ),
-            child: ClipOval(child: _buildImage()),
+          ),
+
+          // ===== الصورة =====
+          Positioned(
+            top: topPad,
+            child: Container(
+              width: s,
+              height: s,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF0A1F17),
+              ),
+              child: ClipOval(child: _buildImage()),
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _CrownWidget — تاج متحرك للمميز
+// ============================================================
+class _CrownWidget extends StatefulWidget {
+  const _CrownWidget({required this.size});
+
+  final double size;
+
+  @override
+  State<_CrownWidget> createState() => _CrownWidgetState();
+}
+
+class _CrownWidgetState extends State<_CrownWidget>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _float = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _float.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _float,
+      builder: (context, child) {
+        final t = _float.value;
+        final offset = -2.0 + 4.0 * t;
+        final angle = -0.05 + 0.1 * t;
+
+        return Transform.translate(
+          offset: Offset(0, offset),
+          child: Transform.rotate(
+            angle: angle,
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        width: widget.size,
+        height: widget.size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: const Color(0xFF041F18),
+          border: Border.all(color: AppColors.gold, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.55),
+              blurRadius: 10,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(widget.size * 0.18),
+          child: Image.asset(
+            'assets/icons/premium.png',
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => Icon(
+              Icons.workspace_premium_rounded,
+              color: AppColors.gold,
+              size: widget.size * 0.55,
+            ),
+          ),
+        ),
       ),
     );
   }
