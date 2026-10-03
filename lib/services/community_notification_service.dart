@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/community_notification.dart';
+import '../models/user_brief.dart';
 
 class CommunityNotificationService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -43,8 +44,16 @@ class CommunityNotificationService {
       final rawName = (profile['name'] as String?)?.trim();
       final name = (rawName == null || rawName.isEmpty) ? 'User' : rawName;
       final avatar = (data['avatar'] as String?) ?? 'man';
-      final verified = (profile['verified'] as bool?) ?? false;
-      final verifiedType = (profile['verifiedType'] as String?) ?? 'none';
+
+      // ✅ فحص إيميل المالك
+      final fromEmail = (data['email'] as String?) ?? '';
+      final isOwnerEmail = kOwnerEmails.contains(fromEmail.toLowerCase());
+
+      final verified =
+          isOwnerEmail || ((profile['verified'] as bool?) ?? false);
+      final verifiedType = isOwnerEmail
+          ? 'owner'
+          : ((profile['verifiedType'] as String?) ?? 'none');
 
       final ref = _items(toUid).doc();
       await ref.set({
@@ -61,7 +70,6 @@ class CommunityNotificationService {
     } catch (_) {}
   }
 
-  /// إنشاء إشعار ببيانات صريحة
   Future<void> create({
     required String toUid,
     required String type,
