@@ -22,13 +22,52 @@ class CommunityNotificationService {
   /// عدد الإشعارات غير المقروءة
   Stream<int> unreadCountStream(String uid) {
     return _items(uid).snapshots().map((snap) {
-      return snap.docs
-          .where((d) => d.data()['isRead'] != true)
-          .length;
+      return snap.docs.where((d) => d.data()['isRead'] != true).length;
     });
   }
 
-  /// إنشاء إشعار (يُستخدم من follow_service وغيره)
+  /// إنشاء إشعار بجلب بيانات المُرسل تلقائياً
+  /// (يُستخدم من community_service و follow_service)
+  Future<void> createFromUser({
+    required String toUid,
+    required String type,
+    required String fromUid,
+    String? targetId,
+  }) async {
+    // لا ترسل إشعاراً لنفسك
+    if (toUid == fromUid || toUid.isEmpty || fromUid.isEmpty) return;
+
+    try {
+      final userSnap = await _db.collection('users').doc(fromUid).get();
+      if (!userSnap.exists) return;
+
+      final data = userSnap.data() ?? {};
+      final profile =
+          (data['profile'] as Map<String, dynamic>?) ?? const {};
+      final rawName = (profile['name'] as String?)?.trim();
+      final name = (rawName == null || rawName.isEmpty)
+          ? 'User'
+          : rawName;
+      final avatar = (data['avatar'] as String?) ?? 'man';
+      final verified = (profile['verified'] as bool?) ?? false;
+
+      final ref = _items(toUid).doc();
+      await ref.set({
+        'type': type,
+        'fromUid': fromUid,
+        'fromName': name,
+        'fromAvatar': avatar,
+        'fromVerified': verified,
+        'targetId': targetId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'isRead': false,
+      });
+    } catch (_) {
+      // لا نُفشل العملية الأصلية بسبب الإشعار
+    }
+  }
+
+  /// إنشاء إشعار ببيانات صريحة (يُستخدم للمتابعة التي تُرسل اسم صاحبها)
   Future<void> create({
     required String toUid,
     required String type,
@@ -38,9 +77,7 @@ class CommunityNotificationService {
     required bool fromVerified,
     String? targetId,
   }) async {
-    // لا ترسل إشعاراً لنفسك
-    if (toUid == fromUid) return;
-
+    if (toUid == fromUid || toUid.isEmpty || fromUid.isEmpty) return;
     final ref = _items(toUid).doc();
     await ref.set({
       'type': type,
@@ -54,7 +91,6 @@ class CommunityNotificationService {
     });
   }
 
-  /// تحديد الكل كمقروء
   Future<void> markAllRead(String uid) async {
     final snap = await _items(uid).get();
     final batch = _db.batch();
@@ -66,7 +102,6 @@ class CommunityNotificationService {
     await batch.commit();
   }
 
-  /// حذف إشعار واحد
   Future<void> deleteOne({
     required String uid,
     required String notifId,
@@ -74,7 +109,6 @@ class CommunityNotificationService {
     await _items(uid).doc(notifId).delete();
   }
 
-  /// حذف كل الإشعارات
   Future<void> clearAll(String uid) async {
     final snap = await _items(uid).get();
     final batch = _db.batch();
