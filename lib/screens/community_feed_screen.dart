@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../core/app_state.dart';
+import '../core/responsive.dart';
 import '../models/post.dart';
 import '../services/community_service.dart';
-import '../core/responsive.dart';
 import '../widgets/post_card.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
@@ -40,18 +42,23 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Stack(
-        children: [
-          Positioned.fill(child: _buildFeed(context)),
-          Positioned(
-            bottom: R.s(context, 16),
-            left: R.s(context, 16),
-            child: _buildFab(context),
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        return Directionality(
+          textDirection: appState.direction,
+          child: Stack(
+            children: [
+              Positioned.fill(child: _buildFeed(context)),
+              Positioned(
+                bottom: R.s(context, 16),
+                left: R.s(context, 16),
+                child: _buildFab(context),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -119,7 +126,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           const CircularProgressIndicator(color: _gold),
           SizedBox(height: R.s(context, 14)),
           Text(
-            'جارٍ التحميل...',
+            appState.tr('cLoading'),
             style: TextStyle(
               color: _cream.withValues(alpha: 0.7),
               fontSize: R.f(context, 13),
@@ -152,7 +159,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             ),
             SizedBox(height: R.s(context, 16)),
             Text(
-              'لا توجد منشورات بعد',
+              appState.tr('cNoPostsYet'),
               style: TextStyle(
                 color: _softGold,
                 fontSize: R.f(context, 16),
@@ -161,7 +168,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             ),
             SizedBox(height: R.s(context, 6)),
             Text(
-              'كن أول من يشارك فائدة أو دعاء',
+              appState.tr('cBeFirstPost'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _cream.withValues(alpha: 0.6),
@@ -188,7 +195,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             ),
             SizedBox(height: R.s(context, 12)),
             Text(
-              'حدث خطأ في تحميل المنشورات',
+              appState.tr('cLoadPostsError'),
               style: TextStyle(
                 color: _softGold,
                 fontSize: R.f(context, 14),
@@ -214,7 +221,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     try {
       await _service.toggleLike(postId: post.id, uid: widget.uid);
     } catch (e) {
-      _showSnack('فشل الإعجاب: $e');
+      _showSnack('${appState.tr('cLikeFailed')}: $e');
     }
   }
 
@@ -230,7 +237,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       ),
     );
     if (result == true && mounted) {
-      _showSnack('تم النشر بنجاح');
+      _showSnack(appState.tr('cPublishSuccess'));
     }
   }
 
@@ -251,7 +258,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       ),
     );
     if (result == true && mounted) {
-      _showSnack('تمت إعادة النشر');
+      _showSnack(appState.tr('cRepostSuccess'));
     }
   }
 
@@ -269,17 +276,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     );
   }
 
-  // ✅ التعديل: يفتح البروفايل
   void _onAuthorTap(Post post) {
-    if (post.uid == widget.uid) {
-      // يفتح بروفايله هو
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => UserProfileScreen(profileUid: widget.uid),
-        ),
-      );
-      return;
-    }
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => UserProfileScreen(profileUid: post.uid),
@@ -297,56 +294,61 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _menuHandle(),
-              if (isOwner) ...[
+        return Directionality(
+          textDirection: appState.direction,
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _menuHandle(),
+                if (isOwner) ...[
+                  _menuItem(
+                    context: sheetContext,
+                    icon: Icons.edit_outlined,
+                    label: appState.tr('cEditPost'),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _showEditDialog(post);
+                    },
+                  ),
+                  _menuItem(
+                    context: sheetContext,
+                    icon: post.isPinned
+                        ? Icons.push_pin_outlined
+                        : Icons.push_pin,
+                    label: post.isPinned
+                        ? appState.tr('cUnpinPost')
+                        : appState.tr('cPinPost'),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _togglePin(post);
+                    },
+                  ),
+                ],
                 _menuItem(
                   context: sheetContext,
-                  icon: Icons.edit_outlined,
-                  label: 'تعديل المنشور',
+                  icon: Icons.copy_outlined,
+                  label: appState.tr('cCopyText'),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
-                    _showEditDialog(post);
+                    Clipboard.setData(ClipboardData(text: post.text));
+                    _showSnack(appState.tr('cTextCopied'));
                   },
                 ),
-                _menuItem(
-                  context: sheetContext,
-                  icon: post.isPinned
-                      ? Icons.push_pin_outlined
-                      : Icons.push_pin,
-                  label: post.isPinned ? 'إلغاء التثبيت' : 'تثبيت المنشور',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _togglePin(post);
-                  },
-                ),
+                if (isOwner)
+                  _menuItem(
+                    context: sheetContext,
+                    icon: Icons.delete_outline,
+                    label: appState.tr('cDeletePost'),
+                    color: Colors.redAccent,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _confirmDelete(post);
+                    },
+                  ),
+                SizedBox(height: R.s(context, 8)),
               ],
-              _menuItem(
-                context: sheetContext,
-                icon: Icons.copy_outlined,
-                label: 'نسخ النص',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  Clipboard.setData(ClipboardData(text: post.text));
-                  _showSnack('تم نسخ النص');
-                },
-              ),
-              if (isOwner)
-                _menuItem(
-                  context: sheetContext,
-                  icon: Icons.delete_outline,
-                  label: 'حذف المنشور',
-                  color: Colors.redAccent,
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _confirmDelete(post);
-                  },
-                ),
-              SizedBox(height: R.s(context, 8)),
-            ],
+            ),
           ),
         );
       },
@@ -404,7 +406,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       context: context,
       builder: (dialogContext) {
         return Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: appState.direction,
           child: AlertDialog(
             backgroundColor: _green,
             shape: RoundedRectangleBorder(
@@ -412,7 +414,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               side: BorderSide(color: _gold.withValues(alpha: 0.4)),
             ),
             title: Text(
-              'تعديل المنشور',
+              appState.tr('cEditPost'),
               style: TextStyle(color: _softGold, fontSize: R.f(context, 15)),
             ),
             content: TextField(
@@ -427,7 +429,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                 height: 1.4,
               ),
               decoration: InputDecoration(
-                hintText: 'نص المنشور...',
+                hintText: appState.tr('cPostHint'),
                 hintStyle: TextStyle(
                   color: _cream.withValues(alpha: 0.4),
                   fontSize: R.f(context, 13),
@@ -450,7 +452,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
                 child: Text(
-                  'إلغاء',
+                  appState.tr('cancel'),
                   style: TextStyle(
                     color: _cream.withValues(alpha: 0.7),
                     fontSize: R.f(context, 13),
@@ -468,7 +470,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                   foregroundColor: _deepGreen,
                 ),
                 child: Text(
-                  'حفظ',
+                  appState.tr('save'),
                   style: TextStyle(
                     fontSize: R.f(context, 13),
                     fontWeight: FontWeight.bold,
@@ -491,9 +493,9 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
         uid: widget.uid,
         newText: result,
       );
-      if (mounted) _showSnack('تم تعديل المنشور');
+      if (mounted) _showSnack(appState.tr('cPostEdited'));
     } catch (e) {
-      _showSnack('فشل التعديل: $e');
+      _showSnack('${appState.tr('cOperationFailed')}: $e');
     }
   }
 
@@ -502,7 +504,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       context: context,
       builder: (dialogContext) {
         return Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: appState.direction,
           child: AlertDialog(
             backgroundColor: _green,
             shape: RoundedRectangleBorder(
@@ -510,18 +512,18 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               side: BorderSide(color: _gold.withValues(alpha: 0.4)),
             ),
             title: Text(
-              'حذف المنشور',
+              appState.tr('cDeletePost'),
               style: TextStyle(color: _softGold, fontSize: R.f(context, 15)),
             ),
             content: Text(
-              'هل أنت متأكد من حذف هذا المنشور؟ لا يمكن التراجع.',
+              appState.tr('cDeletePostConfirm'),
               style: TextStyle(color: _cream, fontSize: R.f(context, 13)),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
                 child: Text(
-                  'إلغاء',
+                  appState.tr('cancel'),
                   style: TextStyle(
                     color: _cream.withValues(alpha: 0.7),
                     fontSize: R.f(context, 13),
@@ -535,7 +537,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                   foregroundColor: Colors.white,
                 ),
                 child: Text(
-                  'حذف',
+                  appState.tr('cDeletePost'),
                   style: TextStyle(
                     fontSize: R.f(context, 13),
                     fontWeight: FontWeight.bold,
@@ -552,9 +554,9 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
 
     try {
       await _service.deletePost(postId: post.id, uid: widget.uid);
-      if (mounted) _showSnack('تم حذف المنشور');
+      if (mounted) _showSnack(appState.tr('cPostDeleted'));
     } catch (e) {
-      _showSnack('فشل الحذف: $e');
+      _showSnack('${appState.tr('cOperationFailed')}: $e');
     }
   }
 
@@ -562,10 +564,12 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     try {
       await _service.togglePin(postId: post.id, uid: widget.uid);
       if (mounted) {
-        _showSnack(post.isPinned ? 'تم إلغاء التثبيت' : 'تم تثبيت المنشور');
+        _showSnack(post.isPinned
+            ? appState.tr('cUnpinSuccess')
+            : appState.tr('cPinSuccess'));
       }
     } catch (e) {
-      _showSnack('فشل العملية: $e');
+      _showSnack('${appState.tr('cOperationFailed')}: $e');
     }
   }
 
