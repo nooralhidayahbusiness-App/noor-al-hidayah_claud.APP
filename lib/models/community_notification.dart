@@ -7,6 +7,7 @@ class CommunityNotification {
   final String fromName;
   final String fromAvatar;
   final bool fromVerified;
+  final String fromVerifiedType; // 'owner' | 'me' | 'user' | 'none'
   final String? targetId;
   final DateTime createdAt;
   final bool isRead;
@@ -18,6 +19,7 @@ class CommunityNotification {
     required this.fromName,
     required this.fromAvatar,
     required this.fromVerified,
+    this.fromVerifiedType = 'none',
     this.targetId,
     required this.createdAt,
     required this.isRead,
@@ -34,6 +36,7 @@ class CommunityNotification {
       fromName: map['fromName'] ?? '',
       fromAvatar: map['fromAvatar'] ?? 'man',
       fromVerified: map['fromVerified'] ?? false,
+      fromVerifiedType: map['fromVerifiedType'] ?? 'none',
       targetId: map['targetId'],
       createdAt:
           (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -48,9 +51,20 @@ class CommunityNotification {
       'fromName': fromName,
       'fromAvatar': fromAvatar,
       'fromVerified': fromVerified,
+      'fromVerifiedType': fromVerifiedType,
       'targetId': targetId,
       'createdAt': Timestamp.fromDate(createdAt),
       'isRead': isRead,
     };
+  }
+
+  String get badgeType {
+    if (!fromVerified) return 'none';
+    if (fromVerifiedType == 'owner' ||
+        fromVerifiedType == 'me' ||
+        fromVerifiedType == 'user') {
+      return fromVerifiedType;
+    }
+    return 'user';
   }
 }
