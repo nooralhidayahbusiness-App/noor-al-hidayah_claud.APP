@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/app_flow.dart';
 import '../core/app_state.dart';
 import '../core/profile_state.dart';
 import '../core/responsive.dart';
@@ -52,7 +53,6 @@ class _AccountScreenState extends State<AccountScreen> {
           _loading = false;
         });
       }
-      // تحديث ProfileState أيضاً
       await profileState.refresh();
     } catch (e) {
       debugPrint('AccountScreen load error: $e');
@@ -80,6 +80,7 @@ class _AccountScreenState extends State<AccountScreen> {
     await _load();
   }
 
+  // ✅ التعديل: بعد signOut → ننتقل لشاشة "ابدأ الآن"
   Future<void> _signOut() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -109,7 +110,9 @@ class _AccountScreenState extends State<AccountScreen> {
     );
     if (confirm == true) {
       await authService.signOut();
-      if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+      if (mounted) {
+        await goAfterSignOut(context);
+      }
     }
   }
 
