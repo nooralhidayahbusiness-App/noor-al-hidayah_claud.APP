@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'i18n/community_strings.dart';
 import 'i18n/fr.dart';
 import 'i18n/id.dart';
 import 'i18n/ms.dart';
@@ -31,7 +32,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// تبديل قديم بين العربي والإنجليزي — يُستخدم في الأزرار القديمة.
+  /// تبديل قديم بين العربي والإنجليزي.
   void toggleLanguage() {
     setLanguage(isArabic ? 'en' : 'ar');
   }
@@ -51,11 +52,23 @@ class AppState extends ChangeNotifier {
       if (v != null) return v;
     }
 
-    // 2) العربية أو الإنجليزية
+    // 2) مفاتيح المجتمع (كل اللغات)
+    final community = _communityTable(code);
+    if (community != null) {
+      final v = community[key];
+      if (v != null) return v;
+    }
+
+    // 3) العربية أو الإنجليزية
     final main = (code == 'en') ? _en : _ar;
     final prayer = (code == 'en') ? prayerStringsEn : prayerStringsAr;
 
     return main[key] ?? prayer[key] ?? _ar[key] ?? key;
+  }
+
+  /// ترجمة مع استبدال {n} برقم
+  String trn(String key, int n) {
+    return tr(key).replaceAll('{n}', n.toString());
   }
 
   Map<String, String>? _extAppTable(String code) {
@@ -87,6 +100,27 @@ class AppState extends ChangeNotifier {
         return prayerId;
       case 'ms':
         return prayerMs;
+      default:
+        return null;
+    }
+  }
+
+  Map<String, String>? _communityTable(String code) {
+    switch (code) {
+      case 'ar':
+        return communityAr;
+      case 'en':
+        return communityEn;
+      case 'fr':
+        return communityFr;
+      case 'ur':
+        return communityUr;
+      case 'ne':
+        return communityNe;
+      case 'id':
+        return communityId;
+      case 'ms':
+        return communityMs;
       default:
         return null;
     }
@@ -372,57 +406,55 @@ const Map<String, String> _ar = {
   'languageIndonesian': 'Bahasa Indonesia',
   'languageMalay': 'Bahasa Melayu',
   'languageChoose': 'اختر اللغة',
-// المعلم الذكي
-'teacherWelcome': 'مرحباً بك في المعلم',
-'teacherWelcomeDesc': 'مساعدك الذكي لتعلم القرآن الكريم. اختر قسماً للبدء، أو اسأل أي سؤال.',
-'teacherCategories': 'الأقسام التعليمية',
-'teacherHint': 'اكتب سؤالك...',
-'teacherClearTitle': 'محادثة جديدة؟',
-'teacherClearBody': 'سيتم حذف المحادثة الحالية.',
-'teacherErrorGeneric': 'تعذّر الاتصال بالمعلم. حاول مرة أخرى.',
-'teacherErrorQuota': 'استهلكت الحصة المجانية. حاول بعد قليل.',
-'teacherErrorAuth': 'مشكلة في مفتاح API. راجع الإعدادات.',
-'teacherErrorTimeout': 'انتهت المهلة. تحقق من الاتصال.',
-'teacherErrorBlocked': 'لم يستطع المعلم الرد. جرّب صياغة أخرى.',
-'recitationTitle': 'تعلّم التلاوة',
-'recitationDesc': 'استمع، اقرأ، ودع المعلم يصحح لك',
-'recitationListen': 'استمع للقارئ',
-'recitationRecord': 'اضغط للتسجيل',
-'recitationStop': 'إيقاف التسجيل',
-'recitationAnalyzing': 'المعلم يسمع تلاوتك...',
-'recitationTryAgain': 'حاول مرة أخرى',
-'recitationMicDenied': 'يجب السماح بالوصول للميكروفون',
-'recitationRecordError': 'تعذّر إنهاء التسجيل',
-'recitationAudioError': 'تعذّر تشغيل الصوت',
-'recitationTooLong': 'التسجيل طويل جداً (15 ميجا كحد أقصى)',
-'recitationChooseSurah': 'اختر سورة',
-'recitationNextAyah': 'الآية التالية',
-'recitationChooseReciter': 'اختر القارئ',
-'recitationOpenStore': 'تصفح متجر القراء',
-'recitationReciterHint': 'القراء المتاحون — اضغط على 🔒 للشراء',
-// التوثيق + لوحة التحكم
-'verificationRequest': 'طلب التوثيق',
-'verificationRequestDesc': 'ارفع صورة شخصية حقيقية للحصول على شعار التوثيق',
-'verificationPending': 'طلبك قيد المراجعة',
-'verificationPendingDesc': 'سيتم مراجعة طلبك قريباً',
-'verificationUploadPhoto': 'اختر صورة شخصية',
-'verificationSend': 'إرسال الطلب',
-'verificationSent': 'تم إرسال طلبك بنجاح ✓',
-'verificationAlreadyVerified': 'حسابك موثّق بالفعل',
-'verificationPhotoRequired': 'يجب اختيار صورة',
-'adminPanel': 'لوحة التحكم',
-'adminVerificationRequests': 'طلبات التوثيق',
-'adminNoRequests': 'لا توجد طلبات حالياً',
-'adminPending': 'قيد الانتظار',
-'adminApproveUser': 'توثيق عادي',
-'adminApproveMe': 'توثيق مميز',
-'adminReject': 'رفض',
-'adminApprovedUser': 'تم التوثيق العادي ✓',
-'adminApprovedMe': 'تم التوثيق المميز ⭐',
-'adminRejected': 'تم الرفض',
-'adminRequestFrom': 'طلب من',
-'adminVerifiedNow': 'موثّق',
-'adminSelectAction': 'اختر نوع التوثيق',
+  'teacherWelcome': 'مرحباً بك في المعلم',
+  'teacherWelcomeDesc': 'مساعدك الذكي لتعلم القرآن الكريم. اختر قسماً للبدء، أو اسأل أي سؤال.',
+  'teacherCategories': 'الأقسام التعليمية',
+  'teacherHint': 'اكتب سؤالك...',
+  'teacherClearTitle': 'محادثة جديدة؟',
+  'teacherClearBody': 'سيتم حذف المحادثة الحالية.',
+  'teacherErrorGeneric': 'تعذّر الاتصال بالمعلم. حاول مرة أخرى.',
+  'teacherErrorQuota': 'استهلكت الحصة المجانية. حاول بعد قليل.',
+  'teacherErrorAuth': 'مشكلة في مفتاح API. راجع الإعدادات.',
+  'teacherErrorTimeout': 'انتهت المهلة. تحقق من الاتصال.',
+  'teacherErrorBlocked': 'لم يستطع المعلم الرد. جرّب صياغة أخرى.',
+  'recitationTitle': 'تعلّم التلاوة',
+  'recitationDesc': 'استمع، اقرأ، ودع المعلم يصحح لك',
+  'recitationListen': 'استمع للقارئ',
+  'recitationRecord': 'اضغط للتسجيل',
+  'recitationStop': 'إيقاف التسجيل',
+  'recitationAnalyzing': 'المعلم يسمع تلاوتك...',
+  'recitationTryAgain': 'حاول مرة أخرى',
+  'recitationMicDenied': 'يجب السماح بالوصول للميكروفون',
+  'recitationRecordError': 'تعذّر إنهاء التسجيل',
+  'recitationAudioError': 'تعذّر تشغيل الصوت',
+  'recitationTooLong': 'التسجيل طويل جداً (15 ميجا كحد أقصى)',
+  'recitationChooseSurah': 'اختر سورة',
+  'recitationNextAyah': 'الآية التالية',
+  'recitationChooseReciter': 'اختر القارئ',
+  'recitationOpenStore': 'تصفح متجر القراء',
+  'recitationReciterHint': 'القراء المتاحون — اضغط على 🔒 للشراء',
+  'verificationRequest': 'طلب التوثيق',
+  'verificationRequestDesc': 'ارفع صورة شخصية حقيقية للحصول على شعار التوثيق',
+  'verificationPending': 'طلبك قيد المراجعة',
+  'verificationPendingDesc': 'سيتم مراجعة طلبك قريباً',
+  'verificationUploadPhoto': 'اختر صورة شخصية',
+  'verificationSend': 'إرسال الطلب',
+  'verificationSent': 'تم إرسال طلبك بنجاح ✓',
+  'verificationAlreadyVerified': 'حسابك موثّق بالفعل',
+  'verificationPhotoRequired': 'يجب اختيار صورة',
+  'adminPanel': 'لوحة التحكم',
+  'adminVerificationRequests': 'طلبات التوثيق',
+  'adminNoRequests': 'لا توجد طلبات حالياً',
+  'adminPending': 'قيد الانتظار',
+  'adminApproveUser': 'توثيق عادي',
+  'adminApproveMe': 'توثيق مميز',
+  'adminReject': 'رفض',
+  'adminApprovedUser': 'تم التوثيق العادي ✓',
+  'adminApprovedMe': 'تم التوثيق المميز ⭐',
+  'adminRejected': 'تم الرفض',
+  'adminRequestFrom': 'طلب من',
+  'adminVerifiedNow': 'موثّق',
+  'adminSelectAction': 'اختر نوع التوثيق',
 };
 
 // =====================================================================
@@ -702,54 +734,53 @@ const Map<String, String> _en = {
   'languageIndonesian': 'Bahasa Indonesia',
   'languageMalay': 'Bahasa Melayu',
   'languageChoose': 'Choose language',
-// AI Teacher
-'teacherWelcome': 'Welcome to the Teacher',
-'teacherWelcomeDesc': 'Your AI assistant for learning the Holy Quran. Choose a category to start, or ask any question.',
-'teacherCategories': 'Learning Categories',
-'teacherHint': 'Type your question...',
-'teacherClearTitle': 'New chat?',
-'teacherClearBody': 'The current conversation will be cleared.',
-'teacherErrorGeneric': 'Could not connect. Try again.',
-'teacherErrorQuota': 'Free quota used. Try again later.',
-'teacherErrorAuth': 'API key issue. Check settings.',
-'teacherErrorTimeout': 'Timeout. Check your connection.',
-'teacherErrorBlocked': 'Teacher could not respond. Try rephrasing.',
-'recitationTitle': 'Learn Recitation',
-'recitationDesc': 'Listen, recite, and let the teacher correct you',
-'recitationListen': 'Listen to reciter',
-'recitationRecord': 'Tap to record',
-'recitationStop': 'Stop recording',
-'recitationAnalyzing': 'The teacher is listening...',
-'recitationTryAgain': 'Try again',
-'recitationMicDenied': 'Microphone permission is required',
-'recitationRecordError': 'Could not finish recording',
-'recitationAudioError': 'Could not play audio',
-'recitationTooLong': 'Recording is too long (15 MB max)',
-'recitationChooseSurah': 'Choose surah',
-'recitationNextAyah': 'Next verse',
-'recitationChooseReciter': 'Choose reciter',
-'recitationOpenStore': 'Browse reciters store',
-'recitationReciterHint': 'Available reciters — tap 🔒 to buy',
-'verificationRequest': 'Request Verification',
-'verificationRequestDesc': 'Upload a real personal photo to get the verified badge',
-'verificationPending': 'Your request is under review',
-'verificationPendingDesc': 'We will review your request soon',
-'verificationUploadPhoto': 'Choose personal photo',
-'verificationSend': 'Send request',
-'verificationSent': 'Your request was sent ✓',
-'verificationAlreadyVerified': 'Your account is already verified',
-'verificationPhotoRequired': 'You must choose a photo',
-'adminPanel': 'Admin Panel',
-'adminVerificationRequests': 'Verification Requests',
-'adminNoRequests': 'No pending requests',
-'adminPending': 'Pending',
-'adminApproveUser': 'Regular Verify',
-'adminApproveMe': 'Special Verify',
-'adminReject': 'Reject',
-'adminApprovedUser': 'Regular verification granted ✓',
-'adminApprovedMe': 'Special verification granted ⭐',
-'adminRejected': 'Rejected',
-'adminRequestFrom': 'Request from',
-'adminVerifiedNow': 'Verified',
-'adminSelectAction': 'Choose verification type',
+  'teacherWelcome': 'Welcome to the Teacher',
+  'teacherWelcomeDesc': 'Your AI assistant for learning the Holy Quran. Choose a category to start, or ask any question.',
+  'teacherCategories': 'Learning Categories',
+  'teacherHint': 'Type your question...',
+  'teacherClearTitle': 'New chat?',
+  'teacherClearBody': 'The current conversation will be cleared.',
+  'teacherErrorGeneric': 'Could not connect. Try again.',
+  'teacherErrorQuota': 'Free quota used. Try again later.',
+  'teacherErrorAuth': 'API key issue. Check settings.',
+  'teacherErrorTimeout': 'Timeout. Check your connection.',
+  'teacherErrorBlocked': 'Teacher could not respond. Try rephrasing.',
+  'recitationTitle': 'Learn Recitation',
+  'recitationDesc': 'Listen, recite, and let the teacher correct you',
+  'recitationListen': 'Listen to reciter',
+  'recitationRecord': 'Tap to record',
+  'recitationStop': 'Stop recording',
+  'recitationAnalyzing': 'The teacher is listening...',
+  'recitationTryAgain': 'Try again',
+  'recitationMicDenied': 'Microphone permission is required',
+  'recitationRecordError': 'Could not finish recording',
+  'recitationAudioError': 'Could not play audio',
+  'recitationTooLong': 'Recording is too long (15 MB max)',
+  'recitationChooseSurah': 'Choose surah',
+  'recitationNextAyah': 'Next verse',
+  'recitationChooseReciter': 'Choose reciter',
+  'recitationOpenStore': 'Browse reciters store',
+  'recitationReciterHint': 'Available reciters — tap 🔒 to buy',
+  'verificationRequest': 'Request Verification',
+  'verificationRequestDesc': 'Upload a real personal photo to get the verified badge',
+  'verificationPending': 'Your request is under review',
+  'verificationPendingDesc': 'We will review your request soon',
+  'verificationUploadPhoto': 'Choose personal photo',
+  'verificationSend': 'Send request',
+  'verificationSent': 'Your request was sent ✓',
+  'verificationAlreadyVerified': 'Your account is already verified',
+  'verificationPhotoRequired': 'You must choose a photo',
+  'adminPanel': 'Admin Panel',
+  'adminVerificationRequests': 'Verification Requests',
+  'adminNoRequests': 'No pending requests',
+  'adminPending': 'Pending',
+  'adminApproveUser': 'Regular Verify',
+  'adminApproveMe': 'Special Verify',
+  'adminReject': 'Reject',
+  'adminApprovedUser': 'Regular verification granted ✓',
+  'adminApprovedMe': 'Special verification granted ⭐',
+  'adminRejected': 'Rejected',
+  'adminRequestFrom': 'Request from',
+  'adminVerifiedNow': 'Verified',
+  'adminSelectAction': 'Choose verification type',
 };
