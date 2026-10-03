@@ -12,6 +12,7 @@ import '../widgets/avatar_picker.dart';
 import '../widgets/post_card.dart';
 import '../widgets/profile_avatar.dart';
 import 'create_post_screen.dart';
+import 'follow_list_screen.dart';
 import 'post_detail_screen.dart';
 import 'verification_request_screen.dart';
 
@@ -316,7 +317,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         _CountTile(
           label: appState.tr('cFollowers'),
           stream: _followService.followersCountStream(user.uid),
-          onTap: () => _showSnack(appState.tr('cFollowersListSoon')),
+          onTap: () => _openFollowList(context, user, 0),
         ),
         Container(
           width: 1,
@@ -327,7 +328,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         _CountTile(
           label: appState.tr('cFollowing'),
           stream: _followService.followingCountStream(user.uid),
-          onTap: () => _showSnack(appState.tr('cFollowingListSoon')),
+          onTap: () => _openFollowList(context, user, 1),
         ),
       ],
     );
@@ -485,6 +486,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const VerificationRequestScreen(),
+      ),
+    );
+  }
+
+  void _openFollowList(BuildContext context, UserBrief user, int tab) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FollowListScreen(
+          profileUid: user.uid,
+          profileName: user.name,
+          initialTab: tab,
+        ),
       ),
     );
   }
