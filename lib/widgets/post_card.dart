@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/post.dart';
+
+import '../core/app_state.dart';
 import '../core/responsive.dart';
+import '../models/post.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -37,52 +39,55 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: R.s(context, 12),
-        vertical: R.s(context, 6),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(R.s(context, 16)),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(R.s(context, 16)),
-              gradient: LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [
-                  _green.withValues(alpha: 0.85),
-                  _deepGreen.withValues(alpha: 0.92),
-                ],
-              ),
-              border: Border.all(
-                color: _gold.withValues(alpha: 0.35),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+    return Directionality(
+      textDirection: appState.direction,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: R.s(context, 12),
+          vertical: R.s(context, 6),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(R.s(context, 16)),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(R.s(context, 16)),
+                gradient: LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  colors: [
+                    _green.withValues(alpha: 0.85),
+                    _deepGreen.withValues(alpha: 0.92),
+                  ],
                 ),
-              ],
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(R.s(context, 12)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (post.isPinned) _buildPinnedBanner(context),
-                  if (post.isRepost) _buildRepostBanner(context),
-                  _buildHeader(context),
-                  SizedBox(height: R.s(context, 10)),
-                  _buildBody(context),
-                  SizedBox(height: R.s(context, 10)),
-                  _buildActions(context),
+                border: Border.all(
+                  color: _gold.withValues(alpha: 0.35),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(R.s(context, 12)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (post.isPinned) _buildPinnedBanner(context),
+                    if (post.isRepost) _buildRepostBanner(context),
+                    _buildHeader(context),
+                    SizedBox(height: R.s(context, 10)),
+                    _buildBody(context),
+                    SizedBox(height: R.s(context, 10)),
+                    _buildActions(context),
+                  ],
+                ),
               ),
             ),
           ),
@@ -102,7 +107,7 @@ class PostCard extends StatelessWidget {
           Icon(Icons.push_pin, size: R.s(context, 13), color: _gold),
           SizedBox(width: R.s(context, 5)),
           Text(
-            'منشور مثبّت',
+            appState.tr('cPinnedPost'),
             style: TextStyle(
               color: _gold,
               fontSize: R.f(context, 11),
@@ -118,7 +123,7 @@ class PostCard extends StatelessWidget {
   // شريط "إعادة نشر"
   // ============================================================
   Widget _buildRepostBanner(BuildContext context) {
-    final name = post.originalAuthorName ?? 'مستخدم';
+    final name = post.originalAuthorName ?? appState.tr('cUserNotFound');
     return Padding(
       padding: EdgeInsets.only(bottom: R.s(context, 6)),
       child: Row(
@@ -127,7 +132,7 @@ class PostCard extends StatelessWidget {
           SizedBox(width: R.s(context, 5)),
           Expanded(
             child: Text(
-              'أعاد نشر منشور $name',
+              '${appState.tr('cRepostFrom')} $name',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -161,7 +166,9 @@ class PostCard extends StatelessWidget {
                     child: GestureDetector(
                       onTap: onAuthorTap,
                       child: Text(
-                        post.userName.isEmpty ? 'مستخدم' : post.userName,
+                        post.userName.isEmpty
+                            ? appState.tr('cUserNotFound')
+                            : post.userName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -186,7 +193,7 @@ class PostCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    _formatTime(post.createdAt),
+                    _formatTime(context, post.createdAt),
                     style: TextStyle(
                       color: _cream.withValues(alpha: 0.55),
                       fontSize: R.f(context, 11),
@@ -201,7 +208,7 @@ class PostCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'تم التعديل',
+                      appState.tr('cEdited'),
                       style: TextStyle(
                         color: _cream.withValues(alpha: 0.55),
                         fontSize: R.f(context, 11),
@@ -302,7 +309,9 @@ class PostCard extends StatelessWidget {
           _buildActionButton(
             context,
             icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-            color: _isLiked ? const Color(0xFFE84E6A) : _cream.withValues(alpha: 0.7),
+            color: _isLiked
+                ? const Color(0xFFE84E6A)
+                : _cream.withValues(alpha: 0.7),
             label: _formatCount(post.likesCount),
             onTap: onLike,
           ),
@@ -377,30 +386,27 @@ class PostCard extends StatelessWidget {
   // ============================================================
 
   /// تنسيق الوقت بالعربية
-  static String _formatTime(DateTime time) {
+  static String _formatTime(BuildContext context, DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
 
-    if (diff.inSeconds < 60) return 'الآن';
+    if (diff.inSeconds < 60) return appState.tr('cTimeNow');
     if (diff.inMinutes < 60) {
-      return 'قبل ${diff.inMinutes} دقيقة';
+      return appState.trn('cTimeMinutesAgo', diff.inMinutes);
     }
     if (diff.inHours < 24) {
-      return 'قبل ${diff.inHours} ساعة';
+      return appState.trn('cTimeHoursAgo', diff.inHours);
     }
     if (diff.inDays < 7) {
-      return 'قبل ${diff.inDays} يوم';
+      return appState.trn('cTimeDaysAgo', diff.inDays);
     }
     if (diff.inDays < 30) {
-      final weeks = (diff.inDays / 7).floor();
-      return 'قبل $weeks أسبوع';
+      return appState.trn('cTimeWeeksAgo', (diff.inDays / 7).floor());
     }
     if (diff.inDays < 365) {
-      final months = (diff.inDays / 30).floor();
-      return 'قبل $months شهر';
+      return appState.trn('cTimeMonthsAgo', (diff.inDays / 30).floor());
     }
-    final years = (diff.inDays / 365).floor();
-    return 'قبل $years سنة';
+    return appState.trn('cTimeYearsAgo', (diff.inDays / 365).floor());
   }
 
   /// تنسيق الأعداد (1.2K, 3.4M)
