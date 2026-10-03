@@ -523,6 +523,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           userName: _currentUser!.name,
           userAvatar: _currentUser!.avatar,
           userVerified: _currentUser!.verified,
+          userVerifiedType: _currentUser!.verifiedType,
           repostOf: post.id,
           originalAuthorUid: post.uid,
           originalAuthorName: post.userName,
@@ -546,6 +547,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           currentUserName: _currentUser!.name,
           currentUserAvatar: _currentUser!.avatar,
           currentUserVerified: _currentUser!.verified,
+          currentUserVerifiedType: _currentUser!.verifiedType,
         ),
       ),
     );
