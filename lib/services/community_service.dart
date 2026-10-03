@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/post.dart';
+
 import '../models/comment.dart';
+import '../models/post.dart';
+import 'community_notification_service.dart';
 
 class CommunityService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final CommunityNotificationService _notif = CommunityNotificationService();
 
   CollectionReference<Map<String, dynamic>> get _posts =>
       _db.collection('posts');
@@ -12,8 +15,6 @@ class CommunityService {
   // POSTS
   // ============================================================
 
-  /// Stream كل المنشورات (الأحدث أولاً)
-  /// نرتّب في Dart → لا يحتاج Composite Index
   Stream<List<Post>> postsStream({int limit = 100}) {
     return _posts.snapshots().map((snap) {
       final list = snap.docs
@@ -26,8 +27,6 @@ class CommunityService {
     });
   }
 
-  /// Stream منشورات مستخدم معيّن (لصفحة البروفايل)
-  /// نرتّب في Dart → لا يحتاج Composite Index
   Stream<List<Post>> userPostsStream(String uid, {int limit = 100}) {
     return _posts.where('uid', isEqualTo: uid).snapshots().map((snap) {
       final list = snap.docs
@@ -40,7 +39,6 @@ class CommunityService {
     });
   }
 
-  /// Stream منشور واحد
   Stream<Post?> postStream(String postId) {
     return _posts.doc(postId).snapshots().map((snap) {
       if (!snap.exists) return null;
@@ -50,7 +48,6 @@ class CommunityService {
     });
   }
 
-  /// إنشاء منشور جديد — يرجّع postId
   Future<String> createPost({
     required String uid,
     required String userName,
@@ -96,12 +93,23 @@ class CommunityService {
       await _posts.doc(repostOf).update({
         'repostsCount': FieldValue.increment(1),
       });
+
+      // إشعار صاحب المنشور الأصلي
+      if (originalAuthorUid != null &&
+          originalAuthorUid.isNotEmpty &&
+          originalAuthorUid != uid) {
+        await _notif.createFromUser(
+          toUid: originalAuthorUid,
+          type: 'repost',
+          fromUid: uid,
+          targetId: repostOf,
+        );
+      }
     }
 
     return ref.id;
   }
 
-  /// تعديل منشور (النص فقط)
   Future<void> editPost({
     required String postId,
     required String uid,
@@ -130,7 +138,6 @@ class CommunityService {
     });
   }
 
-  /// حذف ناعم للمنشور
   Future<void> deletePost({
     required String postId,
     required String uid,
@@ -144,12 +151,15 @@ class CommunityService {
     await ref.update({'isDeleted': true});
   }
 
-  /// toggle إعجاب (like/unlike)
   Future<void> toggleLike({
     required String postId,
     required String uid,
   }) async {
     final ref = _posts.doc(postId);
+
+    String? ownerUid;
+    bool didLike = false;
+
     await _db.runTransaction((tx) async {
       final snap = await tx.get(ref);
       if (!snap.exists) throw Exception('المنشور غير موجود');
@@ -166,11 +176,22 @@ class CommunityService {
             ? (currentCount - 1).clamp(0, 1 << 31)
             : currentCount + 1,
       });
+
+      ownerUid = data['uid'] as String?;
+      didLike = !hasLiked;
     });
+
+    // إرسال إشعار (فقط عند الإعجاب، ليس عند الإلغاء)
+    if (didLike && ownerUid != null && ownerUid!.isNotEmpty) {
+      await _notif.createFromUser(
+        toUid: ownerUid!,
+        type: 'like',
+        fromUid: uid,
+        targetId: postId,
+      );
+    }
   }
 
-  /// تثبيت / إلغاء تثبيت منشور — منشور واحد فقط مثبّت لكل مستخدم
-  /// نرتّب في Dart → لا يحتاج Composite Index
   Future<void> togglePin({
     required String postId,
     required String uid,
@@ -190,7 +211,6 @@ class CommunityService {
       return;
     }
 
-    // نجيب كل منشورات المستخدم (بدون where على isPinned)
     final userPosts = await _posts.where('uid', isEqualTo: uid).get();
 
     final batch = _db.batch();
@@ -205,7 +225,6 @@ class CommunityService {
     await batch.commit();
   }
 
-  /// إعادة نشر
   Future<String> repost({
     required String originalPostId,
     required String uid,
@@ -237,8 +256,6 @@ class CommunityService {
   // COMMENTS
   // ============================================================
 
-  /// تعليقات المنشور (الأقدم أولاً)
-  /// نرتّب في Dart → لا يحتاج Composite Index
   Stream<List<Comment>> commentsStream(String postId) {
     return _posts
         .doc(postId)
@@ -284,6 +301,20 @@ class CommunityService {
     batch.set(commentRef, comment.toMap());
     batch.update(postRef, {'commentsCount': FieldValue.increment(1)});
     await batch.commit();
+
+    // إشعار صاحب المنشور
+    try {
+      final postSnap = await postRef.get();
+      final ownerUid = postSnap.data()?['uid'] as String?;
+      if (ownerUid != null && ownerUid.isNotEmpty && ownerUid != uid) {
+        await _notif.createFromUser(
+          toUid: ownerUid,
+          type: 'comment',
+          fromUid: uid,
+          targetId: postId,
+        );
+      }
+    } catch (_) {}
 
     return commentRef.id;
   }
