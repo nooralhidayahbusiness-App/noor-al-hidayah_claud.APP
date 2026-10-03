@@ -11,6 +11,7 @@ import '../services/follow_service.dart';
 import '../widgets/avatar_picker.dart';
 import '../widgets/post_card.dart';
 import '../widgets/profile_avatar.dart';
+import '../widgets/verified_badge.dart';
 import 'create_post_screen.dart';
 import 'follow_list_screen.dart';
 import 'post_detail_screen.dart';
@@ -190,9 +191,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           if (user.verified) ...[
             SizedBox(width: R.s(context, 6)),
-            Icon(
-              Icons.verified,
-              color: AppColors.gold,
+            VerifiedBadge(
+              type: user.badgeType,
               size: R.s(context, 21),
             ),
           ],
@@ -576,9 +576,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 }
 
-// ============================================================
-// _CountTile
-// ============================================================
 class _CountTile extends StatelessWidget {
   final String label;
   final Stream<int> stream;
