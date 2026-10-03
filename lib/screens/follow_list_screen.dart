@@ -7,9 +7,9 @@ import '../core/theme.dart';
 import '../models/user_brief.dart';
 import '../services/follow_service.dart';
 import '../widgets/profile_avatar.dart';
+import '../widgets/verified_badge.dart';
 import 'user_profile_screen.dart';
 
-// ============ ترجمات إضافية (لهذه الشاشة فقط) ============
 const Map<String, String> _emptyFollowers = {
   'ar': 'لا يوجد متابعون بعد',
   'en': 'No followers yet',
@@ -36,7 +36,7 @@ String _trEmpty(Map<String, String> m) =>
 class FollowListScreen extends StatefulWidget {
   final String profileUid;
   final String profileName;
-  final int initialTab; // 0 = followers, 1 = following
+  final int initialTab;
 
   const FollowListScreen({
     super.key,
@@ -268,9 +268,8 @@ class _UserTile extends StatelessWidget {
                       ),
                       if (user.verified) ...[
                         SizedBox(width: R.s(context, 4)),
-                        Icon(
-                          Icons.verified,
-                          color: AppColors.gold,
+                        VerifiedBadge(
+                          type: user.badgeType,
                           size: R.s(context, 15),
                         ),
                       ],
