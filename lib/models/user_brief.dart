@@ -47,7 +47,6 @@ class UserBrief {
     final emailLower = email.toLowerCase();
     final isOwnerEmail = kOwnerEmails.contains(emailLower);
 
-    // Premium check
     final premiumMap =
         (profile['premium'] as Map<String, dynamic>?) ?? const {};
     final premiumActive = (premiumMap['active'] as bool?) ?? false;
@@ -95,8 +94,12 @@ class UserBrief {
   bool get isOwner => verifiedType == 'owner';
 
   bool get isPremium {
-    if (!premiumActive) return false;
-    if (premiumExpiresAt == null) return false;
+    if (!premiumActive) {
+      return false;
+    }
+    if (premiumExpiresAt == null) {
+      return false;
+    }
     return premiumExpiresAt!.isAfter(DateTime.now());
   }
 
@@ -104,31 +107,44 @@ class UserBrief {
       verified || isOwner || verifiedType == 'me' || verifiedType == 'user';
 
   // ============================================================
-  // Badges — قائمة الشارات للعرض في كل مكان
+  // Badges
   // ============================================================
 
-  /// ترتيب الشارات: [owner] أو [premium, me] أو [premium] أو [me] أو [user] أو []
   List<String> get badges {
-    if (isOwner) return const ['owner'];
+    if (isOwner) {
+      return const ['owner'];
+    }
 
     final list = <String>[];
-    if (isPremium) list.add('premium');
+    if (isPremium) {
+      list.add('premium');
+    }
 
     if (verified) {
-      if (verifiedType == 'me') list.add('me');
-      else if (verifiedType == 'user') list.add('user');
+      if (verifiedType == 'me') {
+        list.add('me');
+      } else if (verifiedType == 'user') {
+        list.add('user');
+      }
     }
 
     return list;
   }
 
-  /// نوع الشعار الفعلي (للتوافق القديم)
   String get badgeType {
-    if (isOwner) return 'owner';
-    if (isPremium) return 'premium';
+    if (isOwner) {
+      return 'owner';
+    }
+    if (isPremium) {
+      return 'premium';
+    }
     if (verified) {
-      if (verifiedType == 'me') return 'me';
-      if (verifiedType == 'user') return 'user';
+      if (verifiedType == 'me') {
+        return 'me';
+      }
+      if (verifiedType == 'user') {
+        return 'user';
+      }
     }
     return 'none';
   }
@@ -137,9 +153,10 @@ class UserBrief {
   // الصور
   // ============================================================
 
-  /// الصورة المخصصة (إن وُجدت)
   Uint8List? get customPhotoBytes {
-    if (customPhotoBase64.isEmpty) return null;
+    if (customPhotoBase64.isEmpty) {
+      return null;
+    }
     try {
       return base64Decode(customPhotoBase64);
     } catch (_) {
@@ -147,9 +164,10 @@ class UserBrief {
     }
   }
 
-  /// صورة التوثيق (إن وُجدت)
   Uint8List? get verificationPhotoBytes {
-    if (photoBase64.isEmpty) return null;
+    if (photoBase64.isEmpty) {
+      return null;
+    }
     try {
       return base64Decode(photoBase64);
     } catch (_) {
@@ -157,13 +175,16 @@ class UserBrief {
     }
   }
 
-  /// الصورة الحالية للعرض (الأولوية: custom > verification)
+  /// الصورة الحالية للعرض
   Uint8List? get displayPhotoBytes {
     if (photoMode == 'custom' && customPhotoBytes != null) {
       return customPhotoBytes;
     }
     return verificationPhotoBytes;
   }
+
+  /// Alias للتوافق — يساوي displayPhotoBytes
+  Uint8List? get photoBytes => displayPhotoBytes;
 
   // ============================================================
   // Empty
