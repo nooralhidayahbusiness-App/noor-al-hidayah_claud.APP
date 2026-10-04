@@ -8,18 +8,15 @@ import '../core/app_state.dart';
 import '../core/profile_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
+import '../models/user_brief.dart';
 import '../services/auth_service.dart';
 import '../services/verification_service.dart';
 import '../widgets/glass_card.dart';
 
-// ============ ترجمات هذه الشاشة ============
 const Map<String, Map<String, String>> _cpTr = {
   'ar': {
     'title': 'تغيير صورة البروفايل',
     'currentPhoto': 'الصورة الحالية',
-    'symbolOption': 'رمز افتراضي',
-    'customOption': 'صورة شخصية',
-    'useSymbol': 'استخدام الرمز',
     'uploadPhoto': 'رفع صورة',
     'changePhoto': 'تغيير الصورة',
     'pendingTitle': 'طلبك قيد المراجعة',
@@ -36,13 +33,11 @@ const Map<String, Map<String, String>> _cpTr = {
     'removePhoto': 'إزالة الصورة',
     'removeConfirm': 'هل تريد الرجوع لرمز افتراضي؟',
     'verifiedCantRemove': 'أنت موثق — لا يمكن إزالة الصورة إلا بإلغاء التوثيق من لوحة التحكم',
+    'ownerMode': 'وضع المالك — بلا قيود',
   },
   'en': {
     'title': 'Change Profile Photo',
     'currentPhoto': 'Current photo',
-    'symbolOption': 'Default symbol',
-    'customOption': 'Personal photo',
-    'useSymbol': 'Use symbol',
     'uploadPhoto': 'Upload photo',
     'changePhoto': 'Change photo',
     'pendingTitle': 'Your request is under review',
@@ -59,13 +54,11 @@ const Map<String, Map<String, String>> _cpTr = {
     'removePhoto': 'Remove photo',
     'removeConfirm': 'Return to default symbol?',
     'verifiedCantRemove': 'You are verified — cannot remove photo without revoking',
+    'ownerMode': 'Owner mode — unlimited',
   },
   'fr': {
     'title': 'Changer la photo de profil',
     'currentPhoto': 'Photo actuelle',
-    'symbolOption': 'Symbole par défaut',
-    'customOption': 'Photo personnelle',
-    'useSymbol': 'Utiliser le symbole',
     'uploadPhoto': 'Télécharger une photo',
     'changePhoto': 'Changer la photo',
     'pendingTitle': 'Votre demande est en cours',
@@ -82,13 +75,11 @@ const Map<String, Map<String, String>> _cpTr = {
     'removePhoto': 'Supprimer la photo',
     'removeConfirm': 'Revenir au symbole par défaut ?',
     'verifiedCantRemove': 'Vous êtes vérifié — impossible de supprimer',
+    'ownerMode': 'Mode propriétaire — illimité',
   },
   'ur': {
     'title': 'پروفائل تصویر تبدیل کریں',
     'currentPhoto': 'موجودہ تصویر',
-    'symbolOption': 'ڈیفالٹ علامت',
-    'customOption': 'ذاتی تصویر',
-    'useSymbol': 'علامت استعمال کریں',
     'uploadPhoto': 'تصویر اپ لوڈ کریں',
     'changePhoto': 'تصویر تبدیل کریں',
     'pendingTitle': 'آپ کی درخواست زیر جائزہ ہے',
@@ -105,13 +96,11 @@ const Map<String, Map<String, String>> _cpTr = {
     'removePhoto': 'تصویر ہٹائیں',
     'removeConfirm': 'ڈیفالٹ علامت پر واپس؟',
     'verifiedCantRemove': 'آپ تصدیق شدہ ہیں — ہٹانا ممکن نہیں',
+    'ownerMode': 'مالک موڈ — لامحدود',
   },
   'ne': {
     'title': 'प्रोफाइल फोटो परिवर्तन',
     'currentPhoto': 'हालको फोटो',
-    'symbolOption': 'पूर्वनिर्धारित प्रतीक',
-    'customOption': 'व्यक्तिगत फोटो',
-    'useSymbol': 'प्रतीक प्रयोग गर्नुहोस्',
     'uploadPhoto': 'फोटो अपलोड',
     'changePhoto': 'फोटो परिवर्तन',
     'pendingTitle': 'तपाईंको अनुरोध समीक्षामा',
@@ -128,13 +117,11 @@ const Map<String, Map<String, String>> _cpTr = {
     'removePhoto': 'फोटो हटाउनुहोस्',
     'removeConfirm': 'पूर्वनिर्धारित प्रतीकमा फर्कने?',
     'verifiedCantRemove': 'तपाईं प्रमाणित हुनुहुन्छ — हटाउन सकिँदैन',
+    'ownerMode': 'मालिक मोड — असीमित',
   },
   'id': {
     'title': 'Ubah Foto Profil',
     'currentPhoto': 'Foto saat ini',
-    'symbolOption': 'Simbol default',
-    'customOption': 'Foto pribadi',
-    'useSymbol': 'Gunakan simbol',
     'uploadPhoto': 'Unggah foto',
     'changePhoto': 'Ubah foto',
     'pendingTitle': 'Permintaan Anda dalam tinjauan',
@@ -151,13 +138,11 @@ const Map<String, Map<String, String>> _cpTr = {
     'removePhoto': 'Hapus foto',
     'removeConfirm': 'Kembali ke simbol default?',
     'verifiedCantRemove': 'Anda terverifikasi — tidak bisa dihapus',
+    'ownerMode': 'Mode pemilik — tanpa batas',
   },
   'ms': {
     'title': 'Tukar Foto Profil',
     'currentPhoto': 'Foto semasa',
-    'symbolOption': 'Simbol lalai',
-    'customOption': 'Foto peribadi',
-    'useSymbol': 'Guna simbol',
     'uploadPhoto': 'Muat naik foto',
     'changePhoto': 'Tukar foto',
     'pendingTitle': 'Permintaan anda dalam semakan',
@@ -174,6 +159,7 @@ const Map<String, Map<String, String>> _cpTr = {
     'removePhoto': 'Buang foto',
     'removeConfirm': 'Kembali ke simbol lalai?',
     'verifiedCantRemove': 'Anda disahkan — tidak boleh dibuang',
+    'ownerMode': 'Mod pemilik — tanpa had',
   },
 };
 
@@ -194,6 +180,7 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
   bool _busy = false;
   bool _hasPending = false;
   bool _isVerified = false;
+  bool _isOwner = false;
   String _gender = 'man';
   String _currentPhotoBase64 = '';
   Uint8List? _pickedBytes;
@@ -210,6 +197,10 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
     try {
       final data = await authService.loadUserData() ?? {};
       final profile = (data['profile'] as Map?) ?? {};
+
+      final email = (data['email'] as String?) ?? '';
+      final isOwner = kOwnerEmails.contains(email.toLowerCase());
+
       final verified = (profile['verified'] as bool?) ?? false;
       final verifiedType = (profile['verifiedType'] as String?) ?? 'none';
       final isVerified = verified &&
@@ -218,8 +209,13 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
               verifiedType == 'owner' ||
               verifiedType == 'premium');
 
-      final pending = await verificationService.hasPendingPhotoChange();
-      final hours = await verificationService.hoursUntilNextPhotoChange();
+      // المالك: لا pending ولا cooldown
+      final pending = isOwner
+          ? false
+          : await verificationService.hasPendingPhotoChange();
+      final hours = isOwner
+          ? 0
+          : await verificationService.hoursUntilNextPhotoChange();
 
       if (mounted) {
         setState(() {
@@ -229,6 +225,7 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
           _currentPhotoBase64 =
               (profile['customPhotoBase64'] as String?) ?? '';
           _isVerified = isVerified;
+          _isOwner = isOwner;
           _hasPending = pending;
           _cooldownHours = hours;
           _loading = false;
@@ -265,19 +262,21 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
     try {
       final base64Str = base64Encode(_pickedBytes!);
 
-      if (_isVerified) {
-        await verificationService.submitPhotoChangeRequest(
-          oldPhotoBase64: _currentPhotoBase64,
-          newPhotoBase64: base64Str,
-        );
-        _showSnack(_cp('sendSuccess'));
-      } else {
+      // المالك أو غير الموثق → تطبيق فوري
+      if (_isOwner || !_isVerified) {
         await verificationService.applyPhotoChangeImmediate(
           customPhotoBase64: base64Str,
           photoMode: 'custom',
         );
         await profileState.refresh();
         _showSnack(_cp('saveSuccess'));
+      } else {
+        // موثق غير مالك → طلب
+        await verificationService.submitPhotoChangeRequest(
+          oldPhotoBase64: _currentPhotoBase64,
+          newPhotoBase64: base64Str,
+        );
+        _showSnack(_cp('sendSuccess'));
       }
 
       await _load();
@@ -290,7 +289,8 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
   }
 
   Future<void> _useSymbol() async {
-    if (_isVerified) {
+    // الموثق غير المالك: ما يقدر يشيل صورته
+    if (_isVerified && !_isOwner) {
       _showSnack(_cp('verifiedCantRemove'), error: true);
       return;
     }
@@ -400,7 +400,11 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
                     : ListView(
                         padding: EdgeInsets.all(R.s(context, 16)),
                         children: [
-                          if (_isVerified) ...[
+                          if (_isOwner) ...[
+                            _buildOwnerBadge(),
+                            SizedBox(height: R.s(context, 12)),
+                          ],
+                          if (_isVerified && !_isOwner) ...[
                             _buildVerifiedNote(),
                             SizedBox(height: R.s(context, 12)),
                           ],
@@ -414,7 +418,7 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
                           ],
                           _buildCurrentSection(context, bg),
                           SizedBox(height: R.s(context, 16)),
-                          _buildPickerSection(context, bg),
+                          _buildPickerSection(context),
                         ],
                       ),
               ),
@@ -438,6 +442,37 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
           fontSize: R.f(context, 16),
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+
+  Widget _buildOwnerBadge() {
+    return Container(
+      padding: EdgeInsets.all(R.s(context, 12)),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(R.s(context, 14)),
+        border: Border.all(color: AppColors.gold, width: 1.2),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.workspace_premium_rounded,
+            color: AppColors.gold,
+            size: R.s(context, 22),
+          ),
+          SizedBox(width: R.s(context, 10)),
+          Expanded(
+            child: Text(
+              _cp('ownerMode'),
+              style: TextStyle(
+                color: AppColors.gold,
+                fontSize: R.f(context, 13),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -604,7 +639,7 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
     );
   }
 
-  Widget _buildPickerSection(BuildContext context, String fallbackAsset) {
+  Widget _buildPickerSection(BuildContext context) {
     final disabled = _hasPending || _cooldownHours > 0 || _busy;
 
     return GlassCard(
@@ -685,7 +720,9 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
                       )
                     : Icon(Icons.check_rounded, size: R.s(context, 20)),
                 label: Text(
-                  _isVerified ? _cp('sendSuccess') : _cp('changePhoto'),
+                  (_isVerified && !_isOwner)
+                      ? _cp('sendSuccess')
+                      : _cp('changePhoto'),
                   style: TextStyle(
                     fontSize: R.f(context, 14),
                     fontWeight: FontWeight.bold,
