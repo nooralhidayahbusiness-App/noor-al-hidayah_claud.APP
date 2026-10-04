@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
+import '../core/profile_state.dart';
 import '../core/responsive.dart';
 import '../services/community_service.dart';
 
@@ -10,6 +11,7 @@ class CreatePostScreen extends StatefulWidget {
   final String userAvatar;
   final bool userVerified;
   final String userVerifiedType;
+  final List<String> userBadges;
 
   final String? repostOf;
   final String? originalAuthorUid;
@@ -24,6 +26,7 @@ class CreatePostScreen extends StatefulWidget {
     required this.userAvatar,
     required this.userVerified,
     this.userVerifiedType = 'none',
+    this.userBadges = const [],
     this.repostOf,
     this.originalAuthorUid,
     this.originalAuthorName,
@@ -50,10 +53,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   bool _isPosting = false;
   int _charCount = 0;
 
-  static const int _maxChars = 500;
+  static const int _maxChars = 1000;
 
   bool get _isRepost => widget.repostOf != null;
-  bool get _isValid => _charCount > 0 && _charCount <= _maxChars && !_isPosting;
+  bool get _isValid =>
+      _charCount > 0 && _charCount <= _maxChars && !_isPosting;
 
   @override
   void initState() {
@@ -94,8 +98,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         uid: widget.uid,
         userName: widget.userName,
         userAvatar: widget.userAvatar,
+        userPhotoBase64: profileState.photoBase64,
         userVerified: widget.userVerified,
         userVerifiedType: widget.userVerifiedType,
+        userBadges: widget.userBadges,
         text: _controller.text,
         repostOf: widget.repostOf,
         originalAuthorUid: widget.originalAuthorUid,
@@ -185,9 +191,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   Widget _buildAuthorRow(BuildContext context) {
-    final initial = widget.userName.isNotEmpty
-        ? widget.userName.characters.first.toUpperCase()
-        : '?';
+    final photoBytes = profileState.photoBytes;
+    final fallbackPath = widget.userAvatar == 'woman'
+        ? 'assets/images/hijab.png'
+        : 'assets/images/arabian.png';
     final size = R.s(context, 44);
 
     return Row(
@@ -197,22 +204,28 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [_emerald, _deepGreen],
-            ),
             border: Border.all(color: _gold, width: 1.5),
           ),
-          child: Center(
-            child: Text(
-              initial,
-              style: TextStyle(
-                color: _gold,
-                fontSize: R.f(context, 17),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          child: ClipOval(
+            child: photoBytes != null && photoBytes.isNotEmpty
+                ? Image.memory(
+                    photoBytes,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                    errorBuilder: (_, _, _) => Image.asset(
+                      fallbackPath,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Image.asset(
+                    fallbackPath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Icon(
+                      Icons.person,
+                      color: _gold,
+                      size: R.s(context, 22),
+                    ),
+                  ),
           ),
         ),
         SizedBox(width: R.s(context, 10)),
