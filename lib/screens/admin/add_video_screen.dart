@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/app_state.dart';
 import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../services/youtube_service.dart';
@@ -141,15 +140,12 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
                 child: ListView(
                   padding: EdgeInsets.all(R.s(context, 18)),
                   children: [
-                    // ===== عنوان =====
                     _Field(
                       controller: _title,
                       label: 'عنوان الفيديو',
                       icon: Icons.title_rounded,
                     ),
                     SizedBox(height: R.s(context, 14)),
-
-                    // ===== رابط =====
                     _Field(
                       controller: _url,
                       label: 'رابط YouTube',
@@ -158,8 +154,6 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
                       hint: 'https://youtube.com/watch?v=...',
                     ),
                     SizedBox(height: R.s(context, 14)),
-
-                    // ===== صورة مصغرة (اختياري) =====
                     _Field(
                       controller: _thumb,
                       label: 'رابط الصورة المصغّرة (اختياري)',
@@ -235,7 +229,6 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
 
                     SizedBox(height: R.s(context, 24)),
 
-                    // ===== زر النشر =====
                     SizedBox(
                       height: R.s(context, 54),
                       child: ElevatedButton.icon(
@@ -244,7 +237,8 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
                           backgroundColor: AppColors.gold,
                           foregroundColor: AppColors.deepGreen,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(R.s(context, 18)),
+                            borderRadius:
+                                BorderRadius.circular(R.s(context, 18)),
                           ),
                           elevation: 6,
                         ),
@@ -281,9 +275,6 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
   }
 }
 
-// ============================================================
-// _Field
-// ============================================================
 class _Field extends StatelessWidget {
   final TextEditingController controller;
   final String label;
