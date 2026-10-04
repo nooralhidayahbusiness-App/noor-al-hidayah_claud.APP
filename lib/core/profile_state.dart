@@ -18,7 +18,13 @@ class ProfileState extends ChangeNotifier {
   String name = '';
   String bio = '';
   bool isPublic = true;
+
+  /// الصورة كـ String (base64) — للاستخدام في المنشورات/التعليقات
+  String photoBase64 = '';
+
+  /// الصورة كـ Uint8List — للعرض
   Uint8List? photoBytes;
+
   bool _loaded = false;
 
   ProfileState() {
@@ -31,7 +37,6 @@ class ProfileState extends ChangeNotifier {
 
     try {
       if (authService.isSignedIn) {
-        // ✅ قراءة مباشرة من السيرفر (لتجنب cache قديم)
         final uid = authService.currentUser?.uid;
         if (uid == null) return;
 
@@ -53,7 +58,9 @@ class ProfileState extends ChangeNotifier {
           isPublic = (p['isPublic'] as bool?) ?? true;
 
           // ✅ قراءة الصورة بذكاء
+          photoBase64 = '';
           photoBytes = null;
+
           final photoMode = (p['photoMode'] as String?) ?? 'symbol';
           final customB64 = p['customPhotoBase64'] as String?;
           final verificationB64 = p['photoBase64'] as String?;
@@ -71,6 +78,7 @@ class ProfileState extends ChangeNotifier {
           }
 
           if (chosenB64 != null && chosenB64.isNotEmpty) {
+            photoBase64 = chosenB64;
             try {
               photoBytes = base64Decode(chosenB64);
             } catch (_) {}
@@ -102,6 +110,7 @@ class ProfileState extends ChangeNotifier {
     name = '';
     bio = '';
     isPublic = true;
+    photoBase64 = '';
     photoBytes = null;
     _loaded = false;
     notifyListeners();
@@ -115,12 +124,6 @@ class ProfileState extends ChangeNotifier {
     } catch (e) {
       debugPrint('ProfileState.reset prefs error: $e');
     }
-  }
-
-  Future<void> setAvatar(String value) async {
-    // ⛔ تم قفل تغيير الجنس نهائياً — هذه الدالة للاستخدام الداخلي فقط
-    avatar = value;
-    notifyListeners();
   }
 
   Future<void> updateProfile({
@@ -149,7 +152,6 @@ class ProfileState extends ChangeNotifier {
     }
   }
 
-  /// إعادة تحميل من السيرفر — يُستدعى بعد تغيير الصورة/التوثيق
   Future<void> refresh() async {
     _loaded = false;
     await load();
