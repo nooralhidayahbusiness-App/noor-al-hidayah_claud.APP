@@ -1,8 +1,7 @@
 import 'dart:math' as math;
-import '../zakat_screen.dart';
+
 import 'package:flutter/material.dart';
-import '../tasbeeh_screen.dart';
-import '../../core/app_flow.dart';
+
 import '../../core/app_state.dart';
 import '../../core/fonts.dart';
 import '../../core/navigation.dart';
@@ -11,18 +10,20 @@ import '../../core/profile_state.dart';
 import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../widgets/ai_teacher_card.dart';
-import '../../widgets/avatar_picker.dart';
 import '../../widgets/daily_cards.dart';
 import '../../widgets/ornament_medallion.dart';
 import '../../widgets/prayer_widgets.dart';
-import '../prayer_times_page.dart';
-import '../hadith_page.dart';
-import '../duas_screen.dart';
-import '../khatm_plan_screen.dart';
-import '../haram_screen.dart';
-import '../qibla_screen.dart';
-import '../mosques_screen.dart';
 import '../ai_teacher_screen.dart';
+import '../change_photo_screen.dart';
+import '../duas_screen.dart';
+import '../hadith_page.dart';
+import '../haram_screen.dart';
+import '../khatm_plan_screen.dart';
+import '../mosques_screen.dart';
+import '../prayer_times_page.dart';
+import '../qibla_screen.dart';
+import '../tasbeeh_screen.dart';
+import '../zakat_screen.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onOpenTab});
@@ -32,14 +33,13 @@ class HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([appState, prayerState]),
+      listenable: Listenable.merge([appState, prayerState, profileState]),
       builder: (context, _) {
         final data = prayerState.data;
         final date = data == null
             ? ''
             : (appState.isArabic ? data.hijriAr : data.hijriEn);
         final label = prayerState.location?.label ?? '';
-
 
         return ListView(
           padding: EdgeInsets.fromLTRB(
@@ -67,10 +67,10 @@ class HomeTab extends StatelessWidget {
               ),
             SizedBox(height: R.s(context, 12)),
             AiTeacherCard(
-  onTap: () => Navigator.of(context).push(
-    fadeRoute(const AiTeacherScreen()),
-  ),
-),
+              onTap: () => Navigator.of(context).push(
+                fadeRoute(const AiTeacherScreen()),
+              ),
+            ),
             SizedBox(height: R.s(context, 20)),
             Text(
               appState.tr('quickAccess'),
@@ -124,7 +124,7 @@ class HomeTab extends StatelessWidget {
                     'assets/images/dua-hands.png',
                     fallback: Icons.volunteer_activism_rounded,
                     tint: true,
-                   ),
+                  ),
                 ),
                 _QuickTile(
                   label: appState.tr('hadiths'),
@@ -143,17 +143,17 @@ class HomeTab extends StatelessWidget {
                   symbol: const SymbolImage(
                     'assets/images/Kaaba.png',
                     fallback: Icons.explore_rounded,
-                   ),
-                 ),
+                  ),
+                ),
                 _QuickTile(
-                 label: appState.tr('tasbeeh'),
-                 onTap: () => Navigator.of(context)
-                     .push(fadeRoute(const TasbeehScreen())),
-                 symbol: const SymbolImage(
-                   'assets/images/tasbih.png',
-                   fallback: Icons.touch_app_rounded,
-                 ),
-               ),
+                  label: appState.tr('tasbeeh'),
+                  onTap: () => Navigator.of(context)
+                      .push(fadeRoute(const TasbeehScreen())),
+                  symbol: const SymbolImage(
+                    'assets/images/tasbih.png',
+                    fallback: Icons.touch_app_rounded,
+                  ),
+                ),
                 _QuickTile(
                   label: appState.tr('nearbyMosques'),
                   onTap: () => Navigator.of(context)
@@ -162,7 +162,7 @@ class HomeTab extends StatelessWidget {
                     'assets/images/mosque.png',
                     fallback: Icons.mosque_rounded,
                     tint: true,
-                   ),
+                  ),
                 ),
                 _QuickTile(
                   label: appState.tr('khatmPlan'),
@@ -171,8 +171,8 @@ class HomeTab extends StatelessWidget {
                   symbol: const SymbolImage(
                     'assets/images/Read.png',
                     fallback: Icons.auto_stories_rounded,
-                   ),
-                 ),
+                  ),
+                ),
                 _QuickTile(
                   label: appState.tr('zakat'),
                   onTap: () => Navigator.of(context)
@@ -181,8 +181,8 @@ class HomeTab extends StatelessWidget {
                     'assets/images/zakat.png',
                     fallback: Icons.favorite_rounded,
                     tint: true,
-                    ),
                   ),
+                ),
                 _QuickTile(
                   label: appState.tr('haram'),
                   onTap: () => Navigator.of(context)
@@ -191,18 +191,18 @@ class HomeTab extends StatelessWidget {
                     'assets/images/haram.png',
                     fallback: Icons.block_rounded,
                     tint: true,
-                    ),
                   ),
-               _QuickTile(
-                 label: appState.tr('makruh'),
-                 onTap: () => Navigator.of(context)
-                     .push(fadeRoute(const MakruhScreen())),
-                 symbol: const SymbolImage(
-                   'assets/images/stop.png',
-                   fallback: Icons.warning_amber_rounded,
-                   tint: true,
-                   ),
-                 ),
+                ),
+                _QuickTile(
+                  label: appState.tr('makruh'),
+                  onTap: () => Navigator.of(context)
+                      .push(fadeRoute(const MakruhScreen())),
+                  symbol: const SymbolImage(
+                    'assets/images/stop.png',
+                    fallback: Icons.warning_amber_rounded,
+                    tint: true,
+                  ),
+                ),
               ],
             ),
             SizedBox(height: R.s(context, 18)),
@@ -214,6 +214,9 @@ class HomeTab extends StatelessWidget {
   }
 }
 
+// ============================================================
+// _Avatar — يعرض صورة البروفايل الحقيقية (من profileState)
+// ============================================================
 class _Avatar extends StatelessWidget {
   const _Avatar();
 
@@ -222,28 +225,45 @@ class _Avatar extends StatelessWidget {
     return ListenableBuilder(
       listenable: profileState,
       builder: (context, _) {
-        final path = switch (profileState.avatar) {
-          'man' => 'assets/images/arabian.png',
-          'woman' => 'assets/images/hijab.png',
-          _ => null,
-        };
+        final photoBytes = profileState.photoBytes;
+        final gender = profileState.avatar ?? 'man';
+        final fallbackPath = gender == 'woman'
+            ? 'assets/images/hijab.png'
+            : 'assets/images/arabian.png';
+
         final placeholder = Icon(
           Icons.person_rounded,
           color: AppColors.gold,
           size: R.s(context, 26),
         );
+
+        Widget child;
+        if (photoBytes != null && photoBytes.isNotEmpty) {
+          child = Image.memory(
+            photoBytes,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (_, _, _) => placeholder,
+          );
+        } else {
+          child = Image.asset(
+            fallbackPath,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => placeholder,
+          );
+        }
+
         return GestureDetector(
-          onTap: () => showAvatarPicker(context),
+          onTap: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const ChangePhotoScreen(),
+              ),
+            );
+          },
           child: OrnamentMedallion(
             size: R.s(context, 78),
-            child: path == null
-                ? placeholder
-                : Image.asset(
-                    path,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        placeholder,
-                  ),
+            child: child,
           ),
         );
       },
