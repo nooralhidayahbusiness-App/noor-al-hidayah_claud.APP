@@ -8,7 +8,7 @@ import '../core/responsive.dart';
 import '../models/post.dart';
 import 'verified_badge.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends StatefulWidget {
   final Post post;
   final String currentUid;
   final VoidCallback? onTap;
@@ -30,6 +30,12 @@ class PostCard extends StatelessWidget {
     this.onAuthorTap,
   });
 
+  @override
+  State<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard>
+    with SingleTickerProviderStateMixin {
   static const Color _gold = Color(0xFFD4AF37);
   static const Color _softGold = Color(0xFFF1DC9A);
   static const Color _deepGreen = Color(0xFF041F18);
@@ -37,65 +43,149 @@ class PostCard extends StatelessWidget {
   static const Color _emerald = Color(0xFF14664C);
   static const Color _cream = Color(0xFFFFF8E7);
 
+  late final AnimationController _entryCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 500),
+  )..forward();
+
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _entryCtrl,
+    curve: Curves.easeOut,
+  );
+
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, 0.06),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(
+    parent: _entryCtrl,
+    curve: Curves.easeOutCubic,
+  ));
+
+  Post get post => widget.post;
+  String get currentUid => widget.currentUid;
+
   bool get _isOwner => post.uid == currentUid;
   bool get _isLiked => post.isLikedBy(currentUid);
+
+  @override
+  void dispose() {
+    _entryCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: appState.direction,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: R.s(context, 12),
-          vertical: R.s(context, 6),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(R.s(context, 16)),
-            child: Container(
-              decoration: BoxDecoration(
+      child: FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(
+          position: _slide,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: R.s(context, 12),
+              vertical: R.s(context, 6),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: widget.onTap,
                 borderRadius: BorderRadius.circular(R.s(context, 16)),
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [
-                    _green.withValues(alpha: 0.85),
-                    _deepGreen.withValues(alpha: 0.92),
-                  ],
-                ),
-                border: Border.all(
-                  color: _gold.withValues(alpha: 0.35),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(R.s(context, 12)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (post.isPinned) _buildPinnedBanner(context),
-                    if (post.isRepost) _buildRepostBanner(context),
-                    _buildHeader(context),
-                    SizedBox(height: R.s(context, 10)),
-                    _buildBody(context),
-                    SizedBox(height: R.s(context, 10)),
-                    _buildActions(context),
-                  ],
-                ),
+                child: _buildCard(context),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCard(BuildContext context) {
+    return Stack(
+      children: [
+        // ===== البطاقة =====
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(R.s(context, 16)),
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                _green.withValues(alpha: 0.92),
+                _deepGreen.withValues(alpha: 0.98),
+              ],
+            ),
+            border: Border.all(
+              color: _gold.withValues(alpha: 0.4),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+              BoxShadow(
+                color: _gold.withValues(alpha: 0.08),
+                blurRadius: 8,
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(R.s(context, 12)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (post.isPinned) _buildPinnedBanner(context),
+                if (post.isRepost) _buildRepostBanner(context),
+                _buildHeader(context),
+                SizedBox(height: R.s(context, 10)),
+                _buildBody(context),
+                SizedBox(height: R.s(context, 10)),
+                _buildActions(context),
+              ],
+            ),
+          ),
+        ),
+
+        // ===== الزخرفة: نجمة في الزاوية اليمنى العليا =====
+        Positioned(
+          top: 0,
+          right: 0,
+          child: _OrnamentStar(
+            size: R.s(context, 28),
+            color: _gold,
+          ),
+        ),
+
+        // ===== الزخرفة: معين ذهبي في الأسفل =====
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: Transform.translate(
+              offset: Offset(0, R.s(context, 4)),
+              child: Container(
+                width: R.s(context, 8),
+                height: R.s(context, 8),
+                decoration: BoxDecoration(
+                  color: _gold,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _gold.withValues(alpha: 0.6),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                transform: Matrix4.rotationZ(0.785398),
+                transformAlignment: Alignment.center,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -158,7 +248,7 @@ class PostCard extends StatelessWidget {
                 children: [
                   Flexible(
                     child: GestureDetector(
-                      onTap: onAuthorTap,
+                      onTap: widget.onAuthorTap,
                       child: Text(
                         post.userName.isEmpty
                             ? appState.tr('cUserNotFound')
@@ -217,9 +307,9 @@ class PostCard extends StatelessWidget {
             ],
           ),
         ),
-        if (onMore != null)
+        if (widget.onMore != null)
           IconButton(
-            onPressed: onMore,
+            onPressed: widget.onMore,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             icon: Icon(
@@ -232,13 +322,9 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // Avatar — يعرض الصورة أو الرمز حسب الجنس
-  // ============================================================
   Widget _buildAvatar(BuildContext context) {
     final size = R.s(context, 42);
 
-    // محاولة فك الصورة
     Uint8List? bytes;
     if (post.userPhotoBase64.isNotEmpty) {
       try {
@@ -252,14 +338,14 @@ class PostCard extends StatelessWidget {
         bytes,
         fit: BoxFit.cover,
         gaplessPlayback: true,
-        errorBuilder: (_, _, _) => _buildSymbolFallback(context, size),
+        errorBuilder: (_, _, _) => _buildSymbolFallback(context),
       );
     } else {
-      child = _buildSymbolFallback(context, size);
+      child = _buildSymbolFallback(context);
     }
 
     return GestureDetector(
-      onTap: onAuthorTap,
+      onTap: widget.onAuthorTap,
       child: Container(
         width: size,
         height: size,
@@ -279,7 +365,7 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSymbolFallback(BuildContext context, double size) {
+  Widget _buildSymbolFallback(BuildContext context) {
     final path = post.userAvatar == 'woman'
         ? 'assets/images/hijab.png'
         : 'assets/images/arabian.png';
@@ -335,7 +421,7 @@ class PostCard extends StatelessWidget {
                 ? const Color(0xFFE84E6A)
                 : _cream.withValues(alpha: 0.7),
             label: _formatCount(post.likesCount),
-            onTap: onLike,
+            onTap: widget.onLike,
           ),
           SizedBox(width: R.s(context, 18)),
           _buildActionButton(
@@ -343,7 +429,7 @@ class PostCard extends StatelessWidget {
             icon: Icons.chat_bubble_outline,
             color: _cream.withValues(alpha: 0.7),
             label: _formatCount(post.commentsCount),
-            onTap: onComment,
+            onTap: widget.onComment,
           ),
           SizedBox(width: R.s(context, 18)),
           _buildActionButton(
@@ -351,7 +437,7 @@ class PostCard extends StatelessWidget {
             icon: Icons.repeat,
             color: _cream.withValues(alpha: 0.7),
             label: _formatCount(post.repostsCount),
-            onTap: onRepost,
+            onTap: widget.onRepost,
           ),
           const Spacer(),
           if (_isOwner)
@@ -436,4 +522,105 @@ class PostCard extends StatelessWidget {
     final m = count / 1000000;
     return '${m.toStringAsFixed(m >= 10 ? 0 : 1)}M';
   }
+}
+
+// ============================================================
+// _OrnamentStar — نجمة ثمانية إسلامية
+// ============================================================
+class _OrnamentStar extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _OrnamentStar({
+    required this.size,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: 0.35,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(
+          painter: _StarPainter(color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _StarPainter extends CustomPainter {
+  final Color color;
+
+  _StarPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final outerR = size.width / 2;
+    final innerR = outerR * 0.42;
+
+    // 8-point star
+    final path = Path();
+    for (int i = 0; i < 16; i++) {
+      final angle = (i * 3.14159265) / 8 - 1.5708;
+      final r = i.isEven ? outerR : innerR;
+      final x = cx + r * _cos(angle);
+      final y = cy + r * _sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  double _cos(double x) {
+    // تقريب بسيط
+    return _taylorCos(x);
+  }
+
+  double _sin(double x) {
+    return _taylorSin(x);
+  }
+
+  double _taylorCos(double x) {
+    // cos(x) via dart:math
+    return _mathCos(x);
+  }
+
+  double _taylorSin(double x) {
+    return _mathSin(x);
+  }
+
+  double _mathCos(double x) {
+    // نبني cos من sin
+    return _mathSin(x + 1.57079632);
+  }
+
+  double _mathSin(double x) {
+    // تقريب
+    x = x % (2 * 3.14159265);
+    double term = x;
+    double sum = x;
+    for (int i = 1; i < 8; i++) {
+      term *= -x * x / ((2 * i) * (2 * i + 1));
+      sum += term;
+    }
+    return sum;
+  }
+
+  @override
+  bool shouldRepaint(covariant _StarPainter oldDelegate) => false;
 }
