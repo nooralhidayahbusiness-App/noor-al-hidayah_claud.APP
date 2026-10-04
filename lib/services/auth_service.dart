@@ -170,51 +170,70 @@ class AuthService {
   // ============================================================
   /// يرجّع true لو نجح الدخول، false لو ألغى المستخدم.
   Future<bool> signInWithGoogle() async {
+  try {
+    debugPrint('🔵 [Google] Starting sign-in...');
+
+    final GoogleSignIn googleSignIn = GoogleSignIn(
+      clientId: kIsWeb ? _googleWebClientId : null,
+      scopes: const ['email', 'profile'],
+    );
+
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: kIsWeb ? _googleWebClientId : null,
-        scopes: const ['email', 'profile'],
-      );
+      await googleSignIn.signOut();
+    } catch (_) {}
 
-      // ضمان عدم وجود جلسة قديمة
-      try {
-        await googleSignIn.signOut();
-      } catch (_) {}
+    debugPrint('🔵 [Google] Opening account picker...');
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+    debugPrint('🔵 [Google] User picked: ${googleUser?.email}');
 
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        return false;
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
-
-      final uid = userCredential.user?.uid;
-      final isNew = userCredential.additionalUserInfo?.isNewUser ?? false;
-
-      if (uid != null && isNew) {
-        await _createInitialUserDoc(
-          uid: uid,
-          email: userCredential.user!.email ?? '',
-        );
-      }
-
-      return true;
-    } on FirebaseAuthException catch (e) {
-      debugPrint('Google FirebaseAuth error: ${e.code} — ${e.message}');
-      throw AuthException(_mapError(e.code));
-    } catch (e) {
-      debugPrint('Google sign-in error: $e');
-      throw const AuthException('authErrGeneric');
+    if (googleUser == null) {
+      debugPrint('🔵 [Google] User cancelled');
+      return false;
     }
+
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+
+    debugPrint('🔵 [Google] accessToken: ${googleAuth.accessToken?.substring(0, 20)}...');
+    debugPrint('🔵 [Google] idToken: ${googleAuth.idToken?.substring(0, 20)}...');
+
+    if (googleAuth.idToken == null) {
+      throw const AuthException(
+          'idToken is NULL — مشكلة في Google Cloud Console config');
+    }
+
+    final OAuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    debugPrint('🔵 [Google] Signing in with Firebase...');
+    final UserCredential userCredential =
+        await _auth.signInWithCredential(credential);
+
+    debugPrint('🔵 [Google] Firebase user: ${userCredential.user?.uid}');
+    debugPrint('🔵 [Google] isNewUser: ${userCredential.additionalUserInfo?.isNewUser}');
+
+    final uid = userCredential.user?.uid;
+    final isNew = userCredential.additionalUserInfo?.isNewUser ?? false;
+
+    if (uid != null && isNew) {
+      debugPrint('🔵 [Google] Creating user doc...');
+      await _createInitialUserDoc(
+        uid: uid,
+        email: userCredential.user!.email ?? '',
+      );
+      debugPrint('🔵 [Google] User doc created ✅');
+    }
+
+    return true;
+  } on FirebaseAuthException catch (e) {
+    debugPrint('🔴 [Google] FirebaseAuth error: ${e.code} — ${e.message}');
+    throw AuthException('G: ${e.code}');
+  } catch (e) {
+    debugPrint('🔴 [Google] Error: $e');
+    throw AuthException('G: $e');
+  }
   }
 
   // ============================================================
