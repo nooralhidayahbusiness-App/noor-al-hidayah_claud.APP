@@ -11,6 +11,7 @@ import '../core/theme_state.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/app_branding.dart';
+import 'gender_select_screen.dart';
 import 'home_shell.dart';
 import 'location_screen.dart';
 import 'welcome_screen.dart';
@@ -57,7 +58,7 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _goNext() async {
     if (!mounted) return;
 
-    // إذا كان المستخدم مسجّلاً: حمّل بياناته
+    // ===== 1) تحميل بيانات المستخدم =====
     if (authService.isSignedIn) {
       try {
         await Future.wait([
@@ -71,13 +72,30 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     Widget next;
+
+    // ===== 2) غير مسجل → Welcome =====
     if (!authService.isSignedIn) {
       next = const WelcomeScreen();
     } else {
-      // فحص وجود موقع محفوظ
-      final hasLocation =
-          await StorageService().loadLocation() != null;
-      next = hasLocation ? const HomeShell() : const LocationScreen();
+      // ===== 3) مسجل → فحص setupComplete =====
+      bool setupComplete = false;
+      try {
+        final data = await authService.loadUserData();
+        final profile = (data?['profile'] as Map?) ?? {};
+        setupComplete = (profile['setupComplete'] as bool?) ?? false;
+      } catch (_) {}
+
+      if (!mounted) return;
+
+      if (!setupComplete) {
+        // ما أكمل الاسم والجنس → GenderSelectScreen
+        next = const GenderSelectScreen();
+      } else {
+        // فحص الموقع
+        final hasLocation =
+            await StorageService().loadLocation() != null;
+        next = hasLocation ? const HomeShell() : const LocationScreen();
+      }
     }
 
     if (!mounted) return;
