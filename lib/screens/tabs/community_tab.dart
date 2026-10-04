@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -85,7 +88,7 @@ class _CommunityTabState extends State<CommunityTab> {
 }
 
 // ============================================================
-// _MyProfileButton
+// _MyProfileButton — يعرض الصورة المخصصة أو أول حرف
 // ============================================================
 class _MyProfileButton extends StatelessWidget {
   const _MyProfileButton();
@@ -103,9 +106,69 @@ class _MyProfileButton extends StatelessWidget {
       builder: (context, snapshot) {
         final data = snapshot.data?.data() ?? {};
         final brief = UserBrief.fromMap(user.uid, data);
+
+        // ✅ نبحث عن الصورة بذكاء: custom > verification
+        String? photoB64;
+        if (brief.customPhotoBase64.isNotEmpty) {
+          photoB64 = brief.customPhotoBase64;
+        } else if (brief.photoBase64.isNotEmpty) {
+          photoB64 = brief.photoBase64;
+        }
+
+        // fallback: رمز حسب الجنس
+        final fallbackPath = brief.avatar == 'woman'
+            ? 'assets/images/hijab.png'
+            : 'assets/images/arabian.png';
+
+        // initial fallback (لو كل شي فشل)
         final initial = brief.name.isNotEmpty
             ? brief.name.characters.first.toUpperCase()
             : '?';
+
+        Uint8List? bytes;
+        if (photoB64 != null && photoB64.isNotEmpty) {
+          try {
+            bytes = base64Decode(photoB64);
+          } catch (_) {}
+        }
+
+        Widget child;
+        if (bytes != null && bytes.isNotEmpty) {
+          child = Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (_, _, _) => Image.asset(
+              fallbackPath,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Center(
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    color: AppColors.gold,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          );
+        } else {
+          child = Image.asset(
+            fallbackPath,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => Center(
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: AppColors.gold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          );
+        }
 
         return GestureDetector(
           onTap: () => Navigator.of(context).push(
@@ -118,30 +181,16 @@ class _MyProfileButton extends StatelessWidget {
             height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [AppColors.emerald, AppColors.deepGreen],
-              ),
-              border: Border.all(color: AppColors.gold, width: 1.5),
+              border: Border.all(color: AppColors.gold, width: 1.8),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.gold.withValues(alpha: 0.3),
+                  color: AppColors.gold.withValues(alpha: 0.35),
                   blurRadius: 8,
                   spreadRadius: 0,
                 ),
               ],
             ),
-            child: Center(
-              child: Text(
-                initial,
-                style: const TextStyle(
-                  color: AppColors.gold,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            child: ClipOval(child: child),
           ),
         );
       },
