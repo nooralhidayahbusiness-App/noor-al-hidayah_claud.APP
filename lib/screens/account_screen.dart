@@ -11,7 +11,8 @@ import '../services/verification_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/themed_background.dart';
-import '../widgets/verified_badge.dart';
+import '../widgets/user_badges.dart';
+import 'change_photo_screen.dart';
 import 'edit_profile_screen.dart';
 import 'verification_request_screen.dart';
 
@@ -60,15 +61,22 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
-  String _verifiedType() {
+  List<String> _badges() {
+    final list = <String>[];
     final vt = _profile['verifiedType'] as String?;
-    if (vt == 'owner' || vt == 'me' || vt == 'user') return vt!;
-    return 'none';
+    final verified = (_profile['verified'] as bool?) ?? false;
+    if (vt == 'owner') {
+      return const ['owner'];
+    }
+    if (verified && (vt == 'me' || vt == 'user')) {
+      list.add(vt!);
+    }
+    return list;
   }
 
   bool _isVerified() {
-    final t = _verifiedType();
-    return t == 'owner' || t == 'me' || t == 'user';
+    final vt = _profile['verifiedType'] as String?;
+    return vt == 'owner' || vt == 'me' || vt == 'user';
   }
 
   Future<void> _openVerification() async {
@@ -80,7 +88,15 @@ class _AccountScreenState extends State<AccountScreen> {
     await _load();
   }
 
-  // ✅ التعديل: بعد signOut → ننتقل لشاشة "ابدأ الآن"
+  Future<void> _openChangePhoto() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const ChangePhotoScreen(),
+      ),
+    );
+    await _load();
+  }
+
   Future<void> _signOut() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -202,11 +218,36 @@ class _AccountScreenState extends State<AccountScreen> {
     return GlassCard(
       child: Column(
         children: [
-          ProfileAvatar(
-            email: email,
-            avatar: avatar,
-            size: R.s(context, 78),
-            photoBytes: profileState.photoBytes,
+          GestureDetector(
+            onTap: _openChangePhoto,
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                ProfileAvatar(
+                  email: email,
+                  avatar: avatar,
+                  size: R.s(context, 78),
+                  photoBytes: profileState.photoBytes,
+                ),
+                Container(
+                  margin: EdgeInsets.all(R.s(context, 4)),
+                  padding: EdgeInsets.all(R.s(context, 5)),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.gold,
+                    border: Border.all(
+                      color: AppColors.deepGreen,
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.camera_alt,
+                    color: AppColors.deepGreen,
+                    size: R.s(context, 12),
+                  ),
+                ),
+              ],
+            ),
           ),
           SizedBox(height: R.s(context, 8)),
           Row(
@@ -230,7 +271,10 @@ class _AccountScreenState extends State<AccountScreen> {
                 ),
               ),
               SizedBox(width: R.s(context, 5)),
-              VerifiedBadge(type: _verifiedType(), size: R.s(context, 16)),
+              UserBadges(
+                badges: _badges(),
+                size: 16,
+              ),
             ],
           ),
           if (profileState.bio.isNotEmpty) ...[
@@ -479,6 +523,15 @@ class _AccountScreenState extends State<AccountScreen> {
               );
               await _load();
             },
+          ),
+          Divider(
+            height: 1,
+            color: AppColors.gold.withValues(alpha: 0.15),
+          ),
+          _ActionRow(
+            icon: Icons.camera_alt_rounded,
+            title: appState.tr('chooseAvatar'),
+            onTap: _openChangePhoto,
           ),
         ],
       ),
