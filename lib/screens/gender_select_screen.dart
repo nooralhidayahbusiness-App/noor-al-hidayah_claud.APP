@@ -24,6 +24,9 @@ const Map<String, Map<String, String>> _gsTr = {
     'errLastName': 'أدخل اسم العائلة',
     'errGender': 'اختر الجنس',
     'errSave': 'تعذّر الحفظ، حاول مرة أخرى',
+    'warningTitle': '⚠️ تنبيه مهم',
+    'warningBody':
+        'بعد اختيار الجنس، لن يمكنك تغييره أبداً. اختر بعناية.',
   },
   'en': {
     'title': 'Complete your profile',
@@ -39,6 +42,9 @@ const Map<String, Map<String, String>> _gsTr = {
     'errLastName': 'Enter your last name',
     'errGender': 'Choose your gender',
     'errSave': 'Save failed, please try again',
+    'warningTitle': '⚠️ Important',
+    'warningBody':
+        'Once you choose your gender, you can NEVER change it. Choose carefully.',
   },
   'fr': {
     'title': 'Complétez votre profil',
@@ -54,6 +60,9 @@ const Map<String, Map<String, String>> _gsTr = {
     'errLastName': 'Entrez votre nom',
     'errGender': 'Choisissez votre genre',
     'errSave': 'Échec de l\'enregistrement',
+    'warningTitle': '⚠️ Important',
+    'warningBody':
+        'Une fois votre genre choisi, vous ne pourrez JAMAIS le changer.',
   },
   'ur': {
     'title': 'اپنی پروفائل مکمل کریں',
@@ -69,6 +78,9 @@ const Map<String, Map<String, String>> _gsTr = {
     'errLastName': 'اپنا خاندانی نام درج کریں',
     'errGender': 'اپنی جنس منتخب کریں',
     'errSave': 'محفوظ نہیں ہو سکا',
+    'warningTitle': '⚠️ اہم',
+    'warningBody':
+        'جنس منتخب کرنے کے بعد، آپ اسے کبھی تبدیل نہیں کر سکیں گے۔',
   },
   'ne': {
     'title': 'आफ्नो प्रोफाइल पूरा गर्नुहोस्',
@@ -84,6 +96,9 @@ const Map<String, Map<String, String>> _gsTr = {
     'errLastName': 'आफ्नो थर प्रविष्ट गर्नुहोस्',
     'errGender': 'आफ्नो लिङ्ग छान्नुहोस्',
     'errSave': 'सुरक्षित गर्न सकिएन',
+    'warningTitle': '⚠️ महत्त्वपूर्ण',
+    'warningBody':
+        'लिङ्ग छानेपछि, तपाईं यसलाई कहिल्यै परिवर्तन गर्न सक्नुहुने छैन।',
   },
   'id': {
     'title': 'Lengkapi profil Anda',
@@ -99,6 +114,9 @@ const Map<String, Map<String, String>> _gsTr = {
     'errLastName': 'Masukkan nama belakang Anda',
     'errGender': 'Pilih jenis kelamin',
     'errSave': 'Gagal menyimpan',
+    'warningTitle': '⚠️ Penting',
+    'warningBody':
+        'Setelah memilih jenis kelamin, Anda TIDAK BISA mengubahnya.',
   },
   'ms': {
     'title': 'Lengkapkan profil anda',
@@ -114,6 +132,9 @@ const Map<String, Map<String, String>> _gsTr = {
     'errLastName': 'Masukkan nama keluarga anda',
     'errGender': 'Pilih jantina anda',
     'errSave': 'Gagal menyimpan',
+    'warningTitle': '⚠️ Penting',
+    'warningBody':
+        'Selepas memilih jantina, anda TIDAK BOLEH mengubahnya.',
   },
 };
 
@@ -139,7 +160,6 @@ class _GenderSelectScreenState extends State<GenderSelectScreen> {
   @override
   void initState() {
     super.initState();
-    // لو مستخدم Google → نعبّي الاسم الأول من displayName
     final user = authService.currentUser;
     final displayName = user?.displayName?.trim() ?? '';
     if (displayName.isNotEmpty) {
@@ -183,7 +203,7 @@ class _GenderSelectScreenState extends State<GenderSelectScreen> {
       final fullName = '$fn $ln';
 
       await authService.saveUserData({
-        'avatar': _gender, // backward compat
+        'avatar': _gender,
         'profile': {
           'name': fullName,
           'gender': _gender,
@@ -193,7 +213,6 @@ class _GenderSelectScreenState extends State<GenderSelectScreen> {
         },
       });
 
-      // حدّث ProfileState
       await userService.saveProfile(name: fullName);
 
       if (!mounted) return;
@@ -240,7 +259,9 @@ class _GenderSelectScreenState extends State<GenderSelectScreen> {
                   icon: Icons.public_rounded,
                   textInputAction: TextInputAction.done,
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 20),
+
+                // ===== عنوان الجنس =====
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Padding(
@@ -255,6 +276,8 @@ class _GenderSelectScreenState extends State<GenderSelectScreen> {
                     ),
                   ),
                 ),
+
+                // ===== بطاقة اختيار الجنس =====
                 Row(
                   children: [
                     Expanded(
@@ -276,7 +299,16 @@ class _GenderSelectScreenState extends State<GenderSelectScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 26),
+
+                const SizedBox(height: 16),
+
+                // ===== بطاقة التحذير =====
+                _WarningCard(
+                  title: _g('warningTitle'),
+                  body: _g('warningBody'),
+                ),
+
+                const SizedBox(height: 22),
                 GoldButton(
                   label: _g('continue'),
                   loading: _loading,
@@ -292,7 +324,57 @@ class _GenderSelectScreenState extends State<GenderSelectScreen> {
 }
 
 // ============================================================
-// _GenderCard — بطاقة اختيار الجنس
+// _WarningCard — تحذير قبل اختيار الجنس
+// ============================================================
+class _WarningCard extends StatelessWidget {
+  const _WarningCard({
+    required this.title,
+    required this.body,
+  });
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(R.s(context, 12)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFD32F2F).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(R.s(context, 14)),
+        border: Border.all(
+          color: const Color(0xFFD32F2F).withValues(alpha: 0.5),
+          width: 1.2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: const Color(0xFFFF8A80),
+              fontSize: R.f(context, 13),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: R.s(context, 6)),
+          Text(
+            body,
+            style: TextStyle(
+              color: AppColors.cream.withValues(alpha: 0.85),
+              fontSize: R.f(context, 12),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _GenderCard
 // ============================================================
 class _GenderCard extends StatelessWidget {
   const _GenderCard({
