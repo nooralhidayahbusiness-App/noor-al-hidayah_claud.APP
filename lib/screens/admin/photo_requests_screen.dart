@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '../../core/app_state.dart';
 import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../services/verification_service.dart';
@@ -159,9 +158,6 @@ class _PhotoRequestsScreenState extends State<PhotoRequestsScreen> {
   }
 }
 
-// ============================================================
-// _RequestCard — يعرض الصورتين جنب بعض
-// ============================================================
 class _RequestCard extends StatelessWidget {
   final PhotoUpdateRequest request;
   final bool busy;
@@ -183,7 +179,6 @@ class _RequestCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ===== اسم + إيميل =====
           Row(
             children: [
               Icon(
@@ -226,7 +221,6 @@ class _RequestCard extends StatelessWidget {
           ),
           SizedBox(height: R.s(context, 12)),
 
-          // ===== الصورتان =====
           Row(
             children: [
               Expanded(
@@ -256,7 +250,6 @@ class _RequestCard extends StatelessWidget {
 
           SizedBox(height: R.s(context, 14)),
 
-          // ===== أزرار =====
           if (busy)
             const Center(
               child: SizedBox(
