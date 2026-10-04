@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
@@ -170,12 +173,15 @@ class PostCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (post.userVerified) ...[
+                  if (post.badges.isNotEmpty) ...[
                     SizedBox(width: R.s(context, 4)),
-                    VerifiedBadge(
-                      type: post.badgeType,
-                      size: R.s(context, 15),
-                    ),
+                    for (int i = 0; i < post.badges.length; i++) ...[
+                      if (i > 0) SizedBox(width: R.s(context, 2)),
+                      VerifiedBadge(
+                        type: post.badges[i],
+                        size: R.s(context, 15),
+                      ),
+                    ],
                   ],
                 ],
               ),
@@ -226,37 +232,72 @@ class PostCard extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // Avatar — يعرض الصورة أو الرمز حسب الجنس
+  // ============================================================
   Widget _buildAvatar(BuildContext context) {
     final size = R.s(context, 42);
-    final initial = post.userName.isNotEmpty
-        ? post.userName.characters.first.toUpperCase()
-        : '?';
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [_emerald, _deepGreen],
+
+    // محاولة فك الصورة
+    Uint8List? bytes;
+    if (post.userPhotoBase64.isNotEmpty) {
+      try {
+        bytes = base64Decode(post.userPhotoBase64);
+      } catch (_) {}
+    }
+
+    Widget child;
+    if (bytes != null && bytes.isNotEmpty) {
+      child = Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) => _buildSymbolFallback(context, size),
+      );
+    } else {
+      child = _buildSymbolFallback(context, size);
+    }
+
+    return GestureDetector(
+      onTap: onAuthorTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: _gold, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: _gold.withValues(alpha: 0.25),
+              blurRadius: 6,
+              spreadRadius: 0,
+            ),
+          ],
         ),
-        border: Border.all(color: _gold, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: _gold.withValues(alpha: 0.25),
-            blurRadius: 6,
-            spreadRadius: 0,
-          ),
-        ],
+        child: ClipOval(child: child),
       ),
-      child: Center(
-        child: Text(
-          initial,
-          style: TextStyle(
-            color: _gold,
-            fontSize: R.f(context, 16),
-            fontWeight: FontWeight.bold,
+    );
+  }
+
+  Widget _buildSymbolFallback(BuildContext context, double size) {
+    final path = post.userAvatar == 'woman'
+        ? 'assets/images/hijab.png'
+        : 'assets/images/arabian.png';
+    return Image.asset(
+      path,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => Container(
+        color: _emerald,
+        child: Center(
+          child: Text(
+            post.userName.isNotEmpty
+                ? post.userName.characters.first.toUpperCase()
+                : '?',
+            style: TextStyle(
+              color: _gold,
+              fontSize: R.f(context, 16),
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
