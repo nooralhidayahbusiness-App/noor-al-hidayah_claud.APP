@@ -14,7 +14,6 @@ class CommunityService {
   // ============================================================
   // POSTS
   // ============================================================
-
   Stream<List<Post>> postsStream({int limit = 100}) {
     return _posts.snapshots().map((snap) {
       final list = snap.docs
@@ -52,8 +51,10 @@ class CommunityService {
     required String uid,
     required String userName,
     required String userAvatar,
+    required String userPhotoBase64,
     required bool userVerified,
     String userVerifiedType = 'none',
+    List<String> userBadges = const [],
     required String text,
     String? repostOf,
     String? originalAuthorUid,
@@ -64,8 +65,8 @@ class CommunityService {
     if (trimmed.isEmpty) {
       throw ArgumentError('نص المنشور فارغ');
     }
-    if (trimmed.length > 500) {
-      throw ArgumentError('نص المنشور يتجاوز 500 حرف');
+    if (trimmed.length > 1000) {
+      throw ArgumentError('نص المنشور يتجاوز 1000 حرف');
     }
 
     final mentions = Post.extractMentions(trimmed);
@@ -77,8 +78,10 @@ class CommunityService {
       uid: uid,
       userName: userName,
       userAvatar: userAvatar,
+      userPhotoBase64: userPhotoBase64,
       userVerified: userVerified,
       userVerifiedType: userVerifiedType,
+      userBadges: userBadges,
       text: trimmed,
       createdAt: DateTime.now(),
       repostOf: repostOf,
@@ -120,8 +123,8 @@ class CommunityService {
     if (trimmed.isEmpty) {
       throw ArgumentError('نص المنشور فارغ');
     }
-    if (trimmed.length > 500) {
-      throw ArgumentError('نص المنشور يتجاوز 500 حرف');
+    if (trimmed.length > 1000) {
+      throw ArgumentError('نص المنشور يتجاوز 1000 حرف');
     }
 
     final ref = _posts.doc(postId);
@@ -225,39 +228,9 @@ class CommunityService {
     await batch.commit();
   }
 
-  Future<String> repost({
-    required String originalPostId,
-    required String uid,
-    required String userName,
-    required String userAvatar,
-    required bool userVerified,
-    String userVerifiedType = 'none',
-    String? comment,
-  }) async {
-    final originalSnap = await _posts.doc(originalPostId).get();
-    if (!originalSnap.exists) throw Exception('المنشور الأصلي غير موجود');
-    final original = originalSnap.data() ?? {};
-
-    return createPost(
-      uid: uid,
-      userName: userName,
-      userAvatar: userAvatar,
-      userVerified: userVerified,
-      userVerifiedType: userVerifiedType,
-      text: (comment == null || comment.trim().isEmpty)
-          ? (original['text'] ?? '')
-          : comment.trim(),
-      repostOf: originalPostId,
-      originalAuthorUid: original['uid'],
-      originalAuthorName: original['userName'],
-      originalAuthorAvatar: original['userAvatar'],
-    );
-  }
-
   // ============================================================
   // COMMENTS
   // ============================================================
-
   Stream<List<Comment>> commentsStream(String postId) {
     return _posts
         .doc(postId)
@@ -278,8 +251,10 @@ class CommunityService {
     required String uid,
     required String userName,
     required String userAvatar,
+    required String userPhotoBase64,
     required bool userVerified,
     String userVerifiedType = 'none',
+    List<String> userBadges = const [],
     required String text,
   }) async {
     final trimmed = text.trim();
@@ -295,8 +270,10 @@ class CommunityService {
       uid: uid,
       userName: userName,
       userAvatar: userAvatar,
+      userPhotoBase64: userPhotoBase64,
       userVerified: userVerified,
       userVerifiedType: userVerifiedType,
+      userBadges: userBadges,
       text: trimmed,
       createdAt: DateTime.now(),
     );
