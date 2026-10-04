@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -833,7 +832,6 @@ class _CommentTile extends StatelessWidget {
   });
 
   static const Color _gold = Color(0xFFD4AF37);
-  static const Color _deepGreen = Color(0xFF041F18);
   static const Color _green = Color(0xFF0B3D2E);
   static const Color _emerald = Color(0xFF14664C);
   static const Color _cream = Color(0xFFFFF8E7);
