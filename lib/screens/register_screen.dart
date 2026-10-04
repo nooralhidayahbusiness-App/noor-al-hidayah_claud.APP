@@ -95,7 +95,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             key: _formKey,
             child: Column(
               children: [
-                // ===== زر Google Sign-In =====
                 _GoogleButton(
                   loading: _googleLoading,
                   onPressed: _googleSignIn,
@@ -103,8 +102,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
                 _OrDivider(text: appState.tr('locOr')),
                 const SizedBox(height: 20),
-
-                // ===== نموذج Email/Password =====
                 GoldTextField(
                   controller: _email,
                   label: appState.tr('email'),
@@ -166,7 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 }
 
 // ============================================================
-// _GoogleButton — زر Google
+// _GoogleButton
 // ============================================================
 class _GoogleButton extends StatelessWidget {
   const _GoogleButton({
@@ -204,7 +201,6 @@ class _GoogleButton extends StatelessWidget {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // G Icon (Google colors)
                   const _GoogleGIcon(size: 22),
                   const SizedBox(width: 12),
                   Text(
@@ -225,7 +221,7 @@ class _GoogleButton extends StatelessWidget {
 }
 
 // ============================================================
-// _GoogleGIcon — أيقونة G بألوان Google
+// _GoogleGIcon
 // ============================================================
 class _GoogleGIcon extends StatelessWidget {
   const _GoogleGIcon({this.size = 22});
@@ -247,10 +243,8 @@ class _GoogleGIcon extends StatelessWidget {
 class _GoogleGPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
     final paint = Paint()..style = PaintingStyle.fill;
 
-    // رسم G بحلقات ملونة (مبسّط)
     final cx = size.width / 2;
     final cy = size.height / 2;
     final r = size.width / 2;
@@ -262,7 +256,7 @@ class _GoogleGPainter extends CustomPainter {
       const Color(0xFFEA4335), // Red
     ];
 
-    // Blue arc (top-right)
+    // Blue arc
     paint.color = colors[0];
     canvas.drawArc(
       Rect.fromCircle(center: Offset(cx, cy), radius: r),
@@ -274,7 +268,7 @@ class _GoogleGPainter extends CustomPainter {
         ..strokeWidth = size.width * 0.22,
     );
 
-    // Green arc (bottom-right)
+    // Green arc
     paint.color = colors[1];
     canvas.drawArc(
       Rect.fromCircle(center: Offset(cx, cy), radius: r),
@@ -284,7 +278,7 @@ class _GoogleGPainter extends CustomPainter {
       paint,
     );
 
-    // Yellow arc (bottom-left)
+    // Yellow arc
     paint.color = colors[2];
     canvas.drawArc(
       Rect.fromCircle(center: Offset(cx, cy), radius: r),
@@ -294,7 +288,7 @@ class _GoogleGPainter extends CustomPainter {
       paint,
     );
 
-    // Red arc (top-left)
+    // Red arc
     paint.color = colors[3];
     canvas.drawArc(
       Rect.fromCircle(center: Offset(cx, cy), radius: r),
@@ -304,7 +298,7 @@ class _GoogleGPainter extends CustomPainter {
       paint,
     );
 
-    // Horizontal blue bar (G crossbar)
+    // Blue crossbar
     paint
       ..color = colors[0]
       ..style = PaintingStyle.fill;
@@ -324,7 +318,7 @@ class _GoogleGPainter extends CustomPainter {
 }
 
 // ============================================================
-// _OrDivider — خط فاصل "أو"
+// _OrDivider
 // ============================================================
 class _OrDivider extends StatelessWidget {
   const _OrDivider({required this.text});
