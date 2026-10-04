@@ -6,6 +6,7 @@ class Comment {
   final String uid;
   final String userName;
   final String userAvatar;
+  final String userPhotoBase64;
   final bool userVerified;
   final String userVerifiedType;
   final List<String> userBadges;
@@ -22,6 +23,7 @@ class Comment {
     required this.uid,
     required this.userName,
     required this.userAvatar,
+    this.userPhotoBase64 = '',
     required this.userVerified,
     this.userVerifiedType = 'none',
     this.userBadges = const [],
@@ -39,7 +41,8 @@ class Comment {
       postId: map['postId'] ?? '',
       uid: map['uid'] ?? '',
       userName: map['userName'] ?? '',
-      userAvatar: map['userAvatar'] ?? '',
+      userAvatar: map['userAvatar'] ?? 'man',
+      userPhotoBase64: map['userPhotoBase64'] ?? '',
       userVerified: map['userVerified'] ?? false,
       userVerifiedType: map['userVerifiedType'] ?? 'none',
       userBadges: List<String>.from(map['userBadges'] ?? const []),
@@ -58,6 +61,7 @@ class Comment {
       'uid': uid,
       'userName': userName,
       'userAvatar': userAvatar,
+      'userPhotoBase64': userPhotoBase64,
       'userVerified': userVerified,
       'userVerifiedType': userVerifiedType,
       'userBadges': userBadges,
@@ -83,6 +87,7 @@ class Comment {
       uid: uid,
       userName: userName,
       userAvatar: userAvatar,
+      userPhotoBase64: userPhotoBase64,
       userVerified: userVerified,
       userVerifiedType: userVerifiedType,
       userBadges: userBadges,
@@ -98,14 +103,11 @@ class Comment {
   bool isLikedBy(String uid) => likes.contains(uid);
   bool isOwner(String uid) => this.uid == uid;
   bool get isEdited => editedAt != null;
+  bool get hasPhoto => userPhotoBase64.isNotEmpty;
 
   List<String> get badges {
-    if (userBadges.isNotEmpty) {
-      return userBadges;
-    }
-    if (!userVerified) {
-      return const [];
-    }
+    if (userBadges.isNotEmpty) return userBadges;
+    if (!userVerified) return const [];
     if (userVerifiedType == 'owner' ||
         userVerifiedType == 'me' ||
         userVerifiedType == 'user') {
@@ -115,9 +117,7 @@ class Comment {
   }
 
   String get badgeType {
-    if (!userVerified) {
-      return 'none';
-    }
+    if (!userVerified) return 'none';
     if (userVerifiedType == 'owner' ||
         userVerifiedType == 'me' ||
         userVerifiedType == 'user') {
