@@ -17,6 +17,7 @@ class CommunityFeedScreen extends StatefulWidget {
   final String userAvatar;
   final bool userVerified;
   final String userVerifiedType;
+  final List<String> userBadges;
 
   const CommunityFeedScreen({
     super.key,
@@ -26,6 +27,7 @@ class CommunityFeedScreen extends StatefulWidget {
     required this.userAvatar,
     required this.userVerified,
     this.userVerifiedType = 'none',
+    this.userBadges = const [],
   });
 
   @override
@@ -236,6 +238,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           userAvatar: widget.userAvatar,
           userVerified: widget.userVerified,
           userVerifiedType: widget.userVerifiedType,
+          userBadges: widget.userBadges,
         ),
       ),
     );
@@ -253,6 +256,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           userAvatar: widget.userAvatar,
           userVerified: widget.userVerified,
           userVerifiedType: widget.userVerifiedType,
+          userBadges: widget.userBadges,
           repostOf: post.id,
           originalAuthorUid: post.uid,
           originalAuthorName: post.userName,
@@ -276,6 +280,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           currentUserAvatar: widget.userAvatar,
           currentUserVerified: widget.userVerified,
           currentUserVerifiedType: widget.userVerifiedType,
+          currentUserBadges: widget.userBadges,
         ),
       ),
     );
@@ -426,7 +431,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               controller: controller,
               maxLines: null,
               minLines: 4,
-              maxLength: 500,
+              maxLength: 1000,
               autofocus: true,
               style: TextStyle(
                 color: _cream,
