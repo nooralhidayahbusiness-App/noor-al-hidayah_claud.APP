@@ -1,11 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class ChannelVideoData {
   final String id;
   final String title;
   final String url;
   final String thumbnailUrl;
-  final String videoId; // YouTube ID
+  final String videoId;
   final int createdAt;
   final String addedBy;
 
