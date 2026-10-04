@@ -56,7 +56,8 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: appState,
+      // ✅ نستمع لـ appState + profileState (لتحديث الصورة في كل مكان)
+      listenable: Listenable.merge([appState, profileState]),
       builder: (context, _) {
         return Scaffold(
           body: AppBackground(
