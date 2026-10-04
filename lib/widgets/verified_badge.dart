@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'asset_icon.dart';
+import '../core/theme.dart';
 
-/// شعار واحد:
+/// شعار واحد — مع تلوين ذهبي تلقائي
 /// - 'owner' → owner.png (ذهبي مع لمعان)
 /// - 'premium' → premium.png (ذهبي مع لمعان)
 /// - 'me' → true.me.png (ذهبي مع لمعان)
@@ -15,7 +15,6 @@ class VerifiedBadge extends StatefulWidget {
     this.size = 18,
   });
 
-  /// 'owner' | 'premium' | 'me' | 'user' | 'none'
   final String type;
   final double size;
 
@@ -36,25 +35,53 @@ class _VerifiedBadgeState extends State<VerifiedBadge>
     super.dispose();
   }
 
+  String get _asset {
+    switch (widget.type) {
+      case 'owner':
+        return 'assets/icons/owner.png';
+      case 'premium':
+        return 'assets/icons/premium.png';
+      case 'me':
+        return 'assets/icons/true.me.png';
+      case 'user':
+        return 'assets/icons/true.users.png';
+      default:
+        return 'assets/icons/true.users.png';
+    }
+  }
+
+  bool get _isSpecial =>
+      widget.type == 'owner' ||
+      widget.type == 'premium' ||
+      widget.type == 'me';
+
   @override
   Widget build(BuildContext context) {
     if (widget.type == 'none' || widget.type.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final isSpecial = widget.type == 'owner' ||
-        widget.type == 'premium' ||
-        widget.type == 'me';
+    // ✅ صورة مُلوّنة ذهبياً
+    final goldIcon = ColorFiltered(
+      colorFilter: const ColorFilter.mode(
+        AppColors.gold,
+        BlendMode.srcIn,
+      ),
+      child: Image.asset(
+        _asset,
+        width: widget.size,
+        height: widget.size,
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => Icon(
+          Icons.verified,
+          size: widget.size,
+          color: AppColors.gold,
+        ),
+      ),
+    );
 
-    final asset = switch (widget.type) {
-      'owner' => 'assets/icons/owner.png',
-      'premium' => 'assets/icons/premium.png',
-      'me' => 'assets/icons/true.me.png',
-      'user' => 'assets/icons/true.users.png',
-      _ => 'assets/icons/true.users.png',
-    };
-
-    if (isSpecial) {
+    // ===== شعارات خاصة: لمعان متحرك =====
+    if (_isSpecial) {
       return AnimatedBuilder(
         animation: _shimmer,
         builder: (context, child) {
@@ -76,10 +103,10 @@ class _VerifiedBadgeState extends State<VerifiedBadge>
             child: child,
           );
         },
-        child: AssetIcon(path: asset, size: widget.size),
+        child: goldIcon,
       );
     }
 
-    return AssetIcon(path: asset, size: widget.size);
+    return goldIcon;
   }
 }
