@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,7 +22,6 @@ class ProfileState extends ChangeNotifier {
   bool _loaded = false;
 
   ProfileState() {
-    // ✅ يسجّل نفسه — عند signOut، يُصفَّر تلقائياً
     authService.addSignOutHandler(reset);
   }
 
@@ -31,19 +31,48 @@ class ProfileState extends ChangeNotifier {
 
     try {
       if (authService.isSignedIn) {
-        final data = await authService.loadUserData();
-        if (data != null) {
-          avatar = (data['avatar'] as String?) ??
-              ((data['profile'] as Map?)?['avatar'] as String?);
+        // ✅ قراءة مباشرة من السيرفر (لتجنب cache قديم)
+        final uid = authService.currentUser?.uid;
+        if (uid == null) return;
+
+        final snap = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get(const GetOptions(source: Source.server));
+
+        if (snap.exists) {
+          final data = snap.data() ?? {};
           final p = (data['profile'] as Map?) ?? {};
+
+          avatar = (p['gender'] as String?) ??
+              (data['avatar'] as String?) ??
+              'man';
+
           name = (p['name'] as String?) ?? '';
           bio = (p['bio'] as String?) ?? '';
           isPublic = (p['isPublic'] as bool?) ?? true;
 
-          final b64 = p['photoBase64'] as String?;
-          if (b64 != null && b64.isNotEmpty) {
+          // ✅ قراءة الصورة بذكاء
+          photoBytes = null;
+          final photoMode = (p['photoMode'] as String?) ?? 'symbol';
+          final customB64 = p['customPhotoBase64'] as String?;
+          final verificationB64 = p['photoBase64'] as String?;
+
+          String? chosenB64;
+          if (photoMode == 'custom' &&
+              customB64 != null &&
+              customB64.isNotEmpty) {
+            chosenB64 = customB64;
+          } else if (verificationB64 != null &&
+              verificationB64.isNotEmpty) {
+            chosenB64 = verificationB64;
+          } else if (customB64 != null && customB64.isNotEmpty) {
+            chosenB64 = customB64;
+          }
+
+          if (chosenB64 != null && chosenB64.isNotEmpty) {
             try {
-              photoBytes = base64Decode(b64);
+              photoBytes = base64Decode(chosenB64);
             } catch (_) {}
           }
 
@@ -68,7 +97,6 @@ class ProfileState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ✅ يُصفَّر عند signOut
   Future<void> reset() async {
     avatar = null;
     name = '';
@@ -90,16 +118,9 @@ class ProfileState extends ChangeNotifier {
   }
 
   Future<void> setAvatar(String value) async {
+    // ⛔ تم قفل تغيير الجنس نهائياً — هذه الدالة للاستخدام الداخلي فقط
     avatar = value;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyAvatar, value);
-    try {
-      await authService.saveUserData({'avatar': value});
-      await userService.saveProfile();
-    } catch (e) {
-      debugPrint('ProfileState.setAvatar remote error: $e');
-    }
   }
 
   Future<void> updateProfile({
@@ -128,7 +149,7 @@ class ProfileState extends ChangeNotifier {
     }
   }
 
-  /// يُعاد تحميل البيانات (بعد الموافقة على التوثيق).
+  /// إعادة تحميل من السيرفر — يُستدعى بعد تغيير الصورة/التوثيق
   Future<void> refresh() async {
     _loaded = false;
     await load();
