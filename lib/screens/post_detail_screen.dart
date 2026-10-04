@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/app_state.dart';
+import '../core/profile_state.dart';
 import '../core/responsive.dart';
 import '../models/comment.dart';
 import '../models/post.dart';
@@ -18,6 +22,7 @@ class PostDetailScreen extends StatefulWidget {
   final String currentUserAvatar;
   final bool currentUserVerified;
   final String currentUserVerifiedType;
+  final List<String> currentUserBadges;
 
   const PostDetailScreen({
     super.key,
@@ -27,6 +32,7 @@ class PostDetailScreen extends StatefulWidget {
     required this.currentUserAvatar,
     required this.currentUserVerified,
     this.currentUserVerifiedType = 'none',
+    this.currentUserBadges = const [],
   });
 
   @override
@@ -382,8 +388,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         uid: widget.currentUid,
         userName: widget.currentUserName,
         userAvatar: widget.currentUserAvatar,
+        userPhotoBase64: profileState.photoBase64,
         userVerified: widget.currentUserVerified,
         userVerifiedType: widget.currentUserVerifiedType,
+        userBadges: widget.currentUserBadges,
         text: _commentCtrl.text,
       );
       _commentCtrl.clear();
@@ -483,6 +491,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           userAvatar: widget.currentUserAvatar,
           userVerified: widget.currentUserVerified,
           userVerifiedType: widget.currentUserVerifiedType,
+          userBadges: widget.currentUserBadges,
           repostOf: post.id,
           originalAuthorUid: post.uid,
           originalAuthorName: post.userName,
@@ -648,7 +657,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             controller: controller,
             maxLines: null,
             minLines: 4,
-            maxLength: 500,
+            maxLength: 1000,
             autofocus: true,
             style: TextStyle(
               color: _cream,
@@ -875,12 +884,15 @@ class _CommentTile extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (comment.userVerified) ...[
+                      if (comment.badges.isNotEmpty) ...[
                         SizedBox(width: R.s(context, 3)),
-                        VerifiedBadge(
-                          type: comment.badgeType,
-                          size: R.s(context, 13),
-                        ),
+                        for (int i = 0; i < comment.badges.length; i++) ...[
+                          if (i > 0) SizedBox(width: R.s(context, 2)),
+                          VerifiedBadge(
+                            type: comment.badges[i],
+                            size: R.s(context, 13),
+                          ),
+                        ],
                       ],
                     ],
                   ),
@@ -929,28 +941,56 @@ class _CommentTile extends StatelessWidget {
 
   Widget _buildAvatar(BuildContext context) {
     final size = R.s(context, 28);
-    final initial = comment.userName.isNotEmpty
-        ? comment.userName.characters.first.toUpperCase()
-        : '?';
+
+    Uint8List? bytes;
+    if (comment.userPhotoBase64.isNotEmpty) {
+      try {
+        bytes = base64Decode(comment.userPhotoBase64);
+      } catch (_) {}
+    }
+
+    Widget child;
+    if (bytes != null && bytes.isNotEmpty) {
+      child = Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) => _symbolFallback(context),
+      );
+    } else {
+      child = _symbolFallback(context);
+    }
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [_emerald, _deepGreen],
-        ),
         border: Border.all(color: _gold, width: 1),
       ),
-      child: Center(
-        child: Text(
-          initial,
-          style: TextStyle(
-            color: _gold,
-            fontSize: R.f(context, 12),
-            fontWeight: FontWeight.bold,
+      child: ClipOval(child: child),
+    );
+  }
+
+  Widget _symbolFallback(BuildContext context) {
+    final path = comment.userAvatar == 'woman'
+        ? 'assets/images/hijab.png'
+        : 'assets/images/arabian.png';
+    return Image.asset(
+      path,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => Container(
+        color: _emerald,
+        child: Center(
+          child: Text(
+            comment.userName.isNotEmpty
+                ? comment.userName.characters.first.toUpperCase()
+                : '?',
+            style: TextStyle(
+              color: _gold,
+              fontSize: R.f(context, 12),
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
