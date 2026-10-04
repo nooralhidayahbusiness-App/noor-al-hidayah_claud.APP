@@ -8,10 +8,10 @@ import '../models/post.dart';
 import '../models/user_brief.dart';
 import '../services/community_service.dart';
 import '../services/follow_service.dart';
-import '../widgets/avatar_picker.dart';
 import '../widgets/post_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/verified_badge.dart';
+import 'change_photo_screen.dart';
 import 'create_post_screen.dart';
 import 'follow_list_screen.dart';
 import 'post_detail_screen.dart';
@@ -133,10 +133,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  // ============================================================
+  // Avatar Section — الضغط يفتح ChangePhotoScreen
+  // ============================================================
   Widget _buildAvatarSection(BuildContext context, UserBrief user) {
     return Center(
       child: GestureDetector(
-        onTap: _isOwnProfile ? () => showAvatarPicker(context) : null,
+        onTap: _isOwnProfile
+            ? () => _openChangePhoto(context)
+            : null,
         child: Stack(
           alignment: Alignment.bottomLeft,
           children: [
@@ -144,7 +149,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               email: user.email,
               avatar: user.avatar,
               size: R.s(context, 100),
-              photoBytes: user.photoBytes,
+              photoBytes: user.displayPhotoBytes,
+              showCrown: user.isPremium,
             ),
             if (_isOwnProfile)
               Container(
@@ -189,11 +195,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
             ),
           ),
-          if (user.verified) ...[
+          if (user.badges.isNotEmpty) ...[
             SizedBox(width: R.s(context, 6)),
-            VerifiedBadge(
-              type: user.badgeType,
-              size: R.s(context, 21),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (int i = 0; i < user.badges.length; i++) ...[
+                  if (i > 0) SizedBox(width: R.s(context, 3)),
+                  VerifiedBadge(
+                    type: user.badges[i],
+                    size: R.s(context, 21),
+                  ),
+                ],
+              ],
             ),
           ],
         ],
@@ -482,6 +496,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  Future<void> _openChangePhoto(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const ChangePhotoScreen(),
+      ),
+    );
+    await _loadCurrentUser();
+  }
+
   void _openVerificationScreen() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -578,6 +601,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 }
 
+// ============================================================
+// _CountTile
+// ============================================================
 class _CountTile extends StatelessWidget {
   final String label;
   final Stream<int> stream;
