@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/app_flow.dart';
 import '../../core/app_state.dart';
 import '../../core/fonts.dart';
 import '../../core/navigation.dart';
@@ -215,7 +216,7 @@ class HomeTab extends StatelessWidget {
 }
 
 // ============================================================
-// _Avatar — يعرض صورة البروفايل الحقيقية (من profileState)
+// _Avatar
 // ============================================================
 class _Avatar extends StatelessWidget {
   const _Avatar();
