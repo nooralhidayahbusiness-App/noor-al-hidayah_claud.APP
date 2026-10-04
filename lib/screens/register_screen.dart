@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_flow.dart';
 import '../core/app_state.dart';
 import '../core/navigation.dart';
+import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/validators.dart';
 import '../services/auth_service.dart';
@@ -201,7 +202,16 @@ class _GoogleButton extends StatelessWidget {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const _GoogleGIcon(size: 22),
+                  Image.asset(
+                    'assets/icons/google.png',
+                    width: R.s(context, 22),
+                    height: R.s(context, 22),
+                    errorBuilder: (_, _, _) => const Icon(
+                      Icons.g_mobiledata_rounded,
+                      size: 26,
+                      color: Color(0xFF4285F4),
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Text(
                     appState.isArabic
@@ -218,103 +228,6 @@ class _GoogleButton extends StatelessWidget {
       ),
     );
   }
-}
-
-// ============================================================
-// _GoogleGIcon
-// ============================================================
-class _GoogleGIcon extends StatelessWidget {
-  const _GoogleGIcon({this.size = 22});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: _GoogleGPainter(),
-      ),
-    );
-  }
-}
-
-class _GoogleGPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final r = size.width / 2;
-
-    final colors = [
-      const Color(0xFF4285F4), // Blue
-      const Color(0xFF34A853), // Green
-      const Color(0xFFFBBC05), // Yellow
-      const Color(0xFFEA4335), // Red
-    ];
-
-    // Blue arc
-    paint.color = colors[0];
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      -0.5,
-      1.5,
-      false,
-      paint
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.width * 0.22,
-    );
-
-    // Green arc
-    paint.color = colors[1];
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      1.0,
-      1.2,
-      false,
-      paint,
-    );
-
-    // Yellow arc
-    paint.color = colors[2];
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      2.2,
-      1.0,
-      false,
-      paint,
-    );
-
-    // Red arc
-    paint.color = colors[3];
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      3.2,
-      0.9,
-      false,
-      paint,
-    );
-
-    // Blue crossbar
-    paint
-      ..color = colors[0]
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromLTWH(
-        cx,
-        cy - size.height * 0.11,
-        r * 1.05,
-        size.height * 0.22,
-      ),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ============================================================
