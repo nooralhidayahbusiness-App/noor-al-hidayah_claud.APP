@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -196,7 +195,6 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
   bool _hasPending = false;
   bool _isVerified = false;
   String _gender = 'man';
-  String _photoMode = 'symbol';
   String _currentPhotoBase64 = '';
   Uint8List? _pickedBytes;
   int _cooldownHours = 0;
@@ -228,7 +226,6 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
           _gender = (profile['gender'] as String?) ??
               (data['avatar'] as String?) ??
               'man';
-          _photoMode = (profile['photoMode'] as String?) ?? 'symbol';
           _currentPhotoBase64 =
               (profile['customPhotoBase64'] as String?) ?? '';
           _isVerified = isVerified;
@@ -269,14 +266,12 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
       final base64Str = base64Encode(_pickedBytes!);
 
       if (_isVerified) {
-        // موثق → طلب إعادة توثيق
         await verificationService.submitPhotoChangeRequest(
           oldPhotoBase64: _currentPhotoBase64,
           newPhotoBase64: base64Str,
         );
         _showSnack(_cp('sendSuccess'));
       } else {
-        // غير موثق → تطبيق فوري
         await verificationService.applyPhotoChangeImmediate(
           customPhotoBase64: base64Str,
           photoMode: 'custom',
@@ -616,7 +611,6 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
       ornament: false,
       child: Column(
         children: [
-          // ===== رفع صورة جديدة =====
           GestureDetector(
             onTap: disabled ? null : _pickImage,
             child: Container(
@@ -666,8 +660,6 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
                     ),
             ),
           ),
-
-          // ===== زر الحفظ =====
           if (_pickedBytes != null) ...[
             SizedBox(height: R.s(context, 14)),
             SizedBox(
@@ -702,8 +694,6 @@ class _ChangePhotoScreenState extends State<ChangePhotoScreen> {
               ),
             ),
           ],
-
-          // ===== زر استخدام Symbol (لو مستخدم custom) =====
           if (_currentPhotoBase64.isNotEmpty) ...[
             SizedBox(height: R.s(context, 14)),
             SizedBox(
