@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 /// Readable error keys
 class AuthException implements Exception {
@@ -26,11 +25,6 @@ class AuthService {
     'nooralimanechannel@gmail.com',
     'nooralhidayahbusiness@gmail.com',
   ];
-
-  /// Google Web Client ID — من Firebase Console
-  /// (public key — آمن للـ version control)
-  static const String _googleWebClientId =
-      '762471094332-l8vkd8up5i13ivjt1btr0urllgvtoupm.apps.googleusercontent.com';
 
   // ============================================================
   // SignOut Handlers
@@ -166,86 +160,9 @@ class AuthService {
   }
 
   // ============================================================
-  // Google Sign-In
-  // ============================================================
-  /// يرجّع true لو نجح الدخول، false لو ألغى المستخدم.
-  Future<bool> signInWithGoogle() async {
-  try {
-    debugPrint('🔵 [Google] Starting sign-in...');
-
-    final GoogleSignIn googleSignIn = GoogleSignIn(
-      clientId: kIsWeb ? _googleWebClientId : null,
-      scopes: const ['email', 'profile'],
-    );
-
-    try {
-      await googleSignIn.signOut();
-    } catch (_) {}
-
-    debugPrint('🔵 [Google] Opening account picker...');
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-    debugPrint('🔵 [Google] User picked: ${googleUser?.email}');
-
-    if (googleUser == null) {
-      debugPrint('🔵 [Google] User cancelled');
-      return false;
-    }
-
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-
-    debugPrint('🔵 [Google] accessToken: ${googleAuth.accessToken?.substring(0, 20)}...');
-    debugPrint('🔵 [Google] idToken: ${googleAuth.idToken?.substring(0, 20)}...');
-
-    if (googleAuth.idToken == null) {
-      throw const AuthException(
-          'idToken is NULL — مشكلة في Google Cloud Console config');
-    }
-
-    final OAuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    debugPrint('🔵 [Google] Signing in with Firebase...');
-    final UserCredential userCredential =
-        await _auth.signInWithCredential(credential);
-
-    debugPrint('🔵 [Google] Firebase user: ${userCredential.user?.uid}');
-    debugPrint('🔵 [Google] isNewUser: ${userCredential.additionalUserInfo?.isNewUser}');
-
-    final uid = userCredential.user?.uid;
-    final isNew = userCredential.additionalUserInfo?.isNewUser ?? false;
-
-    if (uid != null && isNew) {
-      debugPrint('🔵 [Google] Creating user doc...');
-      await _createInitialUserDoc(
-        uid: uid,
-        email: userCredential.user!.email ?? '',
-      );
-      debugPrint('🔵 [Google] User doc created ✅');
-    }
-
-    return true;
-  } on FirebaseAuthException catch (e) {
-    debugPrint('🔴 [Google] FirebaseAuth error: ${e.code} — ${e.message}');
-    throw AuthException('G: ${e.code}');
-  } catch (e) {
-    debugPrint('🔴 [Google] Error: $e');
-    throw AuthException('G: $e');
-  }
-  }
-
-  // ============================================================
   // SignOut
   // ============================================================
   Future<void> signOut() async {
-    try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: kIsWeb ? _googleWebClientId : null,
-      );
-      await googleSignIn.signOut();
-    } catch (_) {}
     await _auth.signOut();
     for (final handler in _signOutHandlers) {
       try {
@@ -272,6 +189,9 @@ class AuthService {
     return snap.data();
   }
 
+  // ============================================================
+  // Error mapping
+  // ============================================================
   String _mapError(String code) {
     switch (code) {
       case 'email-already-in-use':
@@ -288,8 +208,6 @@ class AuthService {
         return 'authErrTooMany';
       case 'network-request-failed':
         return 'authErrNetwork';
-      case 'account-exists-with-different-credential':
-        return 'authErrEmailInUse';
       default:
         return 'authErrGeneric';
     }
