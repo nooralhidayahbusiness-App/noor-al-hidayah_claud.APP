@@ -85,7 +85,7 @@ class _CommunityTabState extends State<CommunityTab> {
 }
 
 // ============================================================
-// _MyProfileButton — زر دائري يفتح بروفايل المستخدم
+// _MyProfileButton
 // ============================================================
 class _MyProfileButton extends StatelessWidget {
   const _MyProfileButton();
@@ -102,15 +102,10 @@ class _MyProfileButton extends StatelessWidget {
           .snapshots(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() ?? {};
-        final profile =
-            (data['profile'] as Map<String, dynamic>?) ?? const {};
-        final rawName = (profile['name'] as String?)?.trim();
-        final name = (rawName != null && rawName.isNotEmpty)
-            ? rawName
-            : (user.displayName?.trim().isNotEmpty == true
-                ? user.displayName!
-                : '?');
-        final initial = name.characters.first.toUpperCase();
+        final brief = UserBrief.fromMap(user.uid, data);
+        final initial = brief.name.isNotEmpty
+            ? brief.name.characters.first.toUpperCase()
+            : '?';
 
         return GestureDetector(
           onTap: () => Navigator.of(context).push(
@@ -185,34 +180,16 @@ class _CommunitySection extends StatelessWidget {
         }
 
         final data = snapshot.data?.data() ?? {};
-        final profile =
-            (data['profile'] as Map<String, dynamic>?) ?? <String, dynamic>{};
-
-        final rawName = (profile['name'] as String?)?.trim();
-        final userName = (rawName != null && rawName.isNotEmpty)
-            ? rawName
-            : (user.displayName?.trim().isNotEmpty == true
-                ? user.displayName!
-                : 'مستخدم');
-
-        final userAvatar = (data['avatar'] as String?) ?? 'man';
-
-        final email = (data['email'] as String?) ?? user.email ?? '';
-        final isOwnerEmail = kOwnerEmails.contains(email.toLowerCase());
-
-        final userVerified =
-            isOwnerEmail || ((profile['verified'] as bool?) ?? false);
-        final userVerifiedType = isOwnerEmail
-            ? 'owner'
-            : ((profile['verifiedType'] as String?) ?? 'none');
+        final brief = UserBrief.fromMap(user.uid, data);
 
         return CommunityFeedScreen(
           uid: user.uid,
-          userName: userName,
-          userEmail: email,
-          userAvatar: userAvatar,
-          userVerified: userVerified,
-          userVerifiedType: userVerifiedType,
+          userName: brief.name,
+          userEmail: brief.email,
+          userAvatar: brief.avatar,
+          userVerified: brief.verified,
+          userVerifiedType: brief.verifiedType,
+          userBadges: brief.badges,
         );
       },
     );
