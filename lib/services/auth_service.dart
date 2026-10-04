@@ -27,6 +27,11 @@ class AuthService {
     'nooralhidayahbusiness@gmail.com',
   ];
 
+  /// Google Web Client ID — من Firebase Console
+  /// (public key — آمن للـ version control)
+  static const String _googleWebClientId =
+      '762471094332-l8vkd8up5i13ivjt1btr0urllgvtoupm.apps.googleusercontent.com';
+
   // ============================================================
   // SignOut Handlers
   // ============================================================
@@ -52,7 +57,7 @@ class AuthService {
   }
 
   // ============================================================
-  // Initial user doc (مشترك بين email & google)
+  // Initial user doc
   // ============================================================
   Map<String, dynamic> _buildInitialProfile(String email) {
     final isOwner = _ownerEmails.contains(email.toLowerCase());
@@ -139,6 +144,7 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw AuthException(_mapError(e.code));
     } catch (e) {
+      debugPrint('Register error: $e');
       throw const AuthException('authErrGeneric');
     }
   }
@@ -166,12 +172,17 @@ class AuthService {
   Future<bool> signInWithGoogle() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: kIsWeb ? _googleWebClientId : null,
         scopes: const ['email', 'profile'],
       );
 
+      // ضمان عدم وجود جلسة قديمة
+      try {
+        await googleSignIn.signOut();
+      } catch (_) {}
+
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        // المستخدم أغلق نافذة الاختيار
         return false;
       }
 
@@ -189,7 +200,6 @@ class AuthService {
       final uid = userCredential.user?.uid;
       final isNew = userCredential.additionalUserInfo?.isNewUser ?? false;
 
-      // لو مستخدم جديد → أنشئ ملفه
       if (uid != null && isNew) {
         await _createInitialUserDoc(
           uid: uid,
@@ -199,6 +209,7 @@ class AuthService {
 
       return true;
     } on FirebaseAuthException catch (e) {
+      debugPrint('Google FirebaseAuth error: ${e.code} — ${e.message}');
       throw AuthException(_mapError(e.code));
     } catch (e) {
       debugPrint('Google sign-in error: $e');
@@ -211,7 +222,9 @@ class AuthService {
   // ============================================================
   Future<void> signOut() async {
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: kIsWeb ? _googleWebClientId : null,
+      );
       await googleSignIn.signOut();
     } catch (_) {}
     await _auth.signOut();
