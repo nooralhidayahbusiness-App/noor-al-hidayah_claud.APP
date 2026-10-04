@@ -133,15 +133,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Avatar Section — الضغط يفتح ChangePhotoScreen
-  // ============================================================
   Widget _buildAvatarSection(BuildContext context, UserBrief user) {
     return Center(
       child: GestureDetector(
-        onTap: _isOwnProfile
-            ? () => _openChangePhoto(context)
-            : null,
+        onTap: _isOwnProfile ? () => _openChangePhoto(context) : null,
         child: Stack(
           alignment: Alignment.bottomLeft,
           children: [
@@ -547,6 +542,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           userAvatar: _currentUser!.avatar,
           userVerified: _currentUser!.verified,
           userVerifiedType: _currentUser!.verifiedType,
+          userBadges: _currentUser!.badges,
           repostOf: post.id,
           originalAuthorUid: post.uid,
           originalAuthorName: post.userName,
@@ -571,6 +567,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           currentUserAvatar: _currentUser!.avatar,
           currentUserVerified: _currentUser!.verified,
           currentUserVerifiedType: _currentUser!.verifiedType,
+          currentUserBadges: _currentUser!.badges,
         ),
       ),
     );
@@ -601,9 +598,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 }
 
-// ============================================================
-// _CountTile
-// ============================================================
 class _CountTile extends StatelessWidget {
   final String label;
   final Stream<int> stream;
