@@ -4,10 +4,11 @@ class Post {
   final String id;
   final String uid;
   final String userName;
-  final String userAvatar;
+  final String userAvatar; // 'man' | 'woman'
+  final String userPhotoBase64; // صورة المستخدم المخصصة (إن وُجدت)
   final bool userVerified;
-  final String userVerifiedType; // 'owner' | 'me' | 'user' | 'none'
-  final List<String> userBadges; // ['owner'] / ['premium','me'] / []
+  final String userVerifiedType;
+  final List<String> userBadges;
   final String text;
   final DateTime createdAt;
   final DateTime? editedAt;
@@ -33,6 +34,7 @@ class Post {
     required this.uid,
     required this.userName,
     required this.userAvatar,
+    this.userPhotoBase64 = '',
     required this.userVerified,
     this.userVerifiedType = 'none',
     this.userBadges = const [],
@@ -58,7 +60,8 @@ class Post {
       id: id,
       uid: map['uid'] ?? '',
       userName: map['userName'] ?? '',
-      userAvatar: map['userAvatar'] ?? '',
+      userAvatar: map['userAvatar'] ?? 'man',
+      userPhotoBase64: map['userPhotoBase64'] ?? '',
       userVerified: map['userVerified'] ?? false,
       userVerifiedType: map['userVerifiedType'] ?? 'none',
       userBadges: List<String>.from(map['userBadges'] ?? const []),
@@ -86,6 +89,7 @@ class Post {
       'uid': uid,
       'userName': userName,
       'userAvatar': userAvatar,
+      'userPhotoBase64': userPhotoBase64,
       'userVerified': userVerified,
       'userVerifiedType': userVerifiedType,
       'userBadges': userBadges,
@@ -122,6 +126,7 @@ class Post {
       uid: uid,
       userName: userName,
       userAvatar: userAvatar,
+      userPhotoBase64: userPhotoBase64,
       userVerified: userVerified,
       userVerifiedType: userVerifiedType,
       userBadges: userBadges,
@@ -143,24 +148,15 @@ class Post {
     );
   }
 
-  // ============================================================
-  // Helpers
-  // ============================================================
   bool isLikedBy(String uid) => likes.contains(uid);
   bool isOwner(String uid) => this.uid == uid;
   bool get isEdited => editedAt != null;
   bool get isRepost => repostOf != null;
+  bool get hasPhoto => userPhotoBase64.isNotEmpty;
 
-  /// قائمة الشارات المعروضة
-  /// - لو `userBadges` موجود → نستخدمه
-  /// - وإلا → نبني من `userVerifiedType` (backward compat)
   List<String> get badges {
-    if (userBadges.isNotEmpty) {
-      return userBadges;
-    }
-    if (!userVerified) {
-      return const [];
-    }
+    if (userBadges.isNotEmpty) return userBadges;
+    if (!userVerified) return const [];
     if (userVerifiedType == 'owner' ||
         userVerifiedType == 'me' ||
         userVerifiedType == 'user') {
@@ -169,11 +165,8 @@ class Post {
     return const ['user'];
   }
 
-  /// نوع الشعار الفعلي (للتوافق)
   String get badgeType {
-    if (!userVerified) {
-      return 'none';
-    }
+    if (!userVerified) return 'none';
     if (userVerifiedType == 'owner' ||
         userVerifiedType == 'me' ||
         userVerifiedType == 'user') {
