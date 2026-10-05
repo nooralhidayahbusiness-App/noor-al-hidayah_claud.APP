@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/comment.dart';
 import '../models/post.dart';
+import '../models/user_brief.dart';
 import 'community_notification_service.dart';
 
 class CommunityService {
@@ -18,7 +20,7 @@ class CommunityService {
     return _posts.snapshots().map((snap) {
       final list = snap.docs
           .map((d) => Post.fromMap(d.id, d.data()))
-          .where((p) => !p.isDeleted)
+          .where((p) => !p.isDeleted && !p.isGlobalPin)
           .toList();
       list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       if (list.length > limit) return list.sublist(0, limit);
@@ -26,6 +28,55 @@ class CommunityService {
     });
   }
 
+  /// ✅ منشور الترحيب العالمي (إن وُجد)
+  Stream<Post?> globalPinnedStream() {
+    return _posts
+        .where('isGlobalPin', isEqualTo: true)
+        .snapshots()
+        .map((snap) {
+      if (snap.docs.isEmpty) return null;
+      final d = snap.docs.first;
+      return Post.fromMap(d.id, d.data());
+    });
+  }
+
+  /// ✅ للمالك فقط: تعيين/إلغاء منشور الترحيب العالمي
+  Future<void> toggleGlobalPin({
+    required String postId,
+    required String uid,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('not signed in');
+    final email = (user.email ?? '').toLowerCase();
+    if (!kOwnerEmails.contains(email)) {
+      throw Exception('غير مصرح');
+    }
+
+    final ref = _posts.doc(postId);
+    final snap = await ref.get();
+    if (!snap.exists) throw Exception('المنشور غير موجود');
+
+    final current = snap.data()?['isGlobalPin'] == true;
+
+    if (current) {
+      // إلغاء التثبيت العالمي
+      await ref.update({'isGlobalPin': false});
+      return;
+    }
+
+    // إلغاء التثبيت العالمي من أي منشور آخر
+    final existing = await _posts
+        .where('isGlobalPin', isEqualTo: true)
+        .get();
+    final batch = _db.batch();
+    for (final doc in existing.docs) {
+      batch.update(doc.reference, {'isGlobalPin': false});
+    }
+    batch.update(ref, {'isGlobalPin': true});
+    await batch.commit();
+  }
+
+  /// Stream منشورات مستخدم معيّن (لصفحة البروفايل)
   Stream<List<Post>> userPostsStream(String uid, {int limit = 100}) {
     return _posts.where('uid', isEqualTo: uid).snapshots().map((snap) {
       final list = snap.docs
