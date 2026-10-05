@@ -157,7 +157,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               color: _gold, size: R.s(context, 16)),
           SizedBox(width: R.s(context, 6)),
           Text(
-            'منشور الترحيب',
+            appState.tr('cWelcomePost'),
             style: TextStyle(
               color: _gold,
               fontSize: R.f(context, 12),
@@ -183,7 +183,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: R.s(context, 10)),
             child: Text(
-              'منشورات المجتمع',
+              appState.tr('cCommunityPosts'),
               style: TextStyle(
                 fontSize: R.f(context, 11),
                 color: _cream.withValues(alpha: 0.5),
