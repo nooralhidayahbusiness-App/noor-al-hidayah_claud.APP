@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/responsive.dart';
 import '../../core/theme.dart';
+import '../../services/community_notification_service.dart';
 import '../../services/verification_service.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/themed_background.dart';
@@ -16,6 +17,8 @@ class PhotoRequestsScreen extends StatefulWidget {
 }
 
 class _PhotoRequestsScreenState extends State<PhotoRequestsScreen> {
+  final CommunityNotificationService _notif =
+      CommunityNotificationService();
   bool _loading = true;
   List<PhotoUpdateRequest> _requests = [];
   String? _busyUid;
@@ -41,6 +44,13 @@ class _PhotoRequestsScreenState extends State<PhotoRequestsScreen> {
     setState(() => _busyUid = r.uid);
     try {
       await verificationService.approvePhotoChange(targetUid: r.uid);
+
+      // ✅ إشعار للمستخدم
+      await _notif.sendFromAdmin(
+        toUid: r.uid,
+        type: 'photo_approved',
+      );
+
       if (mounted) _snack('تمت الموافقة ✓');
       await _load();
     } catch (e) {
@@ -54,6 +64,13 @@ class _PhotoRequestsScreenState extends State<PhotoRequestsScreen> {
     setState(() => _busyUid = r.uid);
     try {
       await verificationService.rejectPhotoChange(targetUid: r.uid);
+
+      // ✅ إشعار للمستخدم
+      await _notif.sendFromAdmin(
+        toUid: r.uid,
+        type: 'photo_rejected',
+      );
+
       if (mounted) _snack('تم الرفض');
       await _load();
     } catch (e) {
@@ -220,7 +237,6 @@ class _RequestCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: R.s(context, 12)),
-
           Row(
             children: [
               Expanded(
@@ -247,9 +263,7 @@ class _RequestCard extends StatelessWidget {
               ),
             ],
           ),
-
           SizedBox(height: R.s(context, 14)),
-
           if (busy)
             const Center(
               child: SizedBox(
