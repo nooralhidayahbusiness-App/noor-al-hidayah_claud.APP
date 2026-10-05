@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/channel_config.dart';
 import '../../core/fonts.dart';
-import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../models/channel_video_data.dart';
 import '../../services/link_service.dart';
@@ -51,39 +50,39 @@ class _ChannelViewState extends State<ChannelView>
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
-        return NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            // ===== 1) بطاقة القناة (تنزلق مع السكرول) =====
-            SliverToBoxAdapter(
-              child: _ChannelHeader(
-                onSubscribe: () => _open(
-                  context,
-                  kChannelUrl.isEmpty ? '' : subscribeUrl(kChannelUrl),
+        return Directionality(
+          textDirection: appState.direction,
+          child: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+              SliverToBoxAdapter(
+                child: _ChannelHeader(
+                  onSubscribe: () => _open(
+                    context,
+                    kChannelUrl.isEmpty ? '' : subscribeUrl(kChannelUrl),
+                  ),
+                  onOpenChannel: () => _open(context, kChannelUrl),
                 ),
-                onOpenChannel: () => _open(context, kChannelUrl),
               ),
-            ),
-
-            // ===== 2) التابات (تثبت في الأعلى) =====
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _TabsDelegate(
-                tabBar: _buildTabBar(context),
-              ),
-            ),
-          ],
-          body: TabBarView(
-            controller: _tabs,
-            children: [
-              _VideoList(
-                isReel: false,
-                onOpen: (url) => _open(context, url),
-              ),
-              _VideoList(
-                isReel: true,
-                onOpen: (url) => _open(context, url),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _TabsDelegate(
+                  tabBar: _buildTabBar(context),
+                ),
               ),
             ],
+            body: TabBarView(
+              controller: _tabs,
+              children: [
+                _VideoList(
+                  isReel: false,
+                  onOpen: (url) => _open(context, url),
+                ),
+                _VideoList(
+                  isReel: true,
+                  onOpen: (url) => _open(context, url),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -121,15 +120,15 @@ class _ChannelViewState extends State<ChannelView>
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
-          tabs: const [
+          tabs: [
             Tab(
               height: 40,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.smart_display_rounded, size: 17),
-                  SizedBox(width: 6),
-                  Text('الفيديوهات'),
+                  const Icon(Icons.smart_display_rounded, size: 17),
+                  const SizedBox(width: 6),
+                  Text(appState.tr('cVideos')),
                 ],
               ),
             ),
@@ -138,9 +137,9 @@ class _ChannelViewState extends State<ChannelView>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.movie_filter_rounded, size: 17),
-                  SizedBox(width: 6),
-                  Text('الريلز'),
+                  const Icon(Icons.movie_filter_rounded, size: 17),
+                  const SizedBox(width: 6),
+                  Text(appState.tr('cReels')),
                 ],
               ),
             ),
@@ -151,9 +150,6 @@ class _ChannelViewState extends State<ChannelView>
   }
 }
 
-// ============================================================
-// _TabsDelegate — SliverPersistentHeader للتابات
-// ============================================================
 class _TabsDelegate extends SliverPersistentHeaderDelegate {
   final Widget tabBar;
 
@@ -182,9 +178,6 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _TabsDelegate oldDelegate) => false;
 }
 
-// ============================================================
-// _ChannelHeader — نسخة مصغّرة شبيهة بـ YouTube
-// ============================================================
 class _ChannelHeader extends StatelessWidget {
   final VoidCallback onSubscribe;
   final VoidCallback onOpenChannel;
@@ -204,7 +197,6 @@ class _ChannelHeader extends StatelessWidget {
         ornament: false,
         child: Column(
           children: [
-            // ===== الصف الأول: شعار + اسم + @handle =====
             Row(
               children: [
                 _ChannelLogo(size: R.s(context, 72)),
@@ -252,8 +244,6 @@ class _ChannelHeader extends StatelessWidget {
               ],
             ),
             SizedBox(height: R.s(context, 12)),
-
-            // ===== الصف الثاني: زر الاشتراك + فتح القناة =====
             Row(
               children: [
                 Expanded(
@@ -312,9 +302,6 @@ class _ChannelHeader extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _VideoList
-// ============================================================
 class _VideoList extends StatelessWidget {
   final bool isReel;
   final void Function(String url) onOpen;
@@ -355,7 +342,9 @@ class _VideoList extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                isReel ? 'لا توجد ريلز بعد' : appState.tr('videosSoon'),
+                isReel
+                    ? appState.tr('cNoReelsYet')
+                    : appState.tr('cVideosSoon'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   height: 1.6,
@@ -366,7 +355,6 @@ class _VideoList extends StatelessWidget {
           );
         }
 
-        // ===== ريلز: شبكة عمودية (2 per row) =====
         if (isReel && firestoreVideos.isNotEmpty) {
           return GridView.builder(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -391,7 +379,6 @@ class _VideoList extends StatelessWidget {
           );
         }
 
-        // ===== فيديوهات عادية: قائمة =====
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
@@ -407,7 +394,6 @@ class _VideoList extends StatelessWidget {
                   onTap: () => onOpen(v.url),
                 ),
               ),
-
             if (hasFirestore && hasOld)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -421,7 +407,7 @@ class _VideoList extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Text(
-                        'فيديوهات سابقة',
+                        appState.tr('cPreviousVideos'),
                         style: TextStyle(
                           fontSize: 11,
                           color: AppColors.cream.withValues(alpha: 0.5),
@@ -437,7 +423,6 @@ class _VideoList extends StatelessWidget {
                   ],
                 ),
               ),
-
             for (final v in oldVideos)
               Padding(
                 padding: const EdgeInsets.only(bottom: 14),
@@ -455,9 +440,6 @@ class _VideoList extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _VideoCard
-// ============================================================
 class _VideoCard extends StatelessWidget {
   final String title;
   final String thumbnailUrl;
@@ -609,9 +591,6 @@ class _VideoCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _ChannelLogo
-// ============================================================
 class _ChannelLogo extends StatelessWidget {
   final double size;
 
