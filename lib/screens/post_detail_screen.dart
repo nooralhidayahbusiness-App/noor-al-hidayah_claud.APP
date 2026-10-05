@@ -59,6 +59,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   bool get _canSend =>
       _commentLen > 0 && _commentLen <= _maxCommentChars && !_isSending;
 
+  bool get _isOwnerOfApp => widget.currentUserVerifiedType == 'owner';
+
   @override
   void initState() {
     super.initState();
@@ -561,6 +563,25 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     },
                   ),
                 ],
+
+                // ✅ المالك فقط: تعيين/إلغاء منشور الترحيب العالمي
+                if (_isOwnerOfApp) ...[
+                  _menuItem(
+                    context: sheetContext,
+                    icon: post.isGlobalPin
+                        ? Icons.campaign_outlined
+                        : Icons.campaign_rounded,
+                    label: post.isGlobalPin
+                        ? 'إلغاء منشور الترحيب'
+                        : 'تعيين كمنشور ترحيب عالمي',
+                    color: post.isGlobalPin ? Colors.orangeAccent : _gold,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _toggleGlobalPin(post);
+                    },
+                  ),
+                ],
+
                 _menuItem(
                   context: sheetContext,
                   icon: Icons.copy_outlined,
@@ -622,12 +643,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           children: [
             Icon(icon, color: c, size: R.s(context, 20)),
             SizedBox(width: R.s(context, 14)),
-            Text(
-              label,
-              style: TextStyle(
-                color: c,
-                fontSize: R.f(context, 14),
-                fontWeight: FontWeight.w500,
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: c,
+                  fontSize: R.f(context, 14),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
@@ -796,6 +819,21 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           : appState.tr('cPinSuccess'));
     } catch (e) {
       _showSnack('${appState.tr('cOperationFailed')}: $e');
+    }
+  }
+
+  // ✅ جديد: تعيين/إلغاء منشور الترحيب العالمي
+  Future<void> _toggleGlobalPin(Post post) async {
+    try {
+      await _service.toggleGlobalPin(
+        postId: post.id,
+        uid: widget.currentUid,
+      );
+      _showSnack(post.isGlobalPin
+          ? 'تم إلغاء منشور الترحيب'
+          : 'تم تعيينه كمنشور ترحيب عالمي ✅');
+    } catch (e) {
+      _showSnack('فشل: $e');
     }
   }
 
