@@ -1,4 +1,15 @@
 #!/bin/bash
-# Builds the web app and serves it on port 8095 (open it from the Ports tab).
-pkill -f "http.server 8095" 2>/dev/null
-flutter build web --release --pwa-strategy=none --dart-define=SHOW_SKIP=true && python3 -m http.server 8095 --directory build/web
+
+# قتل أي عمليات قديمة
+pkill -f flutter 2>/dev/null
+pkill -f dart 2>/dev/null
+
+# تنظيف
+flutter clean 2>/dev/null
+flutter pub get 2>/dev/null
+
+# تشغيل
+flutter run -d web-server \
+  --web-hostname 0.0.0.0 \
+  --web-port 8095 \
+  --no-wasm-dry-run
