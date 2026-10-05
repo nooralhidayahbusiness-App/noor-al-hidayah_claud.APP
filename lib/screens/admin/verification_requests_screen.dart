@@ -51,7 +51,6 @@ class _VerificationRequestsScreenState
         type: type,
       );
 
-      // ✅ إشعار للمستخدم
       await _notif.sendFromAdmin(
         toUid: req.uid,
         type: type == 'me' ? 'verified_me' : 'verified_user',
@@ -77,7 +76,6 @@ class _VerificationRequestsScreenState
     try {
       await verificationService.reject(targetUid: req.uid);
 
-      // ✅ إشعار للمستخدم
       await _notif.sendFromAdmin(
         toUid: req.uid,
         type: 'verify_rejected',
@@ -111,83 +109,92 @@ class _VerificationRequestsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ThemedBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(
-                  R.s(context, 6),
-                  R.s(context, 6),
-                  R.s(context, 16),
-                  0,
-                ),
-                child: Row(
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        return Directionality(
+          textDirection: appState.direction,
+          child: Scaffold(
+            body: ThemedBackground(
+              child: SafeArea(
+                child: Column(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      color: AppColors.softGold,
-                      iconSize: R.s(context, 22),
-                      icon: const Icon(Icons.arrow_back_rounded),
-                    ),
-                    const Spacer(),
-                    Text(
-                      appState.tr('adminVerificationRequests'),
-                      style: TextStyle(
-                        fontSize: R.f(context, 15),
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.softGold,
+                    Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                        R.s(context, 6),
+                        R.s(context, 6),
+                        R.s(context, 16),
+                        0,
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () =>
+                                Navigator.of(context).maybePop(),
+                            color: AppColors.softGold,
+                            iconSize: R.s(context, 22),
+                            icon: const Icon(Icons.arrow_back_rounded),
+                          ),
+                          const Spacer(),
+                          Text(
+                            appState.tr('adminVerificationRequests'),
+                            style: TextStyle(
+                              fontSize: R.f(context, 15),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.softGold,
+                            ),
+                          ),
+                          SizedBox(width: R.s(context, 40)),
+                        ],
                       ),
                     ),
-                    SizedBox(width: R.s(context, 40)),
+                    SizedBox(height: R.s(context, 6)),
+                    Expanded(
+                      child: _loading
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                  color: AppColors.gold))
+                          : _requests.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.all(R.s(context, 20)),
+                                    child: Text(
+                                      appState.tr('adminNoRequests'),
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: R.f(context, 14),
+                                        color: AppColors.cream
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: EdgeInsets.all(R.s(context, 14)),
+                                  itemCount: _requests.length,
+                                  itemBuilder: (context, i) => Padding(
+                                    padding: EdgeInsets.only(
+                                        bottom: R.s(context, 10)),
+                                    child: _RequestCard(
+                                      request: _requests[i],
+                                      busy: _busyUid == _requests[i].uid,
+                                      onApproveUser: () =>
+                                          _approve(_requests[i], 'user'),
+                                      onApproveMe: () =>
+                                          _approve(_requests[i], 'me'),
+                                      onReject: () => _reject(_requests[i]),
+                                    ),
+                                  ),
+                                ),
+                    ),
                   ],
                 ),
               ),
-              SizedBox(height: R.s(context, 6)),
-              Expanded(
-                child: _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                            color: AppColors.gold))
-                    : _requests.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding:
-                                  EdgeInsets.all(R.s(context, 20)),
-                              child: Text(
-                                appState.tr('adminNoRequests'),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: R.f(context, 14),
-                                  color: AppColors.cream
-                                      .withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.all(R.s(context, 14)),
-                            itemCount: _requests.length,
-                            itemBuilder: (context, i) => Padding(
-                              padding: EdgeInsets.only(
-                                  bottom: R.s(context, 10)),
-                              child: _RequestCard(
-                                request: _requests[i],
-                                busy: _busyUid == _requests[i].uid,
-                                onApproveUser: () =>
-                                    _approve(_requests[i], 'user'),
-                                onApproveMe: () =>
-                                    _approve(_requests[i], 'me'),
-                                onReject: () => _reject(_requests[i]),
-                              ),
-                            ),
-                          ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
