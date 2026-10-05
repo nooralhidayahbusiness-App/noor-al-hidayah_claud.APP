@@ -70,32 +70,48 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     return StreamBuilder<List<Post>>(
       stream: _service.postsStream(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return _buildLoading(context);
-        }
-        if (snapshot.hasError) {
-          return _buildError(context, snapshot.error.toString());
-        }
-        final posts = snapshot.data ?? [];
-        if (posts.isEmpty) {
-          return _buildEmpty(context);
-        }
-        return RefreshIndicator(
-          onRefresh: () async {
-            await Future.delayed(const Duration(milliseconds: 300));
-          },
-          color: _gold,
-          backgroundColor: _green,
-          child: ListView.builder(
-            padding: EdgeInsets.only(
-              top: R.s(context, 8),
-              bottom: R.s(context, 90),
-            ),
-            itemCount: posts.length,
-            itemBuilder: (context, i) {
-              final post = posts[i];
-              return PostCard(
+        return StreamBuilder<Post?>(
+          stream: _service.globalPinnedStream(),
+          builder: (context, pinSnap) {
+            final welcomePost = pinSnap.data;
+
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData) {
+              return _buildLoading(context);
+            }
+            if (snapshot.hasError) {
+              return _buildError(context, snapshot.error.toString());
+            }
+            final posts = snapshot.data ?? [];
+
+            if (posts.isEmpty && welcomePost == null) {
+              return _buildEmpty(context);
+            }
+
+            // نبني قائمة موحدة: منشور الترحيب أولاً
+            final all = <Widget>[];
+
+            if (welcomePost != null) {
+              all.add(_buildWelcomeLabel(context));
+              all.add(PostCard(
+                key: ValueKey('welcome_${welcomePost.id}'),
+                post: welcomePost,
+                currentUid: widget.uid,
+                onTap: () => _openPostDetail(welcomePost),
+                onLike: () => _onLike(welcomePost),
+                onComment: () => _openPostDetail(welcomePost),
+                onRepost: () => _onRepost(welcomePost),
+                onMore: () => _showMoreMenu(welcomePost),
+                onAuthorTap: () => _onAuthorTap(welcomePost),
+              ));
+              if (posts.isNotEmpty) {
+                all.add(_buildDividerLabel(context));
+              }
+            }
+
+            for (final post in posts) {
+              all.add(PostCard(
+                key: ValueKey('post_${post.id}'),
                 post: post,
                 currentUid: widget.uid,
                 onTap: () => _openPostDetail(post),
@@ -104,11 +120,82 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                 onRepost: () => _onRepost(post),
                 onMore: () => _showMoreMenu(post),
                 onAuthorTap: () => _onAuthorTap(post),
-              );
-            },
-          ),
+              ));
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async {
+                await Future.delayed(const Duration(milliseconds: 300));
+              },
+              color: _gold,
+              backgroundColor: _green,
+              child: ListView(
+                padding: EdgeInsets.only(
+                  top: R.s(context, 8),
+                  bottom: R.s(context, 90),
+                ),
+                children: all,
+              ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildWelcomeLabel(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        R.s(context, 16),
+        R.s(context, 8),
+        R.s(context, 16),
+        R.s(context, 4),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.waving_hand_rounded,
+              color: _gold, size: R.s(context, 16)),
+          SizedBox(width: R.s(context, 6)),
+          Text(
+            'منشور الترحيب',
+            style: TextStyle(
+              color: _gold,
+              fontSize: R.f(context, 12),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDividerLabel(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: R.s(context, 16),
+        vertical: R.s(context, 12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Divider(color: _gold.withValues(alpha: 0.25)),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: R.s(context, 10)),
+            child: Text(
+              'منشورات المجتمع',
+              style: TextStyle(
+                fontSize: R.f(context, 11),
+                color: _cream.withValues(alpha: 0.5),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Divider(color: _gold.withValues(alpha: 0.25)),
+          ),
+        ],
+      ),
     );
   }
 
