@@ -25,7 +25,6 @@ class CommunityNotificationService {
     });
   }
 
-  /// إنشاء إشعار بجلب بيانات المُرسل تلقائياً (مع verifiedType)
   Future<void> createFromUser({
     required String toUid,
     required String type,
@@ -45,7 +44,6 @@ class CommunityNotificationService {
       final name = (rawName == null || rawName.isEmpty) ? 'User' : rawName;
       final avatar = (data['avatar'] as String?) ?? 'man';
 
-      // ✅ فحص إيميل المالك
       final fromEmail = (data['email'] as String?) ?? '';
       final isOwnerEmail = kOwnerEmails.contains(fromEmail.toLowerCase());
 
@@ -89,6 +87,33 @@ class CommunityNotificationService {
       'fromAvatar': fromAvatar,
       'fromVerified': fromVerified,
       'fromVerifiedType': fromVerifiedType,
+      'targetId': targetId,
+      'createdAt': FieldValue.serverTimestamp(),
+      'isRead': false,
+    });
+  }
+
+  // ============================================================
+  // ✅ دالة بسيطة لإرسال إشعار من المالك → المستخدم
+  // تُستخدم عند الموافقة/الرفض على طلبات
+  // ============================================================
+  Future<void> sendFromAdmin({
+    required String toUid,
+    required String type,
+    String? targetId,
+    String? customTitle,
+  }) async {
+    if (toUid.isEmpty) return;
+    final currentUid = _db.app.name.isEmpty ? '' : '';
+    // نرسل كإشعار من "الإدارة"
+    final ref = _items(toUid).doc();
+    await ref.set({
+      'type': type,
+      'fromUid': 'system',
+      'fromName': customTitle ?? 'الإدارة',
+      'fromAvatar': 'man',
+      'fromVerified': true,
+      'fromVerifiedType': 'owner',
       'targetId': targetId,
       'createdAt': FieldValue.serverTimestamp(),
       'isRead': false,
