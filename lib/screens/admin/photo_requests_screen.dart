@@ -2,12 +2,106 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../../core/app_state.dart';
 import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../services/community_notification_service.dart';
 import '../../services/verification_service.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/themed_background.dart';
+
+// ============ ترجمات ============
+const Map<String, Map<String, String>> _prTr = {
+  'ar': {
+    'title': 'طلبات تغيير الصورة',
+    'empty': 'لا توجد طلبات حالياً',
+    'current': 'الحالية',
+    'proposed': 'المقترحة',
+    'approve': 'موافقة',
+    'reject': 'رفض',
+    'approved': 'تمت الموافقة ✓',
+    'rejected': 'تم الرفض',
+    'error': 'خطأ',
+    'user': 'مستخدم',
+  },
+  'en': {
+    'title': 'Photo Change Requests',
+    'empty': 'No requests currently',
+    'current': 'Current',
+    'proposed': 'Proposed',
+    'approve': 'Approve',
+    'reject': 'Reject',
+    'approved': 'Approved ✓',
+    'rejected': 'Rejected',
+    'error': 'Error',
+    'user': 'User',
+  },
+  'fr': {
+    'title': 'Demandes de changement de photo',
+    'empty': 'Aucune demande actuellement',
+    'current': 'Actuelle',
+    'proposed': 'Proposée',
+    'approve': 'Approuver',
+    'reject': 'Refuser',
+    'approved': 'Approuvée ✓',
+    'rejected': 'Refusée',
+    'error': 'Erreur',
+    'user': 'Utilisateur',
+  },
+  'ur': {
+    'title': 'تصویر تبدیلی کی درخواستیں',
+    'empty': 'ابھی کوئی درخواست نہیں',
+    'current': 'موجودہ',
+    'proposed': 'تجویز کردہ',
+    'approve': 'منظور',
+    'reject': 'مسترد',
+    'approved': 'منظور ✓',
+    'rejected': 'مسترد',
+    'error': 'خرابی',
+    'user': 'صارف',
+  },
+  'ne': {
+    'title': 'फोटो परिवर्तन अनुरोधहरू',
+    'empty': 'अहिले कुनै अनुरोध छैन',
+    'current': 'हालको',
+    'proposed': 'प्रस्तावित',
+    'approve': 'स्वीकार',
+    'reject': 'अस्वीकार',
+    'approved': 'स्वीकृत ✓',
+    'rejected': 'अस्वीकृत',
+    'error': 'त्रुटि',
+    'user': 'प्रयोगकर्ता',
+  },
+  'id': {
+    'title': 'Permintaan Ubah Foto',
+    'empty': 'Tidak ada permintaan saat ini',
+    'current': 'Saat ini',
+    'proposed': 'Diusulkan',
+    'approve': 'Setujui',
+    'reject': 'Tolak',
+    'approved': 'Disetujui ✓',
+    'rejected': 'Ditolak',
+    'error': 'Kesalahan',
+    'user': 'Pengguna',
+  },
+  'ms': {
+    'title': 'Permintaan Tukar Foto',
+    'empty': 'Tiada permintaan sekarang',
+    'current': 'Semasa',
+    'proposed': 'Dicadangkan',
+    'approve': 'Luluskan',
+    'reject': 'Tolak',
+    'approved': 'Diluluskan ✓',
+    'rejected': 'Ditolak',
+    'error': 'Ralat',
+    'user': 'Pengguna',
+  },
+};
+
+String _pr(String key) {
+  final m = _prTr[appState.languageCode] ?? _prTr['ar']!;
+  return m[key] ?? key;
+}
 
 class PhotoRequestsScreen extends StatefulWidget {
   const PhotoRequestsScreen({super.key});
@@ -44,17 +138,14 @@ class _PhotoRequestsScreenState extends State<PhotoRequestsScreen> {
     setState(() => _busyUid = r.uid);
     try {
       await verificationService.approvePhotoChange(targetUid: r.uid);
-
-      // ✅ إشعار للمستخدم
       await _notif.sendFromAdmin(
         toUid: r.uid,
         type: 'photo_approved',
       );
-
-      if (mounted) _snack('تمت الموافقة ✓');
+      if (mounted) _snack(_pr('approved'));
       await _load();
     } catch (e) {
-      if (mounted) _snack('خطأ: $e', error: true);
+      if (mounted) _snack('${_pr('error')}: $e', error: true);
     } finally {
       if (mounted) setState(() => _busyUid = null);
     }
@@ -64,17 +155,14 @@ class _PhotoRequestsScreenState extends State<PhotoRequestsScreen> {
     setState(() => _busyUid = r.uid);
     try {
       await verificationService.rejectPhotoChange(targetUid: r.uid);
-
-      // ✅ إشعار للمستخدم
       await _notif.sendFromAdmin(
         toUid: r.uid,
         type: 'photo_rejected',
       );
-
-      if (mounted) _snack('تم الرفض');
+      if (mounted) _snack(_pr('rejected'));
       await _load();
     } catch (e) {
-      if (mounted) _snack('خطأ: $e', error: true);
+      if (mounted) _snack('${_pr('error')}: $e', error: true);
     } finally {
       if (mounted) setState(() => _busyUid = null);
     }
@@ -99,78 +187,90 @@ class _PhotoRequestsScreenState extends State<PhotoRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ThemedBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(
-                  R.s(context, 6),
-                  R.s(context, 6),
-                  R.s(context, 16),
-                  0,
-                ),
-                child: Row(
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        return Directionality(
+          textDirection: appState.direction,
+          child: Scaffold(
+            body: ThemedBackground(
+              child: SafeArea(
+                child: Column(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      color: AppColors.softGold,
-                      iconSize: R.s(context, 22),
-                      icon: const Icon(Icons.arrow_back_rounded),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'طلبات تغيير الصورة',
-                      style: TextStyle(
-                        fontSize: R.f(context, 15),
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.softGold,
+                    Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                        R.s(context, 6),
+                        R.s(context, 6),
+                        R.s(context, 16),
+                        0,
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () =>
+                                Navigator.of(context).maybePop(),
+                            color: AppColors.softGold,
+                            iconSize: R.s(context, 22),
+                            icon: const Icon(Icons.arrow_back_rounded),
+                          ),
+                          const Spacer(),
+                          Text(
+                            _pr('title'),
+                            style: TextStyle(
+                              fontSize: R.f(context, 15),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.softGold,
+                            ),
+                          ),
+                          SizedBox(width: R.s(context, 40)),
+                        ],
                       ),
                     ),
-                    SizedBox(width: R.s(context, 40)),
+                    SizedBox(height: R.s(context, 6)),
+                    Expanded(
+                      child: _loading
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                  color: AppColors.gold))
+                          : _requests.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.all(R.s(context, 20)),
+                                    child: Text(
+                                      _pr('empty'),
+                                      style: TextStyle(
+                                        fontSize: R.f(context, 14),
+                                        color: AppColors.cream
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: EdgeInsets.all(R.s(context, 14)),
+                                  itemCount: _requests.length,
+                                  itemBuilder: (context, i) => Padding(
+                                    padding: EdgeInsets.only(
+                                        bottom: R.s(context, 10)),
+                                    child: _RequestCard(
+                                      request: _requests[i],
+                                      busy: _busyUid == _requests[i].uid,
+                                      onApprove: () =>
+                                          _approve(_requests[i]),
+                                      onReject: () =>
+                                          _reject(_requests[i]),
+                                    ),
+                                  ),
+                                ),
+                    ),
                   ],
                 ),
               ),
-              SizedBox(height: R.s(context, 6)),
-              Expanded(
-                child: _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                            color: AppColors.gold))
-                    : _requests.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(R.s(context, 20)),
-                              child: Text(
-                                'لا توجد طلبات حالياً',
-                                style: TextStyle(
-                                  fontSize: R.f(context, 14),
-                                  color: AppColors.cream
-                                      .withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.all(R.s(context, 14)),
-                            itemCount: _requests.length,
-                            itemBuilder: (context, i) => Padding(
-                              padding: EdgeInsets.only(
-                                  bottom: R.s(context, 10)),
-                              child: _RequestCard(
-                                request: _requests[i],
-                                busy: _busyUid == _requests[i].uid,
-                                onApprove: () => _approve(_requests[i]),
-                                onReject: () => _reject(_requests[i]),
-                              ),
-                            ),
-                          ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -206,7 +306,7 @@ class _RequestCard extends StatelessWidget {
               SizedBox(width: R.s(context, 6)),
               Expanded(
                 child: Text(
-                  request.name.isEmpty ? 'مستخدم' : request.name,
+                  request.name.isEmpty ? _pr('user') : request.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -241,7 +341,7 @@ class _RequestCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _PhotoBox(
-                  label: 'الحالية',
+                  label: _pr('current'),
                   photoBase64: request.oldPhotoBase64,
                   isNew: false,
                 ),
@@ -256,7 +356,7 @@ class _RequestCard extends StatelessWidget {
               ),
               Expanded(
                 child: _PhotoBox(
-                  label: 'المقترحة',
+                  label: _pr('proposed'),
                   photoBase64: request.newPhotoBase64,
                   isNew: true,
                 ),
@@ -281,7 +381,7 @@ class _RequestCard extends StatelessWidget {
                 Expanded(
                   child: _ActionBtn(
                     icon: Icons.check_rounded,
-                    label: 'موافقة',
+                    label: _pr('approve'),
                     color: AppColors.gold,
                     onTap: onApprove,
                   ),
@@ -290,7 +390,7 @@ class _RequestCard extends StatelessWidget {
                 Expanded(
                   child: _ActionBtn(
                     icon: Icons.close_rounded,
-                    label: 'رفض',
+                    label: _pr('reject'),
                     color: const Color(0xFFD32F2F),
                     onTap: onReject,
                   ),
