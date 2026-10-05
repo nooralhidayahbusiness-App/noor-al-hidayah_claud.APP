@@ -347,7 +347,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return;
     }
 
-    final chatId = chatService.chatIdFor(_currentUid!, user.uid);
+    final chatId = ChatService.chatIdFor(_currentUid!, user.uid);
 
     // 1) هل Chat موجود؟ → افتحه مباشرة
     final existing = await chatService.chatStream(chatId).first;
@@ -699,7 +699,9 @@ class _ChatButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled ? AppColors.gold : AppColors.cream.withValues(alpha: 0.4);
+    final color = enabled
+        ? AppColors.gold
+        : AppColors.cream.withValues(alpha: 0.4);
     final bg = enabled ? null : Colors.black.withValues(alpha: 0.25);
 
     return GestureDetector(
