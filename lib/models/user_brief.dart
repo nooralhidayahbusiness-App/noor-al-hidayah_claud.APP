@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-/// الإيميلات الأربعة للمالك
 const List<String> kOwnerEmails = [
   'abdelrahmenbenromdhan11@gmail.com',
   'vevocom888@gmail.com',
@@ -9,21 +8,21 @@ const List<String> kOwnerEmails = [
   'nooralhidayahbusiness@gmail.com',
 ];
 
-/// نموذج مختصر لبيانات مستخدم
 class UserBrief {
   final String uid;
   final String email;
   final String name;
-  final String avatar; // 'man' | 'woman'
-  final String gender; // 'man' | 'woman'
-  final String photoMode; // 'symbol' | 'custom'
+  final String avatar;
+  final String gender;
+  final String photoMode;
   final String bio;
-  final String photoBase64; // صورة التوثيق
-  final String customPhotoBase64; // صورة مخصصة
+  final String photoBase64;
+  final String customPhotoBase64;
   final bool verified;
-  final String verifiedType; // 'owner' | 'me' | 'user' | 'none'
+  final String verifiedType;
   final bool premiumActive;
   final DateTime? premiumExpiresAt;
+  final bool isPublic;
 
   const UserBrief({
     required this.uid,
@@ -39,6 +38,7 @@ class UserBrief {
     required this.verifiedType,
     required this.premiumActive,
     required this.premiumExpiresAt,
+    this.isPublic = true,
   });
 
   factory UserBrief.fromMap(String uid, Map<String, dynamic> map) {
@@ -79,6 +79,7 @@ class UserBrief {
           : ((profile['verifiedType'] as String?) ?? 'none'),
       premiumActive: premiumActive,
       premiumExpiresAt: premiumExpiresAt,
+      isPublic: (profile['isPublic'] as bool?) ?? true,
     );
   }
 
@@ -87,76 +88,41 @@ class UserBrief {
     return t.isEmpty ? 'مستخدم' : t;
   }
 
-  // ============================================================
-  // Helpers — الحالة
-  // ============================================================
-
   bool get isOwner => verifiedType == 'owner';
 
   bool get isPremium {
-    if (!premiumActive) {
-      return false;
-    }
-    if (premiumExpiresAt == null) {
-      return false;
-    }
+    if (!premiumActive) return false;
+    if (premiumExpiresAt == null) return false;
     return premiumExpiresAt!.isAfter(DateTime.now());
   }
 
   bool get isVerified =>
       verified || isOwner || verifiedType == 'me' || verifiedType == 'user';
 
-  // ============================================================
-  // Badges
-  // ============================================================
-
   List<String> get badges {
-    if (isOwner) {
-      return const ['owner'];
-    }
+    if (isOwner) return const ['owner'];
 
     final list = <String>[];
-    if (isPremium) {
-      list.add('premium');
-    }
-
+    if (isPremium) list.add('premium');
     if (verified) {
-      if (verifiedType == 'me') {
-        list.add('me');
-      } else if (verifiedType == 'user') {
-        list.add('user');
-      }
+      if (verifiedType == 'me') list.add('me');
+      else if (verifiedType == 'user') list.add('user');
     }
-
     return list;
   }
 
   String get badgeType {
-    if (isOwner) {
-      return 'owner';
-    }
-    if (isPremium) {
-      return 'premium';
-    }
+    if (isOwner) return 'owner';
+    if (isPremium) return 'premium';
     if (verified) {
-      if (verifiedType == 'me') {
-        return 'me';
-      }
-      if (verifiedType == 'user') {
-        return 'user';
-      }
+      if (verifiedType == 'me') return 'me';
+      if (verifiedType == 'user') return 'user';
     }
     return 'none';
   }
 
-  // ============================================================
-  // الصور
-  // ============================================================
-
   Uint8List? get customPhotoBytes {
-    if (customPhotoBase64.isEmpty) {
-      return null;
-    }
+    if (customPhotoBase64.isEmpty) return null;
     try {
       return base64Decode(customPhotoBase64);
     } catch (_) {
@@ -165,9 +131,7 @@ class UserBrief {
   }
 
   Uint8List? get verificationPhotoBytes {
-    if (photoBase64.isEmpty) {
-      return null;
-    }
+    if (photoBase64.isEmpty) return null;
     try {
       return base64Decode(photoBase64);
     } catch (_) {
@@ -175,7 +139,6 @@ class UserBrief {
     }
   }
 
-  /// الصورة الحالية للعرض
   Uint8List? get displayPhotoBytes {
     if (photoMode == 'custom' && customPhotoBytes != null) {
       return customPhotoBytes;
@@ -183,12 +146,7 @@ class UserBrief {
     return verificationPhotoBytes;
   }
 
-  /// Alias للتوافق — يساوي displayPhotoBytes
   Uint8List? get photoBytes => displayPhotoBytes;
-
-  // ============================================================
-  // Empty
-  // ============================================================
 
   static UserBrief empty(String uid) => UserBrief(
         uid: uid,
@@ -204,5 +162,6 @@ class UserBrief {
         verifiedType: 'none',
         premiumActive: false,
         premiumExpiresAt: null,
+        isPublic: true,
       );
 }
