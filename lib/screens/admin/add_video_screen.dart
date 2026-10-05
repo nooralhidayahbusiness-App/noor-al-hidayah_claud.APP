@@ -226,19 +226,29 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
     }
 
     setState(() => _saving = true);
-    try {
-      await youtubeService.addVideo(
-        title: t,
-        url: u,
-        thumbnailUrl: _thumb.text.trim(),
-        isReel: _isReel,
-      );
-      if (mounted) {
-        _snack(_isReel ? _av('successReel') : _av('successVideo'));
-        await Future.delayed(const Duration(milliseconds: 700));
-        if (mounted) Navigator.of(context).pop(true);
-      }
-    } catch (e) {
+try {
+  final videoId = await youtubeService.addVideo(
+    title: t,
+    url: u,
+    thumbnailUrl: _thumb.text.trim(),
+    isReel: _isReel,
+  );
+
+  // ✅ إرسال إشعار لكل المتابعين
+  try {
+    await CommunityNotificationService().notifyNewVideo(
+      videoId: videoId,
+      videoTitle: t,
+      isReel: _isReel,
+    );
+  } catch (_) {}
+
+  if (mounted) {
+    _snack(_isReel ? _av('successReel') : _av('successVideo'));
+    await Future.delayed(const Duration(milliseconds: 700));
+    if (mounted) Navigator.of(context).pop(true);
+  }
+} catch (e) {
       if (mounted) _snack('$e', error: true);
     } finally {
       if (mounted) setState(() => _saving = false);
