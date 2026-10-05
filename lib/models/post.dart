@@ -4,8 +4,8 @@ class Post {
   final String id;
   final String uid;
   final String userName;
-  final String userAvatar; // 'man' | 'woman'
-  final String userPhotoBase64; // صورة المستخدم المخصصة (إن وُجدت)
+  final String userAvatar;
+  final String userPhotoBase64;
   final bool userVerified;
   final String userVerifiedType;
   final List<String> userBadges;
@@ -24,6 +24,7 @@ class Post {
   final String? originalAuthorAvatar;
 
   final bool isPinned;
+  final bool isGlobalPin;
   final bool isDeleted;
 
   final List<String> mentions;
@@ -50,6 +51,7 @@ class Post {
     this.originalAuthorName,
     this.originalAuthorAvatar,
     this.isPinned = false,
+    this.isGlobalPin = false,
     this.isDeleted = false,
     this.mentions = const [],
     this.hashtags = const [],
@@ -78,6 +80,7 @@ class Post {
       originalAuthorName: map['originalAuthorName'],
       originalAuthorAvatar: map['originalAuthorAvatar'],
       isPinned: map['isPinned'] ?? false,
+      isGlobalPin: map['isGlobalPin'] ?? false,
       isDeleted: map['isDeleted'] ?? false,
       mentions: List<String>.from(map['mentions'] ?? const []),
       hashtags: List<String>.from(map['hashtags'] ?? const []),
@@ -105,6 +108,7 @@ class Post {
       'originalAuthorName': originalAuthorName,
       'originalAuthorAvatar': originalAuthorAvatar,
       'isPinned': isPinned,
+      'isGlobalPin': isGlobalPin,
       'isDeleted': isDeleted,
       'mentions': mentions,
       'hashtags': hashtags,
@@ -119,6 +123,7 @@ class Post {
     int? commentsCount,
     int? repostsCount,
     bool? isPinned,
+    bool? isGlobalPin,
     bool? isDeleted,
   }) {
     return Post(
@@ -142,6 +147,7 @@ class Post {
       originalAuthorName: originalAuthorName,
       originalAuthorAvatar: originalAuthorAvatar,
       isPinned: isPinned ?? this.isPinned,
+      isGlobalPin: isGlobalPin ?? this.isGlobalPin,
       isDeleted: isDeleted ?? this.isDeleted,
       mentions: mentions,
       hashtags: hashtags,
