@@ -93,10 +93,6 @@ class CommunityNotificationService {
     });
   }
 
-  // ============================================================
-  // ✅ دالة بسيطة لإرسال إشعار من المالك → المستخدم
-  // تُستخدم عند الموافقة/الرفض على طلبات
-  // ============================================================
   Future<void> sendFromAdmin({
     required String toUid,
     required String type,
@@ -104,8 +100,6 @@ class CommunityNotificationService {
     String? customTitle,
   }) async {
     if (toUid.isEmpty) return;
-    final currentUid = _db.app.name.isEmpty ? '' : '';
-    // نرسل كإشعار من "الإدارة"
     final ref = _items(toUid).doc();
     await ref.set({
       'type': type,
