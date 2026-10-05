@@ -18,6 +18,7 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
   final _url = TextEditingController();
   final _thumb = TextEditingController();
   bool _saving = false;
+  bool _isReel = false;
   String? _previewId;
 
   @override
@@ -66,9 +67,12 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
         title: t,
         url: u,
         thumbnailUrl: _thumb.text.trim(),
+        isReel: _isReel,
       );
       if (mounted) {
-        _snack('تم النشر بنجاح ✅');
+        _snack(_isReel
+            ? 'تم نشر الريل بنجاح ✅'
+            : 'تم نشر الفيديو بنجاح ✅');
         await Future.delayed(const Duration(milliseconds: 700));
         if (mounted) Navigator.of(context).pop(true);
       }
@@ -107,6 +111,7 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
         child: SafeArea(
           child: Column(
             children: [
+              // ===== الشريط العلوي =====
               Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(
                   R.s(context, 6),
@@ -124,7 +129,7 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
                     ),
                     const Spacer(),
                     Text(
-                      'إضافة فيديو',
+                      _isReel ? 'إضافة ريل' : 'إضافة فيديو',
                       style: TextStyle(
                         fontSize: R.f(context, 15),
                         fontWeight: FontWeight.w700,
@@ -140,6 +145,13 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
                 child: ListView(
                   padding: EdgeInsets.all(R.s(context, 18)),
                   children: [
+                    // ===== اختيار النوع =====
+                    _TypeSelector(
+                      isReel: _isReel,
+                      onChanged: (v) => setState(() => _isReel = v),
+                    ),
+                    SizedBox(height: R.s(context, 18)),
+
                     _Field(
                       controller: _title,
                       label: 'عنوان الفيديو',
@@ -179,7 +191,9 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
                                 ),
                                 SizedBox(width: R.s(context, 6)),
                                 Text(
-                                  'معاينة',
+                                  _isReel
+                                      ? 'معاينة (9:16)'
+                                      : 'معاينة (16:9)',
                                   style: TextStyle(
                                     color: AppColors.softGold,
                                     fontSize: R.f(context, 12),
@@ -189,36 +203,44 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
                               ],
                             ),
                             SizedBox(height: R.s(context, 10)),
-                            ClipRRect(
-                              borderRadius:
-                                  BorderRadius.circular(R.s(context, 12)),
-                              child: AspectRatio(
-                                aspectRatio: 16 / 9,
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    Image.network(
-                                      _thumb.text.trim().isNotEmpty
-                                          ? _thumb.text.trim()
-                                          : preview,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => Container(
-                                        color: AppColors.green,
-                                        child: const Icon(
-                                          Icons.play_circle_fill_rounded,
-                                          color: AppColors.gold,
-                                          size: 56,
+                            Center(
+                              child: ClipRRect(
+                                borderRadius:
+                                    BorderRadius.circular(R.s(context, 12)),
+                                child: SizedBox(
+                                  // 16:9 → عرض كامل، 9:16 → عمودي محدود
+                                  width: _isReel
+                                      ? R.s(context, 180)
+                                      : double.infinity,
+                                  child: AspectRatio(
+                                    aspectRatio: _isReel ? 9 / 16 : 16 / 9,
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        Image.network(
+                                          _thumb.text.trim().isNotEmpty
+                                              ? _thumb.text.trim()
+                                              : preview,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) => Container(
+                                            color: AppColors.green,
+                                            child: const Icon(
+                                              Icons.play_circle_fill_rounded,
+                                              color: AppColors.gold,
+                                              size: 56,
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                        const Center(
+                                          child: Icon(
+                                            Icons.play_circle_outline_rounded,
+                                            color: AppColors.gold,
+                                            size: 44,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const Center(
-                                      child: Icon(
-                                        Icons.play_circle_outline_rounded,
-                                        color: AppColors.gold,
-                                        size: 44,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -229,6 +251,7 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
 
                     SizedBox(height: R.s(context, 24)),
 
+                    // ===== زر النشر =====
                     SizedBox(
                       height: R.s(context, 54),
                       child: ElevatedButton.icon(
@@ -256,7 +279,9 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
                                 size: R.s(context, 20),
                               ),
                         label: Text(
-                          _saving ? 'جارٍ النشر...' : 'نشر الفيديو',
+                          _saving
+                              ? 'جارٍ النشر...'
+                              : (_isReel ? 'نشر الريل' : 'نشر الفيديو'),
                           style: TextStyle(
                             fontSize: R.f(context, 15),
                             fontWeight: FontWeight.bold,
@@ -275,6 +300,107 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
   }
 }
 
+// ============================================================
+// _TypeSelector — اختيار: فيديو عادي أو ريلز
+// ============================================================
+class _TypeSelector extends StatelessWidget {
+  final bool isReel;
+  final ValueChanged<bool> onChanged;
+
+  const _TypeSelector({
+    required this.isReel,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(R.s(context, 4)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(R.s(context, 16)),
+        color: AppColors.deepGreen.withValues(alpha: 0.65),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _SelectorBtn(
+              icon: Icons.smart_display_rounded,
+              label: 'فيديو عادي (16:9)',
+              active: !isReel,
+              onTap: () => onChanged(false),
+            ),
+          ),
+          SizedBox(width: R.s(context, 4)),
+          Expanded(
+            child: _SelectorBtn(
+              icon: Icons.movie_filter_rounded,
+              label: 'ريلز (9:16)',
+              active: isReel,
+              onTap: () => onChanged(true),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectorBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _SelectorBtn({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: EdgeInsets.symmetric(vertical: R.s(context, 12)),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(R.s(context, 14)),
+          color: active ? AppColors.gold : Colors.transparent,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: R.s(context, 18),
+              color: active ? AppColors.deepGreen : AppColors.softGold,
+            ),
+            SizedBox(width: R.s(context, 6)),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: R.f(context, 11.5),
+                  fontWeight: FontWeight.w700,
+                  color: active ? AppColors.deepGreen : AppColors.softGold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _Field
+// ============================================================
 class _Field extends StatelessWidget {
   final TextEditingController controller;
   final String label;
