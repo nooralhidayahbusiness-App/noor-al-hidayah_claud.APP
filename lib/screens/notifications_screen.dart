@@ -18,15 +18,24 @@ const Map<String, Map<String, String>> _localTr = {
     'markAllRead': 'تحديد الكل كمقروء',
     'clearAll': 'حذف الكل',
     'clearAllConfirm': 'هل تريد حذف جميع الإشعارات؟',
+    // Community
     'followed': 'بدأ متابعتك',
     'liked': 'أعجب بمنشورك',
     'commented': 'علّق على منشورك',
     'reposted': 'أعاد نشر منشورك',
+    // Admin
+    'photo_approved': 'تمت الموافقة على صورة بروفايلك ✓',
+    'photo_rejected': 'تم رفض طلب تغيير الصورة',
+    'verified_me': '⭐ تم ترقيتك إلى موثّق مميز',
+    'verified_user': '✓ تم توثيق حسابك',
+    'verify_rejected': 'تم رفض طلب التوثيق',
+    'admin_sender': 'الإدارة',
   },
   'en': {
     'title': 'Notifications',
     'empty': 'No notifications yet',
-    'emptyDesc': "You'll see them here when someone follows or interacts with your posts",
+    'emptyDesc':
+        "You'll see them here when someone follows or interacts with your posts",
     'markAllRead': 'Mark all as read',
     'clearAll': 'Clear all',
     'clearAllConfirm': 'Delete all notifications?',
@@ -34,11 +43,18 @@ const Map<String, Map<String, String>> _localTr = {
     'liked': 'liked your post',
     'commented': 'commented on your post',
     'reposted': 'reposted your post',
+    'photo_approved': 'Your profile photo was approved ✓',
+    'photo_rejected': 'Your photo change request was rejected',
+    'verified_me': '⭐ You were upgraded to Premium Verified',
+    'verified_user': '✓ Your account is now verified',
+    'verify_rejected': 'Your verification request was rejected',
+    'admin_sender': 'Admin',
   },
   'fr': {
     'title': 'Notifications',
     'empty': 'Aucune notification',
-    'emptyDesc': "Elles apparaîtront ici quand quelqu'un vous suit ou interagit avec vos posts",
+    'emptyDesc':
+        "Elles apparaîtront ici quand quelqu'un vous suit ou interagit avec vos posts",
     'markAllRead': 'Tout marquer comme lu',
     'clearAll': 'Tout effacer',
     'clearAllConfirm': 'Supprimer toutes les notifications ?',
@@ -46,11 +62,18 @@ const Map<String, Map<String, String>> _localTr = {
     'liked': 'a aimé votre post',
     'commented': 'a commenté votre post',
     'reposted': 'a reposté votre post',
+    'photo_approved': 'Votre photo de profil a été approuvée ✓',
+    'photo_rejected': 'Votre demande de changement de photo a été refusée',
+    'verified_me': '⭐ Vous êtes passé en Vérifié Premium',
+    'verified_user': '✓ Votre compte est maintenant vérifié',
+    'verify_rejected': 'Votre demande de vérification a été refusée',
+    'admin_sender': 'Admin',
   },
   'ur': {
     'title': 'اطلاعات',
     'empty': 'ابھی کوئی اطلاع نہیں',
-    'emptyDesc': 'جب کوئی آپ کو فالو کرے یا آپ کی پوسٹ پر رد عمل دے تو یہاں دکھے گا',
+    'emptyDesc':
+        'جب کوئی آپ کو فالو کرے یا آپ کی پوسٹ پر رد عمل دے تو یہاں دکھے گا',
     'markAllRead': 'سب کو پڑھا ہوا نشان زد کریں',
     'clearAll': 'سب حذف کریں',
     'clearAllConfirm': 'تمام اطلاعات حذف کریں؟',
@@ -58,11 +81,18 @@ const Map<String, Map<String, String>> _localTr = {
     'liked': 'نے آپ کی پوسٹ لائک کی',
     'commented': 'نے آپ کی پوسٹ پر تبصرہ کیا',
     'reposted': 'نے آپ کی پوسٹ دوبارہ پوسٹ کی',
+    'photo_approved': 'آپ کی پروفائل تصویر منظور ہو گئی ✓',
+    'photo_rejected': 'تصویر تبدیلی کی درخواست مسترد',
+    'verified_me': '⭐ پریمیم تصدیق شدہ میں اپ گریڈ',
+    'verified_user': '✓ آپ کا اکاؤنٹ تصدیق شدہ',
+    'verify_rejected': 'تصدیق کی درخواست مسترد',
+    'admin_sender': 'ایڈمن',
   },
   'ne': {
     'title': 'सूचनाहरू',
     'empty': 'अझै कुनै सूचना छैन',
-    'emptyDesc': 'कसैले तपाईंलाई फलो गरे वा पोस्टमा प्रतिक्रिया दिए यहाँ देखिनेछ',
+    'emptyDesc':
+        'कसैले तपाईंलाई फलो गरे वा पोस्टमा प्रतिक्रिया दिए यहाँ देखिनेछ',
     'markAllRead': 'सबै पढेको चिन्ह लगाउनुहोस्',
     'clearAll': 'सबै मेट्नुहोस्',
     'clearAllConfirm': 'सबै सूचनाहरू मेट्ने?',
@@ -70,6 +100,12 @@ const Map<String, Map<String, String>> _localTr = {
     'liked': 'ले तपाईंको पोस्ट लाइक गरे',
     'commented': 'ले तपाईंको पोस्टमा टिप्पणी गरे',
     'reposted': 'ले तपाईंको पोस्ट पुनः पोस्ट गरे',
+    'photo_approved': 'तपाईंको प्रोफाइल फोटो स्वीकृत ✓',
+    'photo_rejected': 'फोटो परिवर्तन अनुरोध अस्वीकृत',
+    'verified_me': '⭐ प्रिमियम प्रमाणितमा अपग्रेड',
+    'verified_user': '✓ तपाईंको खाता प्रमाणित',
+    'verify_rejected': 'प्रमाणीकरण अनुरोध अस्वीकृत',
+    'admin_sender': 'एडमिन',
   },
   'id': {
     'title': 'Notifikasi',
@@ -82,6 +118,12 @@ const Map<String, Map<String, String>> _localTr = {
     'liked': 'menyukai postingan Anda',
     'commented': 'mengomentari postingan Anda',
     'reposted': 'memposting ulang postingan Anda',
+    'photo_approved': 'Foto profil Anda disetujui ✓',
+    'photo_rejected': 'Permintaan ubah foto ditolak',
+    'verified_me': '⭐ Anda diupgrade ke Verified Premium',
+    'verified_user': '✓ Akun Anda terverifikasi',
+    'verify_rejected': 'Permintaan verifikasi ditolak',
+    'admin_sender': 'Admin',
   },
   'ms': {
     'title': 'Pemberitahuan',
@@ -94,6 +136,12 @@ const Map<String, Map<String, String>> _localTr = {
     'liked': 'menyukai catatan anda',
     'commented': 'mengulas catatan anda',
     'reposted': 'mencatat semula catatan anda',
+    'photo_approved': 'Foto profil anda diluluskan ✓',
+    'photo_rejected': 'Permintaan tukar foto ditolak',
+    'verified_me': '⭐ Anda dinaikkan ke Verified Premium',
+    'verified_user': '✓ Akaun anda disahkan',
+    'verify_rejected': 'Permintaan pengesahan ditolak',
+    'admin_sender': 'Admin',
   },
 };
 
@@ -101,6 +149,22 @@ String _tr(String key) {
   final m = _localTr[appState.languageCode] ?? _localTr['ar']!;
   return m[key] ?? key;
 }
+
+// ===== الأنواع =====
+const Set<String> _communityTypes = {
+  'follow',
+  'like',
+  'comment',
+  'repost',
+};
+
+const Set<String> _adminTypes = {
+  'photo_approved',
+  'photo_rejected',
+  'verified_me',
+  'verified_user',
+  'verify_rejected',
+};
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -318,11 +382,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _onTap(CommunityNotification n) {
     _service.markAllRead(_uid!);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => UserProfileScreen(profileUid: n.fromUid),
-      ),
-    );
+
+    // ✅ فقط إشعارات المجتمع تفتح البروفايل
+    if (_communityTypes.contains(n.type)) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => UserProfileScreen(profileUid: n.fromUid),
+        ),
+      );
+    }
+    // إشعارات الإدارة → فقط mark read (بدون تنقل)
   }
 
   Future<void> _confirmClear() async {
@@ -345,7 +414,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           content: Text(
             _tr('clearAllConfirm'),
-            style: TextStyle(color: AppColors.cream, fontSize: R.f(context, 13)),
+            style: TextStyle(
+              color: AppColors.cream,
+              fontSize: R.f(context, 13),
+            ),
           ),
           actions: [
             TextButton(
@@ -391,6 +463,8 @@ class _NotifTile extends StatelessWidget {
 
   const _NotifTile({required this.notif, required this.onTap});
 
+  bool get _isAdmin => _adminTypes.contains(notif.type);
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -405,12 +479,17 @@ class _NotifTile extends StatelessWidget {
             : AppColors.gold.withValues(alpha: 0.08),
         child: Row(
           children: [
-            ProfileAvatar(
-              email: '',
-              avatar: notif.fromAvatar,
-              size: R.s(context, 42),
-            ),
+            // ===== الأفاتار =====
+            _isAdmin
+                ? _AdminAvatar(size: R.s(context, 42))
+                : ProfileAvatar(
+                    email: '',
+                    avatar: notif.fromAvatar,
+                    size: R.s(context, 42),
+                  ),
             SizedBox(width: R.s(context, 10)),
+
+            // ===== المحتوى =====
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,9 +498,11 @@ class _NotifTile extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          notif.fromName.isEmpty
-                              ? appState.tr('cUserNotFound')
-                              : notif.fromName,
+                          _isAdmin
+                              ? _tr('admin_sender')
+                              : (notif.fromName.isEmpty
+                                  ? appState.tr('cUserNotFound')
+                                  : notif.fromName),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -431,10 +512,13 @@ class _NotifTile extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (notif.fromVerified) ...[
+                      if (notif.fromVerified || _isAdmin) ...[
                         SizedBox(width: R.s(context, 4)),
-                        VerifiedBadge(
-                          type: notif.badgeType,
+                        Icon(
+                          _isAdmin
+                              ? Icons.shield_rounded
+                              : Icons.verified,
+                          color: AppColors.gold,
                           size: R.s(context, 14),
                         ),
                       ],
@@ -446,6 +530,7 @@ class _NotifTile extends StatelessWidget {
                     style: TextStyle(
                       color: AppColors.cream.withValues(alpha: 0.75),
                       fontSize: R.f(context, 12),
+                      height: 1.4,
                     ),
                   ),
                   SizedBox(height: R.s(context, 2)),
@@ -459,6 +544,8 @@ class _NotifTile extends StatelessWidget {
                 ],
               ),
             ),
+
+            // ===== الأيقونة =====
             Icon(
               _iconForType(),
               color: _colorForType(),
@@ -480,8 +567,18 @@ class _NotifTile extends StatelessWidget {
         return _tr('commented');
       case 'repost':
         return _tr('reposted');
+      case 'photo_approved':
+        return _tr('photo_approved');
+      case 'photo_rejected':
+        return _tr('photo_rejected');
+      case 'verified_me':
+        return _tr('verified_me');
+      case 'verified_user':
+        return _tr('verified_user');
+      case 'verify_rejected':
+        return _tr('verify_rejected');
       default:
-        return _tr('followed');
+        return notif.type;
     }
   }
 
@@ -495,8 +592,18 @@ class _NotifTile extends StatelessWidget {
         return Icons.chat_bubble_outline;
       case 'repost':
         return Icons.repeat;
+      case 'photo_approved':
+        return Icons.check_circle_outline_rounded;
+      case 'photo_rejected':
+        return Icons.cancel_outlined;
+      case 'verified_me':
+        return Icons.workspace_premium_rounded;
+      case 'verified_user':
+        return Icons.verified_rounded;
+      case 'verify_rejected':
+        return Icons.gpp_bad_outlined;
       default:
-        return Icons.person_add_alt_1;
+        return Icons.notifications_none;
     }
   }
 
@@ -508,6 +615,14 @@ class _NotifTile extends StatelessWidget {
         return AppColors.gold;
       case 'repost':
         return AppColors.softGold;
+      case 'photo_approved':
+      case 'verified_user':
+        return const Color(0xFF4CAF50); // أخضر
+      case 'photo_rejected':
+      case 'verify_rejected':
+        return Colors.redAccent;
+      case 'verified_me':
+        return const Color(0xFFFFA000); // ذهبي فاتح
       default:
         return AppColors.gold;
     }
@@ -534,5 +649,46 @@ class _NotifTile extends StatelessWidget {
       return appState.trn('cTimeMonthsAgo', (diff.inDays / 30).floor());
     }
     return appState.trn('cTimeYearsAgo', (diff.inDays / 365).floor());
+  }
+}
+
+// ============================================================
+// _AdminAvatar — شعار الإدارة (درع ذهبي)
+// ============================================================
+class _AdminAvatar extends StatelessWidget {
+  final double size;
+
+  const _AdminAvatar({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [
+            AppColors.gold.withValues(alpha: 0.25),
+            AppColors.deepGreen,
+          ],
+        ),
+        border: Border.all(color: AppColors.gold, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gold.withValues(alpha: 0.3),
+            blurRadius: 8,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.shield_rounded,
+        color: AppColors.gold,
+        size: size * 0.5,
+      ),
+    );
   }
 }
