@@ -6,6 +6,7 @@ class ChannelVideoData {
   final String videoId;
   final int createdAt;
   final String addedBy;
+  final bool isReel; // 9:16 ريلز / 16:9 فيديو عادي
 
   const ChannelVideoData({
     required this.id,
@@ -15,6 +16,7 @@ class ChannelVideoData {
     required this.videoId,
     required this.createdAt,
     required this.addedBy,
+    this.isReel = false,
   });
 
   factory ChannelVideoData.fromMap(String id, Map<String, dynamic> m) {
@@ -27,6 +29,7 @@ class ChannelVideoData {
       createdAt: (m['createdAt'] as num?)?.toInt() ??
           DateTime.now().millisecondsSinceEpoch,
       addedBy: (m['addedBy'] as String?) ?? '',
+      isReel: (m['isReel'] as bool?) ?? false,
     );
   }
 
@@ -38,6 +41,7 @@ class ChannelVideoData {
       'videoId': videoId,
       'createdAt': createdAt,
       'addedBy': addedBy,
+      'isReel': isReel,
     };
   }
 
