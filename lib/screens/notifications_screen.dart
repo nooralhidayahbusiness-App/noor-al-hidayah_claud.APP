@@ -17,17 +17,17 @@ const Map<String, Map<String, String>> _localTr = {
     'markAllRead': 'تحديد الكل كمقروء',
     'clearAll': 'حذف الكل',
     'clearAllConfirm': 'هل تريد حذف جميع الإشعارات؟',
-    // Community
     'followed': 'بدأ متابعتك',
     'liked': 'أعجب بمنشورك',
     'commented': 'علّق على منشورك',
     'reposted': 'أعاد نشر منشورك',
-    // Admin
     'photo_approved': 'تمت الموافقة على صورة بروفايلك ✓',
     'photo_rejected': 'تم رفض طلب تغيير الصورة',
     'verified_me': '⭐ تم ترقيتك إلى موثّق مميز',
     'verified_user': '✓ تم توثيق حسابك',
     'verify_rejected': 'تم رفض طلب التوثيق',
+    'new_video': 'نشر فيديو جديد في القناة 🎬',
+    'new_reel': 'نشر ريل جديد في القناة 🎞️',
     'admin_sender': 'الإدارة',
   },
   'en': {
@@ -47,6 +47,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verified_me': '⭐ You were upgraded to Premium Verified',
     'verified_user': '✓ Your account is now verified',
     'verify_rejected': 'Your verification request was rejected',
+    'new_video': 'Published a new video 🎬',
+    'new_reel': 'Published a new reel 🎞️',
     'admin_sender': 'Admin',
   },
   'fr': {
@@ -66,6 +68,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verified_me': '⭐ Vous êtes passé en Vérifié Premium',
     'verified_user': '✓ Votre compte est maintenant vérifié',
     'verify_rejected': 'Votre demande de vérification a été refusée',
+    'new_video': 'A publié une nouvelle vidéo 🎬',
+    'new_reel': 'A publié un nouveau reel 🎞️',
     'admin_sender': 'Admin',
   },
   'ur': {
@@ -85,6 +89,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verified_me': '⭐ پریمیم تصدیق شدہ میں اپ گریڈ',
     'verified_user': '✓ آپ کا اکاؤنٹ تصدیق شدہ',
     'verify_rejected': 'تصدیق کی درخواست مسترد',
+    'new_video': 'چینل میں نئی ویڈیو 🎬',
+    'new_reel': 'چینل میں نیا ریل 🎞️',
     'admin_sender': 'ایڈمن',
   },
   'ne': {
@@ -104,12 +110,15 @@ const Map<String, Map<String, String>> _localTr = {
     'verified_me': '⭐ प्रिमियम प्रमाणितमा अपग्रेड',
     'verified_user': '✓ तपाईंको खाता प्रमाणित',
     'verify_rejected': 'प्रमाणीकरण अनुरोध अस्वीकृत',
+    'new_video': 'च्यानलमा नयाँ भिडियो 🎬',
+    'new_reel': 'च्यानलमा नयाँ रील 🎞️',
     'admin_sender': 'एडमिन',
   },
   'id': {
     'title': 'Notifikasi',
     'empty': 'Belum ada notifikasi',
-    'emptyDesc': 'Akan muncul di sini saat seseorang mengikuti atau berinteraksi',
+    'emptyDesc':
+        'Akan muncul di sini saat seseorang mengikuti atau berinteraksi',
     'markAllRead': 'Tandai semua dibaca',
     'clearAll': 'Hapus semua',
     'clearAllConfirm': 'Hapus semua notifikasi?',
@@ -122,12 +131,15 @@ const Map<String, Map<String, String>> _localTr = {
     'verified_me': '⭐ Anda diupgrade ke Verified Premium',
     'verified_user': '✓ Akun Anda terverifikasi',
     'verify_rejected': 'Permintaan verifikasi ditolak',
+    'new_video': 'Video baru di saluran 🎬',
+    'new_reel': 'Reel baru di saluran 🎞️',
     'admin_sender': 'Admin',
   },
   'ms': {
     'title': 'Pemberitahuan',
     'empty': 'Belum ada pemberitahuan',
-    'emptyDesc': 'Akan muncul di sini apabila seseorang mengikuti atau berinteraksi',
+    'emptyDesc':
+        'Akan muncul di sini apabila seseorang mengikuti atau berinteraksi',
     'markAllRead': 'Tanda semua dibaca',
     'clearAll': 'Hapus semua',
     'clearAllConfirm': 'Hapus semua pemberitahuan?',
@@ -140,6 +152,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verified_me': '⭐ Anda dinaikkan ke Verified Premium',
     'verified_user': '✓ Akaun anda disahkan',
     'verify_rejected': 'Permintaan pengesahan ditolak',
+    'new_video': 'Video baru di saluran 🎬',
+    'new_reel': 'Reel baru di saluran 🎞️',
     'admin_sender': 'Admin',
   },
 };
@@ -149,7 +163,6 @@ String _tr(String key) {
   return m[key] ?? key;
 }
 
-// ===== الأنواع =====
 const Set<String> _communityTypes = {
   'follow',
   'like',
@@ -163,6 +176,8 @@ const Set<String> _adminTypes = {
   'verified_me',
   'verified_user',
   'verify_rejected',
+  'new_video',
+  'new_reel',
 };
 
 class NotificationsScreen extends StatefulWidget {
@@ -382,7 +397,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void _onTap(CommunityNotification n) {
     _service.markAllRead(_uid!);
 
-    // ✅ فقط إشعارات المجتمع تفتح البروفايل
     if (_communityTypes.contains(n.type)) {
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -390,7 +404,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
       );
     }
-    // إشعارات الإدارة → فقط mark read (بدون تنقل)
   }
 
   Future<void> _confirmClear() async {
@@ -478,7 +491,6 @@ class _NotifTile extends StatelessWidget {
             : AppColors.gold.withValues(alpha: 0.08),
         child: Row(
           children: [
-            // ===== الأفاتار =====
             _isAdmin
                 ? _AdminAvatar(size: R.s(context, 42))
                 : ProfileAvatar(
@@ -487,8 +499,6 @@ class _NotifTile extends StatelessWidget {
                     size: R.s(context, 42),
                   ),
             SizedBox(width: R.s(context, 10)),
-
-            // ===== المحتوى =====
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,8 +553,6 @@ class _NotifTile extends StatelessWidget {
                 ],
               ),
             ),
-
-            // ===== الأيقونة =====
             Icon(
               _iconForType(),
               color: _colorForType(),
@@ -576,6 +584,10 @@ class _NotifTile extends StatelessWidget {
         return _tr('verified_user');
       case 'verify_rejected':
         return _tr('verify_rejected');
+      case 'new_video':
+        return _tr('new_video');
+      case 'new_reel':
+        return _tr('new_reel');
       default:
         return notif.type;
     }
@@ -601,6 +613,10 @@ class _NotifTile extends StatelessWidget {
         return Icons.verified_rounded;
       case 'verify_rejected':
         return Icons.gpp_bad_outlined;
+      case 'new_video':
+        return Icons.smart_display_rounded;
+      case 'new_reel':
+        return Icons.movie_filter_rounded;
       default:
         return Icons.notifications_none;
     }
@@ -616,12 +632,15 @@ class _NotifTile extends StatelessWidget {
         return AppColors.softGold;
       case 'photo_approved':
       case 'verified_user':
-        return const Color(0xFF4CAF50); // أخضر
+        return const Color(0xFF4CAF50);
       case 'photo_rejected':
       case 'verify_rejected':
         return Colors.redAccent;
       case 'verified_me':
-        return const Color(0xFFFFA000); // ذهبي فاتح
+        return const Color(0xFFFFA000);
+      case 'new_video':
+      case 'new_reel':
+        return AppColors.gold;
       default:
         return AppColors.gold;
     }
@@ -652,7 +671,7 @@ class _NotifTile extends StatelessWidget {
 }
 
 // ============================================================
-// _AdminAvatar — شعار الإدارة (درع ذهبي)
+// _AdminAvatar
 // ============================================================
 class _AdminAvatar extends StatelessWidget {
   final double size;
