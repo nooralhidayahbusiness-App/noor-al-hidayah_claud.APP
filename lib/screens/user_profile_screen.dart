@@ -227,9 +227,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // ============================================================
-  // Action Buttons: [💬] [متابعة/وثّق]
-  // ============================================================
   Widget _buildActionButton(BuildContext context, UserBrief user) {
     if (_isOwnProfile) {
       if (user.verified) return const SizedBox.shrink();
@@ -335,7 +332,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   // ============================================================
-  // Chat: open or send request (FIXED)
+  // Chat
   // ============================================================
   Future<void> _openChatOrRequest(UserBrief user, bool isFollowing) async {
     if (_currentUid == null) return;
@@ -347,7 +344,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     final chatId = ChatService.chatIdFor(_currentUid!, user.uid);
 
-    // 1) هل Chat موجود؟ (نتجاهل الأخطاء لو ما يوجد)
+    // 1) فحص Chat موجود (آمن)
     bool hasChat = false;
     try {
       final existing = await chatService.chatStream(chatId).first;
@@ -371,7 +368,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return;
     }
 
-    // 2) حساب عام → أنشئ Chat وافتحه مباشرة
+    // 2) عام → افتح مباشرة
     if (user.isPublic) {
       try {
         await chatService.getOrCreateChat(
@@ -395,7 +392,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return;
     }
 
-    // 3) حساب خاص → تحقق من طلب معلق
+    // 3) خاص → طلب
     try {
       final hasPending = await chatService.hasPendingRequest(
         fromUid: _currentUid!,
@@ -696,7 +693,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 }
 
 // ============================================================
-// _ChatButton — يستخدم chat.png
+// _ChatButton — chat.png ذهبي صغير + خلفية شفافة
 // ============================================================
 class _ChatButton extends StatelessWidget {
   final bool enabled;
@@ -714,52 +711,41 @@ class _ChatButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Opacity(
-        opacity: enabled ? 1.0 : 0.35,
+        opacity: enabled ? 1.0 : 0.4,
         child: Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: enabled
-                ? const LinearGradient(
-                    colors: [AppColors.gold, AppColors.softGold],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                  )
-                : null,
-            color: enabled ? null : Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withValues(alpha: 0.25),
             border: Border.all(
               color: enabled
                   ? AppColors.gold
                   : AppColors.cream.withValues(alpha: 0.3),
+              width: 1.5,
             ),
             boxShadow: enabled
                 ? [
                     BoxShadow(
-                      color: AppColors.gold.withValues(alpha: 0.35),
-                      blurRadius: 10,
+                      color: AppColors.gold.withValues(alpha: 0.25),
+                      blurRadius: 8,
                     ),
                   ]
                 : null,
           ),
           child: Padding(
-            padding: EdgeInsets.all(R.s(context, 10)),
+            padding: EdgeInsets.all(R.s(context, 13)),
             child: ColorFiltered(
-              colorFilter: enabled
-                  ? const ColorFilter.mode(
-                      AppColors.deepGreen,
-                      BlendMode.srcIn,
-                    )
-                  : const ColorFilter.mode(
-                      AppColors.cream,
-                      BlendMode.srcIn,
-                    ),
+              colorFilter: ColorFilter.mode(
+                enabled ? AppColors.gold : AppColors.cream,
+                BlendMode.srcIn,
+              ),
               child: Image.asset(
                 'assets/icons/chat.png',
                 fit: BoxFit.contain,
                 errorBuilder: (_, _, _) => Icon(
                   Icons.chat_bubble_outline_rounded,
-                  color: enabled ? AppColors.deepGreen : AppColors.cream,
+                  color: enabled ? AppColors.gold : AppColors.cream,
                   size: R.s(context, 20),
                 ),
               ),
