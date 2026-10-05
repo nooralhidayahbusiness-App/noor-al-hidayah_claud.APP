@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/responsive.dart';
 import '../../core/theme.dart';
+import '../../services/community_notification_service.dart';
 import '../../services/verification_service.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/themed_background.dart';
@@ -19,6 +20,8 @@ class VerificationRequestsScreen extends StatefulWidget {
 
 class _VerificationRequestsScreenState
     extends State<VerificationRequestsScreen> {
+  final CommunityNotificationService _notif =
+      CommunityNotificationService();
   bool _loading = true;
   List<VerificationRequest> _requests = [];
   String? _busyUid;
@@ -47,6 +50,13 @@ class _VerificationRequestsScreenState
         targetUid: req.uid,
         type: type,
       );
+
+      // ✅ إشعار للمستخدم
+      await _notif.sendFromAdmin(
+        toUid: req.uid,
+        type: type == 'me' ? 'verified_me' : 'verified_user',
+      );
+
       if (mounted) {
         _showSnack(
           type == 'me'
@@ -66,6 +76,13 @@ class _VerificationRequestsScreenState
     setState(() => _busyUid = req.uid);
     try {
       await verificationService.reject(targetUid: req.uid);
+
+      // ✅ إشعار للمستخدم
+      await _notif.sendFromAdmin(
+        toUid: req.uid,
+        type: 'verify_rejected',
+      );
+
       if (mounted) _showSnack(appState.tr('adminRejected'));
       await _load();
     } catch (e) {
@@ -262,7 +279,6 @@ class _RequestCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: R.s(context, 12)),
-
           if (busy)
             const Center(
               child: SizedBox(
