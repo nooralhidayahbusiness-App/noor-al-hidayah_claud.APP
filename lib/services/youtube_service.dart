@@ -13,9 +13,6 @@ class YouTubeService {
   CollectionReference<Map<String, dynamic>> get _videos =>
       _db.collection('channel_videos');
 
-  // ============================================================
-  // استخراج ID الفيديو من رابط YouTube
-  // ============================================================
   static String? extractVideoId(String url) {
     if (url.isEmpty) return null;
     final patterns = [
@@ -27,7 +24,6 @@ class YouTubeService {
         return m.group(1);
       }
     }
-    // لو الرابط مباشر ID (11 حرف)
     if (RegExp(r'^[A-Za-z0-9_-]{11}$').hasMatch(url)) {
       return url;
     }
@@ -37,9 +33,6 @@ class YouTubeService {
   static String thumbnailFor(String videoId) =>
       'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
 
-  // ============================================================
-  // Stream — كل الفيديوهات (الأحدث أولاً)
-  // ============================================================
   Stream<List<ChannelVideoData>> stream() {
     return _videos.snapshots().map((snap) {
       final list = snap.docs
@@ -50,13 +43,11 @@ class YouTubeService {
     });
   }
 
-  // ============================================================
-  // إضافة فيديو
-  // ============================================================
   Future<String> addVideo({
     required String title,
     required String url,
     String? thumbnailUrl,
+    bool isReel = false,
   }) async {
     final trimmedTitle = title.trim();
     final trimmedUrl = url.trim();
@@ -82,14 +73,12 @@ class YouTubeService {
       'videoId': videoId,
       'createdAt': DateTime.now().millisecondsSinceEpoch,
       'addedBy': email,
+      'isReel': isReel,
     });
 
     return ref.id;
   }
 
-  // ============================================================
-  // حذف فيديو
-  // ============================================================
   Future<void> deleteVideo(String id) async {
     try {
       await _videos.doc(id).delete();
@@ -99,9 +88,6 @@ class YouTubeService {
     }
   }
 
-  // ============================================================
-  // عدّاد
-  // ============================================================
   Future<int> count() async {
     try {
       final snap = await _videos.get();
