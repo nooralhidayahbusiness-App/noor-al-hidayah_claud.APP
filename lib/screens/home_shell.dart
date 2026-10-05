@@ -9,12 +9,14 @@ import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
+import '../services/chat_service.dart';
 import '../services/community_notification_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/language_picker_sheet.dart';
 import 'challenge_screen.dart';
+import 'chats_list_screen.dart';
 import 'notifications_screen.dart';
 import 'settings_screen.dart';
 import 'tabs/community_tab.dart';
@@ -56,7 +58,6 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      // ✅ نستمع لـ appState + profileState (لتحديث الصورة في كل مكان)
       listenable: Listenable.merge([appState, profileState]),
       builder: (context, _) {
         return Scaffold(
@@ -69,7 +70,7 @@ class _HomeShellState extends State<HomeShell> {
                     padding: EdgeInsetsDirectional.fromSTEB(
                       R.s(context, 8),
                       R.s(context, 8),
-                      R.s(context, 20),
+                      R.s(context, 16),
                       0,
                     ),
                     child: Row(
@@ -83,6 +84,8 @@ class _HomeShellState extends State<HomeShell> {
                               Icons.edit_location_alt_outlined),
                         ),
                         const Spacer(),
+                        _buildChatButton(context),
+                        SizedBox(width: R.s(context, 4)),
                         _buildNotifButton(context),
                         SizedBox(width: R.s(context, 4)),
                         IconButton(
@@ -135,6 +138,64 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  // ============================================================
+  // زر الشات
+  // ============================================================
+  Widget _buildChatButton(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const SizedBox.shrink();
+
+    return StreamBuilder<int>(
+      stream: chatService.totalUnreadStream(uid),
+      builder: (context, snap) {
+        final count = snap.data ?? 0;
+        return Stack(
+          alignment: Alignment.topRight,
+          children: [
+            IconButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ChatsListScreen(),
+                ),
+              ),
+              color: AppColors.softGold,
+              iconSize: R.s(context, 24),
+              icon: const Icon(Icons.chat_bubble_outline),
+            ),
+            if (count > 0)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  constraints: const BoxConstraints(minWidth: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD32F2F),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    count > 99 ? '99+' : count.toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // زر الإشعارات
+  // ============================================================
   Widget _buildNotifButton(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const SizedBox.shrink();
