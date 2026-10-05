@@ -9,7 +9,6 @@ import '../models/user_brief.dart';
 import '../services/chat_service.dart';
 import '../services/community_service.dart';
 import '../services/follow_service.dart';
-import '../widgets/asset_icon.dart';
 import '../widgets/post_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/verified_badge.dart';
