@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/chat.dart';
@@ -27,8 +26,7 @@ class ChatService {
   }
 
   // ============================================================
-  // هل يمكن إرسال رسالة؟
-  // (يجب أن يتابعه)
+  // هل يمكن إرسال رسالة؟ (يجب أن يتابعه)
   // ============================================================
   Future<bool> canMessage({
     required String myUid,
@@ -81,7 +79,6 @@ class ChatService {
       final list = snap.docs
           .map((d) => Chat.fromMap(d.id, d.data()))
           .toList();
-      // ترتيب: آخر رسالة أولاً
       list.sort((a, b) {
         final aT = a.lastMessageAt?.millisecondsSinceEpoch ?? 0;
         final bT = b.lastMessageAt?.millisecondsSinceEpoch ?? 0;
@@ -110,7 +107,7 @@ class ChatService {
   }
 
   // ============================================================
-  // Stream — chat واحد (للـ AppBar)
+  // Stream — chat واحد
   // ============================================================
   Stream<Chat?> chatStream(String chatId) {
     return _chats.doc(chatId).snapshots().map((snap) {
@@ -158,7 +155,7 @@ class ChatService {
       'isDeleted': false,
     });
 
-    // 2) حدّث chat (lastMessage + unread)
+    // 2) حدّث chat
     final currentUnread = (chatSnap.data()?['unread'] as Map?) ?? {};
     final otherUnread = (currentUnread[otherUid] as num?)?.toInt() ?? 0;
 
@@ -189,7 +186,6 @@ class ChatService {
         List<String>.from(chatSnap.data()?['participants'] ?? const []);
     if (!participants.contains(myUid)) return;
 
-    // 1) صفّر unread للمستخدم
     final currentUnread = (chatSnap.data()?['unread'] as Map?) ?? {};
     await chatRef.update({
       'unread': {
@@ -198,7 +194,6 @@ class ChatService {
       },
     });
 
-    // 2) حدّث readBy للرسائل الأخيرة (آخر 50 رسالة غير مقروءة)
     final msgsSnap = await chatRef
         .collection('messages')
         .orderBy('createdAt', descending: true)
@@ -284,7 +279,7 @@ class ChatService {
   }
 
   // ============================================================
-  // حذف chat (للمستخدم نفسه فقط، اختياري)
+  // حذف رسائل chat (soft delete)
   // ============================================================
   Future<void> clearChatMessages(String chatId) async {
     try {
