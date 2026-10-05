@@ -6,12 +6,14 @@ import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../models/post.dart';
 import '../models/user_brief.dart';
+import '../services/chat_service.dart';
 import '../services/community_service.dart';
 import '../services/follow_service.dart';
 import '../widgets/post_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/verified_badge.dart';
 import 'change_photo_screen.dart';
+import 'chat_screen.dart';
 import 'create_post_screen.dart';
 import 'follow_list_screen.dart';
 import 'post_detail_screen.dart';
@@ -225,7 +227,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  // ============================================================
+  // Action Buttons: [💬] [متابعة/وثّق]
+  // ============================================================
   Widget _buildActionButton(BuildContext context, UserBrief user) {
+    // ===== صاحب الحساب =====
     if (_isOwnProfile) {
       if (user.verified) return const SizedBox.shrink();
       return Center(
@@ -257,18 +263,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       );
     }
 
+    // ===== حساب آخر =====
     if (_currentUid == null) return const SizedBox.shrink();
-    return Center(
-      child: StreamBuilder<bool>(
-        stream: _followService.isFollowingStream(
-          followerUid: _currentUid!,
-          followingUid: user.uid,
-        ),
-        builder: (context, snap) {
-          final isFollowing = snap.data ?? false;
-          return _buildFollowButton(context, isFollowing);
-        },
+
+    return StreamBuilder<bool>(
+      stream: _followService.isFollowingStream(
+        followerUid: _currentUid!,
+        followingUid: user.uid,
       ),
+      builder: (context, snap) {
+        final isFollowing = snap.data ?? false;
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _ChatButton(
+              enabled: isFollowing,
+              onTap: () => _openChatOrRequest(user, isFollowing),
+            ),
+            SizedBox(width: R.s(context, 10)),
+            _buildFollowButton(context, isFollowing),
+          ],
+        );
+      },
     );
   }
 
@@ -319,6 +336,76 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
+  // ============================================================
+  // Chat: open or send request
+  // ============================================================
+  Future<void> _openChatOrRequest(UserBrief user, bool isFollowing) async {
+    if (_currentUid == null) return;
+
+    if (!isFollowing) {
+      _showSnack('يجب متابعة المستخدم أولاً لتتمكن من المحادثة');
+      return;
+    }
+
+    final chatId = chatService.chatIdFor(_currentUid!, user.uid);
+
+    // 1) هل Chat موجود؟ → افتحه مباشرة
+    final existing = await chatService.chatStream(chatId).first;
+    if (existing != null) {
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            chatId: chatId,
+            myUid: _currentUid!,
+            otherUid: user.uid,
+            otherName: user.name,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 2) حساب عام → افتح مباشرة
+    if (user.isPublic) {
+      await chatService.getOrCreateChat(
+        myUid: _currentUid!,
+        targetUid: user.uid,
+      );
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            chatId: chatId,
+            myUid: _currentUid!,
+            otherUid: user.uid,
+            otherName: user.name,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 3) حساب خاص → أرسل طلب
+    final hasPending = await chatService.hasPendingRequest(
+      fromUid: _currentUid!,
+      toUid: user.uid,
+    );
+    if (hasPending) {
+      _showSnack('تم إرسال طلب الرسالة مسبقاً، في انتظار القبول');
+      return;
+    }
+
+    await chatService.sendMessageRequest(
+      fromUid: _currentUid!,
+      toUid: user.uid,
+    );
+    _showSnack('تم إرسال طلب الرسالة ✅');
+  }
+
+  // ============================================================
+  // Counts Row
+  // ============================================================
   Widget _buildCountsRow(BuildContext context, UserBrief user) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -598,6 +685,65 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 }
 
+// ============================================================
+// _ChatButton
+// ============================================================
+class _ChatButton extends StatelessWidget {
+  final bool enabled;
+  final VoidCallback onTap;
+
+  const _ChatButton({
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled ? AppColors.gold : AppColors.cream.withValues(alpha: 0.4);
+    final bg = enabled ? null : Colors.black.withValues(alpha: 0.25);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: R.s(context, 46),
+        height: R.s(context, 44),
+        decoration: BoxDecoration(
+          gradient: enabled
+              ? const LinearGradient(
+                  colors: [AppColors.gold, AppColors.softGold],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                )
+              : null,
+          color: bg,
+          borderRadius: BorderRadius.circular(R.s(context, 22)),
+          border: Border.all(
+            color: enabled
+                ? AppColors.gold
+                : AppColors.cream.withValues(alpha: 0.3),
+          ),
+          boxShadow: enabled
+              ? [
+                  BoxShadow(
+                    color: AppColors.gold.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(
+          Icons.chat_bubble_outline_rounded,
+          color: enabled ? AppColors.deepGreen : color,
+          size: R.s(context, 20),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _CountTile
+// ============================================================
 class _CountTile extends StatelessWidget {
   final String label;
   final Stream<int> stream;
