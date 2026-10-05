@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/channel_config.dart';
 import '../../core/fonts.dart';
+import '../../core/responsive.dart';
 import '../../core/theme.dart';
+import '../../models/channel_video_data.dart';
 import '../../services/link_service.dart';
+import '../../services/youtube_service.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glow_sparks.dart';
 
-/// "قناتي": channel card with a subscribe button and the list of videos.
 class ChannelView extends StatelessWidget {
   const ChannelView({super.key});
 
@@ -33,6 +35,7 @@ class ChannelView extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
+            // ===== بطاقة القناة =====
             GlassCard(
               child: Column(
                 children: [
@@ -93,24 +96,83 @@ class ChannelView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            if (kChannelVideos.isEmpty)
-              Text(
-                appState.tr('videosSoon'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  height: 1.6,
-                  color: AppColors.cream.withValues(alpha: 0.7),
-                ),
-              )
-            else
-              for (final video in kChannelVideos.reversed)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: _VideoCard(
-                    video: video,
-                    onTap: () => _open(context, video.url),
-                  ),
-                ),
+
+            // ===== قائمة الفيديوهات (من Firestore) =====
+            StreamBuilder<List<ChannelVideoData>>(
+              stream: youtubeService.stream(),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting &&
+                    !snap.hasData) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 30),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.gold,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  );
+                }
+
+                if (snap.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        appState.tr('videosSoon'),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          height: 1.6,
+                          color: AppColors.cream.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                final videos = snap.data ?? [];
+
+                // لو ما فيه فيديوهات في Firestore، نستخدم القائمة المحلية
+                if (videos.isEmpty) {
+                  if (kChannelVideos.isEmpty) {
+                    return Text(
+                      appState.tr('videosSoon'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        height: 1.6,
+                        color: AppColors.cream.withValues(alpha: 0.7),
+                      ),
+                    );
+                  }
+                  // fallback للقائمة الثابتة
+                  return Column(
+                    children: [
+                      for (final video in kChannelVideos.reversed)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: _LocalVideoCard(
+                            video: video,
+                            onTap: () => _open(context, video.url),
+                          ),
+                        ),
+                    ],
+                  );
+                }
+
+                return Column(
+                  children: [
+                    for (final video in videos)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _FirestoreVideoCard(
+                          video: video,
+                          onTap: () => _open(context, video.url),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ],
         );
       },
@@ -118,11 +180,115 @@ class ChannelView extends StatelessWidget {
   }
 }
 
-class _VideoCard extends StatelessWidget {
-  const _VideoCard({required this.video, required this.onTap});
+// ============================================================
+// _FirestoreVideoCard — فيديو من Firestore
+// ============================================================
+class _FirestoreVideoCard extends StatelessWidget {
+  final ChannelVideoData video;
+  final VoidCallback onTap;
 
+  const _FirestoreVideoCard({
+    required this.video,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbnail = video.thumbnailUrl.isNotEmpty
+        ? video.thumbnailUrl
+        : YouTubeService.thumbnailFor(video.videoId);
+
+    final placeholder = Container(
+      color: AppColors.green,
+      child: const Center(
+        child: Icon(
+          Icons.play_circle_fill_rounded,
+          size: 56,
+          color: AppColors.gold,
+        ),
+      ),
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: AppColors.deepGreen.withValues(alpha: 0.65),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(19)),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
+                        thumbnail,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => placeholder,
+                      ),
+                      Center(
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withValues(alpha: 0.55),
+                            border: Border.all(color: AppColors.gold),
+                          ),
+                          child: const Icon(
+                            Icons.play_arrow_rounded,
+                            color: AppColors.gold,
+                            size: 34,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Text(
+                  video.title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    height: 1.5,
+                    color: AppColors.cream,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _LocalVideoCard — فيديو من القائمة الثابتة (fallback)
+// ============================================================
+class _LocalVideoCard extends StatelessWidget {
   final ChannelVideo video;
   final VoidCallback onTap;
+
+  const _LocalVideoCard({
+    required this.video,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -163,8 +329,7 @@ class _VideoCard extends StatelessWidget {
                         Image.network(
                           thumbnail,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              placeholder,
+                          errorBuilder: (_, _, _) => placeholder,
                         )
                       else
                         placeholder,
@@ -210,8 +375,9 @@ class _VideoCard extends StatelessWidget {
   }
 }
 
-
-/// Channel logo: plain circle with a glowing gold edge and rising sparks.
+// ============================================================
+// _ChannelLogo
+// ============================================================
 class _ChannelLogo extends StatelessWidget {
   const _ChannelLogo();
 
