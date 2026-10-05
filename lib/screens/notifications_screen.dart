@@ -7,7 +7,6 @@ import '../core/theme.dart';
 import '../models/community_notification.dart';
 import '../services/community_notification_service.dart';
 import '../widgets/profile_avatar.dart';
-import '../widgets/verified_badge.dart';
 import 'user_profile_screen.dart';
 
 const Map<String, Map<String, String>> _localTr = {
