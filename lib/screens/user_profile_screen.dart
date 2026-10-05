@@ -9,6 +9,7 @@ import '../models/user_brief.dart';
 import '../services/chat_service.dart';
 import '../services/community_service.dart';
 import '../services/follow_service.dart';
+import '../widgets/asset_icon.dart';
 import '../widgets/post_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/verified_badge.dart';
@@ -231,7 +232,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // Action Buttons: [💬] [متابعة/وثّق]
   // ============================================================
   Widget _buildActionButton(BuildContext context, UserBrief user) {
-    // ===== صاحب الحساب =====
     if (_isOwnProfile) {
       if (user.verified) return const SizedBox.shrink();
       return Center(
@@ -263,7 +263,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       );
     }
 
-    // ===== حساب آخر =====
     if (_currentUid == null) return const SizedBox.shrink();
 
     return StreamBuilder<bool>(
@@ -337,7 +336,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   // ============================================================
-  // Chat: open or send request
+  // Chat: open or send request (FIXED)
   // ============================================================
   Future<void> _openChatOrRequest(UserBrief user, bool isFollowing) async {
     if (_currentUid == null) return;
@@ -349,9 +348,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     final chatId = ChatService.chatIdFor(_currentUid!, user.uid);
 
-    // 1) هل Chat موجود؟ → افتحه مباشرة
-    final existing = await chatService.chatStream(chatId).first;
-    if (existing != null) {
+    // 1) هل Chat موجود؟ (نتجاهل الأخطاء لو ما يوجد)
+    bool hasChat = false;
+    try {
+      final existing = await chatService.chatStream(chatId).first;
+      hasChat = existing != null;
+    } catch (_) {
+      hasChat = false;
+    }
+
+    if (hasChat) {
       if (!mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -366,46 +372,51 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return;
     }
 
-    // 2) حساب عام → افتح مباشرة
+    // 2) حساب عام → أنشئ Chat وافتحه مباشرة
     if (user.isPublic) {
-      await chatService.getOrCreateChat(
-        myUid: _currentUid!,
-        targetUid: user.uid,
-      );
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(
-            chatId: chatId,
-            myUid: _currentUid!,
-            otherUid: user.uid,
-            otherName: user.name,
+      try {
+        await chatService.getOrCreateChat(
+          myUid: _currentUid!,
+          targetUid: user.uid,
+        );
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              chatId: chatId,
+              myUid: _currentUid!,
+              otherUid: user.uid,
+              otherName: user.name,
+            ),
           ),
-        ),
+        );
+      } catch (e) {
+        _showSnack('فشل فتح المحادثة: $e');
+      }
+      return;
+    }
+
+    // 3) حساب خاص → تحقق من طلب معلق
+    try {
+      final hasPending = await chatService.hasPendingRequest(
+        fromUid: _currentUid!,
+        toUid: user.uid,
       );
-      return;
-    }
+      if (hasPending) {
+        _showSnack('تم إرسال طلب الرسالة مسبقاً، في انتظار القبول');
+        return;
+      }
 
-    // 3) حساب خاص → أرسل طلب
-    final hasPending = await chatService.hasPendingRequest(
-      fromUid: _currentUid!,
-      toUid: user.uid,
-    );
-    if (hasPending) {
-      _showSnack('تم إرسال طلب الرسالة مسبقاً، في انتظار القبول');
-      return;
+      await chatService.sendMessageRequest(
+        fromUid: _currentUid!,
+        toUid: user.uid,
+      );
+      _showSnack('تم إرسال طلب الرسالة ✅');
+    } catch (e) {
+      _showSnack('فشل: $e');
     }
-
-    await chatService.sendMessageRequest(
-      fromUid: _currentUid!,
-      toUid: user.uid,
-    );
-    _showSnack('تم إرسال طلب الرسالة ✅');
   }
 
-  // ============================================================
-  // Counts Row
-  // ============================================================
   Widget _buildCountsRow(BuildContext context, UserBrief user) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -686,7 +697,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 }
 
 // ============================================================
-// _ChatButton
+// _ChatButton — يستخدم chat.png
 // ============================================================
 class _ChatButton extends StatelessWidget {
   final bool enabled;
@@ -699,44 +710,62 @@ class _ChatButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled
-        ? AppColors.gold
-        : AppColors.cream.withValues(alpha: 0.4);
-    final bg = enabled ? null : Colors.black.withValues(alpha: 0.25);
+    final size = R.s(context, 46);
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: R.s(context, 46),
-        height: R.s(context, 44),
-        decoration: BoxDecoration(
-          gradient: enabled
-              ? const LinearGradient(
-                  colors: [AppColors.gold, AppColors.softGold],
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                )
-              : null,
-          color: bg,
-          borderRadius: BorderRadius.circular(R.s(context, 22)),
-          border: Border.all(
-            color: enabled
-                ? AppColors.gold
-                : AppColors.cream.withValues(alpha: 0.3),
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.35,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: enabled
+                ? const LinearGradient(
+                    colors: [AppColors.gold, AppColors.softGold],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  )
+                : null,
+            color: enabled ? null : Colors.black.withValues(alpha: 0.25),
+            border: Border.all(
+              color: enabled
+                  ? AppColors.gold
+                  : AppColors.cream.withValues(alpha: 0.3),
+            ),
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: AppColors.gold.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                    ),
+                  ]
+                : null,
           ),
-          boxShadow: enabled
-              ? [
-                  BoxShadow(
-                    color: AppColors.gold.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                  ),
-                ]
-              : null,
-        ),
-        child: Icon(
-          Icons.chat_bubble_outline_rounded,
-          color: enabled ? AppColors.deepGreen : color,
-          size: R.s(context, 20),
+          child: Padding(
+            padding: EdgeInsets.all(R.s(context, 10)),
+            child: ColorFiltered(
+              colorFilter: enabled
+                  ? const ColorFilter.mode(
+                      AppColors.deepGreen,
+                      BlendMode.srcIn,
+                    )
+                  : const ColorFilter.mode(
+                      AppColors.cream,
+                      BlendMode.srcIn,
+                    ),
+              child: Image.asset(
+                'assets/icons/chat.png',
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: enabled ? AppColors.deepGreen : AppColors.cream,
+                  size: R.s(context, 20),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
