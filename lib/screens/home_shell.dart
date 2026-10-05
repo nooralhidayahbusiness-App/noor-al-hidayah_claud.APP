@@ -139,7 +139,7 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   // ============================================================
-  // زر الشات
+  // زر الشات (chat.png + badge)
   // ============================================================
   Widget _buildChatButton(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -158,9 +158,11 @@ class _HomeShellState extends State<HomeShell> {
                   builder: (_) => const ChatsListScreen(),
                 ),
               ),
-              color: AppColors.softGold,
-              iconSize: R.s(context, 24),
-              icon: const Icon(Icons.chat_bubble_outline),
+              iconSize: R.s(context, 26),
+              icon: const AssetIcon(
+                path: 'assets/icons/chat.png',
+                size: 26,
+              ),
             ),
             if (count > 0)
               Positioned(
