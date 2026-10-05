@@ -100,23 +100,40 @@ class UserBrief {
       verified || isOwner || verifiedType == 'me' || verifiedType == 'user';
 
   List<String> get badges {
-    if (isOwner) return const ['owner'];
+    if (isOwner) {
+      return const ['owner'];
+    }
 
     final list = <String>[];
-    if (isPremium) list.add('premium');
-    if (verified) {
-      if (verifiedType == 'me') list.add('me');
-      else if (verifiedType == 'user') list.add('user');
+    if (isPremium) {
+      list.add('premium');
     }
+
+    if (verified) {
+      if (verifiedType == 'me') {
+        list.add('me');
+      } else if (verifiedType == 'user') {
+        list.add('user');
+      }
+    }
+
     return list;
   }
 
   String get badgeType {
-    if (isOwner) return 'owner';
-    if (isPremium) return 'premium';
+    if (isOwner) {
+      return 'owner';
+    }
+    if (isPremium) {
+      return 'premium';
+    }
     if (verified) {
-      if (verifiedType == 'me') return 'me';
-      if (verifiedType == 'user') return 'user';
+      if (verifiedType == 'me') {
+        return 'me';
+      }
+      if (verifiedType == 'user') {
+        return 'user';
+      }
     }
     return 'none';
   }
