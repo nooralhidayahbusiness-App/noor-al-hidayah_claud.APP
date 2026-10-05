@@ -1,10 +1,174 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_state.dart';
 import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../services/youtube_service.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/themed_background.dart';
+
+// ============ ترجمات ============
+const Map<String, Map<String, String>> _avTr = {
+  'ar': {
+    'title': 'إضافة فيديو',
+    'titleReel': 'إضافة ريل',
+    'typeNormal': 'فيديو عادي (16:9)',
+    'typeReel': 'ريلز (9:16)',
+    'fieldTitle': 'عنوان الفيديو',
+    'fieldUrl': 'رابط YouTube',
+    'fieldThumb': 'رابط الصورة المصغّرة (اختياري)',
+    'hintUrl': 'https://youtube.com/watch?v=...',
+    'hintThumb': 'تلقائي من YouTube إذا فاضي',
+    'preview': 'معاينة',
+    'preview169': 'معاينة (16:9)',
+    'preview916': 'معاينة (9:16)',
+    'publish': 'نشر الفيديو',
+    'publishReel': 'نشر الريل',
+    'publishing': 'جارٍ النشر...',
+    'errTitle': 'العنوان مطلوب',
+    'errUrl': 'رابط YouTube مطلوب',
+    'errUrlInvalid': 'رابط YouTube غير صالح',
+    'successVideo': 'تم نشر الفيديو بنجاح ✅',
+    'successReel': 'تم نشر الريل بنجاح ✅',
+  },
+  'en': {
+    'title': 'Add Video',
+    'titleReel': 'Add Reel',
+    'typeNormal': 'Video (16:9)',
+    'typeReel': 'Reel (9:16)',
+    'fieldTitle': 'Video title',
+    'fieldUrl': 'YouTube URL',
+    'fieldThumb': 'Thumbnail URL (optional)',
+    'hintUrl': 'https://youtube.com/watch?v=...',
+    'hintThumb': 'Auto from YouTube if empty',
+    'preview': 'Preview',
+    'preview169': 'Preview (16:9)',
+    'preview916': 'Preview (9:16)',
+    'publish': 'Publish Video',
+    'publishReel': 'Publish Reel',
+    'publishing': 'Publishing...',
+    'errTitle': 'Title is required',
+    'errUrl': 'YouTube URL is required',
+    'errUrlInvalid': 'Invalid YouTube URL',
+    'successVideo': 'Video published ✅',
+    'successReel': 'Reel published ✅',
+  },
+  'fr': {
+    'title': 'Ajouter une vidéo',
+    'titleReel': 'Ajouter un Reel',
+    'typeNormal': 'Vidéo (16:9)',
+    'typeReel': 'Reel (9:16)',
+    'fieldTitle': 'Titre de la vidéo',
+    'fieldUrl': 'URL YouTube',
+    'fieldThumb': 'URL de la miniature (optionnel)',
+    'hintUrl': 'https://youtube.com/watch?v=...',
+    'hintThumb': 'Auto de YouTube si vide',
+    'preview': 'Aperçu',
+    'preview169': 'Aperçu (16:9)',
+    'preview916': 'Aperçu (9:16)',
+    'publish': 'Publier la vidéo',
+    'publishReel': 'Publier le Reel',
+    'publishing': 'Publication...',
+    'errTitle': 'Le titre est requis',
+    'errUrl': "L'URL YouTube est requise",
+    'errUrlInvalid': 'URL YouTube invalide',
+    'successVideo': 'Vidéo publiée ✅',
+    'successReel': 'Reel publié ✅',
+  },
+  'ur': {
+    'title': 'ویڈیو شامل کریں',
+    'titleReel': 'ریل شامل کریں',
+    'typeNormal': 'ویڈیو (16:9)',
+    'typeReel': 'ریل (9:16)',
+    'fieldTitle': 'ویڈیو کا عنوان',
+    'fieldUrl': 'YouTube URL',
+    'fieldThumb': 'تھمب نیل URL (اختیاری)',
+    'hintUrl': 'https://youtube.com/watch?v=...',
+    'hintThumb': 'YouTube سے خودکار',
+    'preview': 'پیش نظارہ',
+    'preview169': 'پیش نظارہ (16:9)',
+    'preview916': 'پیش نظارہ (9:16)',
+    'publish': 'ویڈیو شائع کریں',
+    'publishReel': 'ریل شائع کریں',
+    'publishing': 'شائع ہو رہی ہے...',
+    'errTitle': 'عنوان درکار ہے',
+    'errUrl': 'YouTube URL درکار ہے',
+    'errUrlInvalid': 'YouTube URL غلط',
+    'successVideo': 'ویڈیو شائع ہو گئی ✅',
+    'successReel': 'ریل شائع ہو گئی ✅',
+  },
+  'ne': {
+    'title': 'भिडियो थप्नुहोस्',
+    'titleReel': 'रील थप्नुहोस्',
+    'typeNormal': 'भिडियो (16:9)',
+    'typeReel': 'रील (9:16)',
+    'fieldTitle': 'भिडियो शीर्षक',
+    'fieldUrl': 'YouTube URL',
+    'fieldThumb': 'थम्बनेल URL (वैकल्पिक)',
+    'hintUrl': 'https://youtube.com/watch?v=...',
+    'hintThumb': 'YouTube बाट स्वतः',
+    'preview': 'पूर्वावलोकन',
+    'preview169': 'पूर्वावलोकन (16:9)',
+    'preview916': 'पूर्वावलोकन (9:16)',
+    'publish': 'भिडियो प्रकाशित',
+    'publishReel': 'रील प्रकाशित',
+    'publishing': 'प्रकाशित हुँदै...',
+    'errTitle': 'शीर्षक आवश्यक',
+    'errUrl': 'YouTube URL आवश्यक',
+    'errUrlInvalid': 'YouTube URL अवैध',
+    'successVideo': 'भिडियो प्रकाशित ✅',
+    'successReel': 'रील प्रकाशित ✅',
+  },
+  'id': {
+    'title': 'Tambah Video',
+    'titleReel': 'Tambah Reel',
+    'typeNormal': 'Video (16:9)',
+    'typeReel': 'Reel (9:16)',
+    'fieldTitle': 'Judul video',
+    'fieldUrl': 'URL YouTube',
+    'fieldThumb': 'URL thumbnail (opsional)',
+    'hintUrl': 'https://youtube.com/watch?v=...',
+    'hintThumb': 'Otomatis dari YouTube jika kosong',
+    'preview': 'Pratinjau',
+    'preview169': 'Pratinjau (16:9)',
+    'preview916': 'Pratinjau (9:16)',
+    'publish': 'Publikasikan Video',
+    'publishReel': 'Publikasikan Reel',
+    'publishing': 'Mempublikasikan...',
+    'errTitle': 'Judul wajib diisi',
+    'errUrl': 'URL YouTube wajib diisi',
+    'errUrlInvalid': 'URL YouTube tidak valid',
+    'successVideo': 'Video dipublikasikan ✅',
+    'successReel': 'Reel dipublikasikan ✅',
+  },
+  'ms': {
+    'title': 'Tambah Video',
+    'titleReel': 'Tambah Reel',
+    'typeNormal': 'Video (16:9)',
+    'typeReel': 'Reel (9:16)',
+    'fieldTitle': 'Tajuk video',
+    'fieldUrl': 'URL YouTube',
+    'fieldThumb': 'URL thumbnail (pilihan)',
+    'hintUrl': 'https://youtube.com/watch?v=...',
+    'hintThumb': 'Auto dari YouTube jika kosong',
+    'preview': 'Pratonton',
+    'preview169': 'Pratonton (16:9)',
+    'preview916': 'Pratonton (9:16)',
+    'publish': 'Terbitkan Video',
+    'publishReel': 'Terbitkan Reel',
+    'publishing': 'Menerbitkan...',
+    'errTitle': 'Tajuk diperlukan',
+    'errUrl': 'URL YouTube diperlukan',
+    'errUrlInvalid': 'URL YouTube tidak sah',
+    'successVideo': 'Video diterbitkan ✅',
+    'successReel': 'Reel diterbitkan ✅',
+  },
+};
+
+String _av(String key) {
+  final m = _avTr[appState.languageCode] ?? _avTr['ar']!;
+  return m[key] ?? key;
+}
 
 class AddVideoScreen extends StatefulWidget {
   const AddVideoScreen({super.key});
@@ -49,15 +213,15 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
     final u = _url.text.trim();
 
     if (t.isEmpty) {
-      _snack('العنوان مطلوب', error: true);
+      _snack(_av('errTitle'), error: true);
       return;
     }
     if (u.isEmpty) {
-      _snack('رابط YouTube مطلوب', error: true);
+      _snack(_av('errUrl'), error: true);
       return;
     }
     if (_previewId == null) {
-      _snack('رابط YouTube غير صالح', error: true);
+      _snack(_av('errUrlInvalid'), error: true);
       return;
     }
 
@@ -70,9 +234,7 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
         isReel: _isReel,
       );
       if (mounted) {
-        _snack(_isReel
-            ? 'تم نشر الريل بنجاح ✅'
-            : 'تم نشر الفيديو بنجاح ✅');
+        _snack(_isReel ? _av('successReel') : _av('successVideo'));
         await Future.delayed(const Duration(milliseconds: 700));
         if (mounted) Navigator.of(context).pop(true);
       }
@@ -106,202 +268,210 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
         ? YouTubeService.thumbnailFor(_previewId!)
         : null;
 
-    return Scaffold(
-      body: ThemedBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ===== الشريط العلوي =====
-              Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(
-                  R.s(context, 6),
-                  R.s(context, 6),
-                  R.s(context, 16),
-                  0,
-                ),
-                child: Row(
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        return Directionality(
+          textDirection: appState.direction,
+          child: Scaffold(
+            body: ThemedBackground(
+              child: SafeArea(
+                child: Column(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      color: AppColors.softGold,
-                      iconSize: R.s(context, 22),
-                      icon: const Icon(Icons.arrow_back_rounded),
-                    ),
-                    const Spacer(),
-                    Text(
-                      _isReel ? 'إضافة ريل' : 'إضافة فيديو',
-                      style: TextStyle(
-                        fontSize: R.f(context, 15),
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.softGold,
+                    Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                        R.s(context, 6),
+                        R.s(context, 6),
+                        R.s(context, 16),
+                        0,
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () =>
+                                Navigator.of(context).maybePop(),
+                            color: AppColors.softGold,
+                            iconSize: R.s(context, 22),
+                            icon: const Icon(Icons.arrow_back_rounded),
+                          ),
+                          const Spacer(),
+                          Text(
+                            _isReel ? _av('titleReel') : _av('title'),
+                            style: TextStyle(
+                              fontSize: R.f(context, 15),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.softGold,
+                            ),
+                          ),
+                          SizedBox(width: R.s(context, 40)),
+                        ],
                       ),
                     ),
-                    SizedBox(width: R.s(context, 40)),
-                  ],
-                ),
-              ),
-              SizedBox(height: R.s(context, 6)),
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.all(R.s(context, 18)),
-                  children: [
-                    // ===== اختيار النوع =====
-                    _TypeSelector(
-                      isReel: _isReel,
-                      onChanged: (v) => setState(() => _isReel = v),
-                    ),
-                    SizedBox(height: R.s(context, 18)),
-
-                    _Field(
-                      controller: _title,
-                      label: 'عنوان الفيديو',
-                      icon: Icons.title_rounded,
-                    ),
-                    SizedBox(height: R.s(context, 14)),
-                    _Field(
-                      controller: _url,
-                      label: 'رابط YouTube',
-                      icon: Icons.link_rounded,
-                      keyboardType: TextInputType.url,
-                      hint: 'https://youtube.com/watch?v=...',
-                    ),
-                    SizedBox(height: R.s(context, 14)),
-                    _Field(
-                      controller: _thumb,
-                      label: 'رابط الصورة المصغّرة (اختياري)',
-                      icon: Icons.image_rounded,
-                      keyboardType: TextInputType.url,
-                      hint: 'تلقائي من YouTube إذا فاضي',
-                    ),
-
-                    // ===== معاينة =====
-                    if (preview != null) ...[
-                      SizedBox(height: R.s(context, 18)),
-                      GlassCard(
-                        ornament: false,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.visibility_rounded,
-                                  color: AppColors.gold,
-                                  size: R.s(context, 16),
-                                ),
-                                SizedBox(width: R.s(context, 6)),
-                                Text(
-                                  _isReel
-                                      ? 'معاينة (9:16)'
-                                      : 'معاينة (16:9)',
-                                  style: TextStyle(
-                                    color: AppColors.softGold,
-                                    fontSize: R.f(context, 12),
-                                    fontWeight: FontWeight.bold,
+                    SizedBox(height: R.s(context, 6)),
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.all(R.s(context, 18)),
+                        children: [
+                          _TypeSelector(
+                            isReel: _isReel,
+                            onChanged: (v) =>
+                                setState(() => _isReel = v),
+                          ),
+                          SizedBox(height: R.s(context, 18)),
+                          _Field(
+                            controller: _title,
+                            label: _av('fieldTitle'),
+                            icon: Icons.title_rounded,
+                          ),
+                          SizedBox(height: R.s(context, 14)),
+                          _Field(
+                            controller: _url,
+                            label: _av('fieldUrl'),
+                            icon: Icons.link_rounded,
+                            keyboardType: TextInputType.url,
+                            hint: _av('hintUrl'),
+                          ),
+                          SizedBox(height: R.s(context, 14)),
+                          _Field(
+                            controller: _thumb,
+                            label: _av('fieldThumb'),
+                            icon: Icons.image_rounded,
+                            keyboardType: TextInputType.url,
+                            hint: _av('hintThumb'),
+                          ),
+                          if (preview != null) ...[
+                            SizedBox(height: R.s(context, 18)),
+                            GlassCard(
+                              ornament: false,
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.visibility_rounded,
+                                        color: AppColors.gold,
+                                        size: R.s(context, 16),
+                                      ),
+                                      SizedBox(width: R.s(context, 6)),
+                                      Text(
+                                        _isReel
+                                            ? _av('preview916')
+                                            : _av('preview169'),
+                                        style: TextStyle(
+                                          color: AppColors.softGold,
+                                          fontSize: R.f(context, 12),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: R.s(context, 10)),
-                            Center(
-                              child: ClipRRect(
-                                borderRadius:
-                                    BorderRadius.circular(R.s(context, 12)),
-                                child: SizedBox(
-                                  // 16:9 → عرض كامل، 9:16 → عمودي محدود
-                                  width: _isReel
-                                      ? R.s(context, 180)
-                                      : double.infinity,
-                                  child: AspectRatio(
-                                    aspectRatio: _isReel ? 9 / 16 : 16 / 9,
-                                    child: Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        Image.network(
-                                          _thumb.text.trim().isNotEmpty
-                                              ? _thumb.text.trim()
-                                              : preview,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => Container(
-                                            color: AppColors.green,
-                                            child: const Icon(
-                                              Icons.play_circle_fill_rounded,
-                                              color: AppColors.gold,
-                                              size: 56,
-                                            ),
+                                  SizedBox(height: R.s(context, 10)),
+                                  Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                          R.s(context, 12)),
+                                      child: SizedBox(
+                                        width: _isReel
+                                            ? R.s(context, 180)
+                                            : double.infinity,
+                                        child: AspectRatio(
+                                          aspectRatio:
+                                              _isReel ? 9 / 16 : 16 / 9,
+                                          child: Stack(
+                                            fit: StackFit.expand,
+                                            children: [
+                                              Image.network(
+                                                _thumb.text.trim().isNotEmpty
+                                                    ? _thumb.text.trim()
+                                                    : preview,
+                                                fit: BoxFit.cover,
+                                                errorBuilder:
+                                                    (_, _, _) => Container(
+                                                  color: AppColors.green,
+                                                  child: const Icon(
+                                                    Icons
+                                                        .play_circle_fill_rounded,
+                                                    color: AppColors.gold,
+                                                    size: 56,
+                                                  ),
+                                                ),
+                                              ),
+                                              const Center(
+                                                child: Icon(
+                                                  Icons
+                                                      .play_circle_outline_rounded,
+                                                  color: AppColors.gold,
+                                                  size: 44,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        const Center(
-                                          child: Icon(
-                                            Icons.play_circle_outline_rounded,
-                                            color: AppColors.gold,
-                                            size: 44,
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                    ],
-
-                    SizedBox(height: R.s(context, 24)),
-
-                    // ===== زر النشر =====
-                    SizedBox(
-                      height: R.s(context, 54),
-                      child: ElevatedButton.icon(
-                        onPressed: _saving ? null : _publish,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.gold,
-                          foregroundColor: AppColors.deepGreen,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(R.s(context, 18)),
-                          ),
-                          elevation: 6,
-                        ),
-                        icon: _saving
-                            ? SizedBox(
-                                width: R.s(context, 18),
-                                height: R.s(context, 18),
-                                child: const CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.deepGreen,
+                          SizedBox(height: R.s(context, 24)),
+                          SizedBox(
+                            height: R.s(context, 54),
+                            child: ElevatedButton.icon(
+                              onPressed: _saving ? null : _publish,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.gold,
+                                foregroundColor: AppColors.deepGreen,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      R.s(context, 18)),
                                 ),
-                              )
-                            : Icon(
-                                Icons.publish_rounded,
-                                size: R.s(context, 20),
+                                elevation: 6,
                               ),
-                        label: Text(
-                          _saving
-                              ? 'جارٍ النشر...'
-                              : (_isReel ? 'نشر الريل' : 'نشر الفيديو'),
-                          style: TextStyle(
-                            fontSize: R.f(context, 15),
-                            fontWeight: FontWeight.bold,
+                              icon: _saving
+                                  ? SizedBox(
+                                      width: R.s(context, 18),
+                                      height: R.s(context, 18),
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.deepGreen,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.publish_rounded,
+                                      size: R.s(context, 20),
+                                    ),
+                              label: Text(
+                                _saving
+                                    ? _av('publishing')
+                                    : (_isReel
+                                        ? _av('publishReel')
+                                        : _av('publish')),
+                                style: TextStyle(
+                                  fontSize: R.f(context, 15),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
 // ============================================================
-// _TypeSelector — اختيار: فيديو عادي أو ريلز
+// _TypeSelector
 // ============================================================
 class _TypeSelector extends StatelessWidget {
   final bool isReel;
@@ -326,7 +496,7 @@ class _TypeSelector extends StatelessWidget {
           Expanded(
             child: _SelectorBtn(
               icon: Icons.smart_display_rounded,
-              label: 'فيديو عادي (16:9)',
+              label: _av('typeNormal'),
               active: !isReel,
               onTap: () => onChanged(false),
             ),
@@ -335,7 +505,7 @@ class _TypeSelector extends StatelessWidget {
           Expanded(
             child: _SelectorBtn(
               icon: Icons.movie_filter_rounded,
-              label: 'ريلز (9:16)',
+              label: _av('typeReel'),
               active: isReel,
               onTap: () => onChanged(true),
             ),
