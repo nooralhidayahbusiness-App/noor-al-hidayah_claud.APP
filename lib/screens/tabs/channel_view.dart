@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/channel_config.dart';
 import '../../core/fonts.dart';
+import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../models/channel_video_data.dart';
 import '../../services/link_service.dart';
@@ -50,146 +51,269 @@ class _ChannelViewState extends State<ChannelView>
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
-        final name = appState.tr('appName');
-        return Column(
-          children: [
-            // ===== بطاقة القناة =====
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-              child: GlassCard(
-                child: Column(
-                  children: [
-                    const _ChannelLogo(),
-                    const SizedBox(height: 12),
-                    Text(
-                      name,
-                      textAlign: TextAlign.center,
-                      style: brandStyle(
-                        name,
-                        fontSize: 30,
-                        color: AppColors.softGold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      kChannelHandle,
-                      textDirection: TextDirection.ltr,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.cream.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GoldButton(
-                            label: appState.tr('subscribe'),
-                            onPressed: () => _open(
-                              context,
-                              kChannelUrl.isEmpty
-                                  ? ''
-                                  : subscribeUrl(kChannelUrl),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _IconBtn(
-                          icon: Icons.open_in_new_rounded,
-                          onTap: () => _open(context, kChannelUrl),
-                        ),
-                      ],
-                    ),
-                  ],
+        return NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            // ===== 1) بطاقة القناة (تنزلق مع السكرول) =====
+            SliverToBoxAdapter(
+              child: _ChannelHeader(
+                onSubscribe: () => _open(
+                  context,
+                  kChannelUrl.isEmpty ? '' : subscribeUrl(kChannelUrl),
                 ),
+                onOpenChannel: () => _open(context, kChannelUrl),
               ),
             ),
-            const SizedBox(height: 14),
 
-            // ===== التابات =====
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  color: AppColors.deepGreen.withValues(alpha: 0.65),
-                  border: Border.all(
-                    color: AppColors.gold.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: TabBar(
-                  controller: _tabs,
-                  indicator: BoxDecoration(
-                    borderRadius: BorderRadius.circular(26),
-                    color: AppColors.gold,
-                  ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: Colors.transparent,
-                  labelColor: AppColors.deepGreen,
-                  unselectedLabelColor: AppColors.softGold,
-                  labelStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  tabs: const [
-                    Tab(
-                      height: 44,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.smart_display_rounded, size: 18),
-                          SizedBox(width: 6),
-                          Text('الفيديوهات'),
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      height: 44,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.movie_filter_rounded, size: 18),
-                          SizedBox(width: 6),
-                          Text('الريلز'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+            // ===== 2) التابات (تثبت في الأعلى) =====
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabsDelegate(
+                tabBar: _buildTabBar(context),
               ),
             ),
-            const SizedBox(height: 12),
+          ],
+          body: TabBarView(
+            controller: _tabs,
+            children: [
+              _VideoList(
+                isReel: false,
+                onOpen: (url) => _open(context, url),
+              ),
+              _VideoList(
+                isReel: true,
+                onOpen: (url) => _open(context, url),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-            // ===== المحتوى =====
-            Expanded(
-              child: TabBarView(
-                controller: _tabs,
+  Widget _buildTabBar(BuildContext context) {
+    return Container(
+      color: AppColors.deepGreen,
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          color: AppColors.deepGreen.withValues(alpha: 0.65),
+          border: Border.all(
+            color: AppColors.gold.withValues(alpha: 0.3),
+          ),
+        ),
+        child: TabBar(
+          controller: _tabs,
+          indicator: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            color: AppColors.gold,
+          ),
+          indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: Colors.transparent,
+          labelColor: AppColors.deepGreen,
+          unselectedLabelColor: AppColors.softGold,
+          labelStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          tabs: const [
+            Tab(
+              height: 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _VideoList(
-                    isReel: false,
-                    onOpen: (url) => _open(context, url),
-                  ),
-                  _VideoList(
-                    isReel: true,
-                    onOpen: (url) => _open(context, url),
-                  ),
+                  Icon(Icons.smart_display_rounded, size: 17),
+                  SizedBox(width: 6),
+                  Text('الفيديوهات'),
+                ],
+              ),
+            ),
+            Tab(
+              height: 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.movie_filter_rounded, size: 17),
+                  SizedBox(width: 6),
+                  Text('الريلز'),
                 ],
               ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
 // ============================================================
-// _VideoList — يجلب من Firestore + يدمج مع القائمة القديمة
+// _TabsDelegate — SliverPersistentHeader للتابات
+// ============================================================
+class _TabsDelegate extends SliverPersistentHeaderDelegate {
+  final Widget tabBar;
+
+  _TabsDelegate({required this.tabBar});
+
+  @override
+  double get minExtent => 58;
+  @override
+  double get maxExtent => 58;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Material(
+      color: AppColors.deepGreen,
+      elevation: overlapsContent ? 4 : 0,
+      shadowColor: Colors.black.withValues(alpha: 0.4),
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _TabsDelegate oldDelegate) => false;
+}
+
+// ============================================================
+// _ChannelHeader — نسخة مصغّرة شبيهة بـ YouTube
+// ============================================================
+class _ChannelHeader extends StatelessWidget {
+  final VoidCallback onSubscribe;
+  final VoidCallback onOpenChannel;
+
+  const _ChannelHeader({
+    required this.onSubscribe,
+    required this.onOpenChannel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final name = appState.tr('appName');
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: GlassCard(
+        ornament: false,
+        child: Column(
+          children: [
+            // ===== الصف الأول: شعار + اسم + @handle =====
+            Row(
+              children: [
+                _ChannelLogo(size: R.s(context, 72)),
+                SizedBox(width: R.s(context, 12)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: brandStyle(
+                          name,
+                          fontSize: R.f(context, 20),
+                          color: AppColors.softGold,
+                        ),
+                      ),
+                      SizedBox(height: R.s(context, 3)),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.verified,
+                            color: AppColors.gold,
+                            size: R.s(context, 12),
+                          ),
+                          SizedBox(width: R.s(context, 3)),
+                          Flexible(
+                            child: Text(
+                              kChannelHandle,
+                              textDirection: TextDirection.ltr,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: R.f(context, 12),
+                                color: AppColors.cream.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: R.s(context, 12)),
+
+            // ===== الصف الثاني: زر الاشتراك + فتح القناة =====
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: R.s(context, 44),
+                    child: ElevatedButton.icon(
+                      onPressed: onSubscribe,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.deepGreen,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(R.s(context, 22)),
+                        ),
+                        elevation: 4,
+                      ),
+                      icon: Icon(
+                        Icons.notifications_active_rounded,
+                        size: R.s(context, 18),
+                      ),
+                      label: Text(
+                        appState.tr('subscribe'),
+                        style: TextStyle(
+                          fontSize: R.f(context, 13.5),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: R.s(context, 8)),
+                GestureDetector(
+                  onTap: onOpenChannel,
+                  child: Container(
+                    width: R.s(context, 44),
+                    height: R.s(context, 44),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(R.s(context, 14)),
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.open_in_new_rounded,
+                      color: AppColors.softGold,
+                      size: R.s(context, 18),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _VideoList
 // ============================================================
 class _VideoList extends StatelessWidget {
   final bool isReel;
@@ -205,13 +329,12 @@ class _VideoList extends StatelessWidget {
     return StreamBuilder<List<ChannelVideoData>>(
       stream: youtubeService.stream(),
       builder: (context, snap) {
-        // ===== اللي من Firestore (نفلتر حسب النوع) =====
         final firestoreVideos = (snap.data ?? [])
             .where((v) => v.isReel == isReel)
             .toList();
 
-        // ===== اللي من القائمة القديمة (فقط في تاب الفيديوهات) =====
-        final oldVideos = !isReel ? kChannelVideos.reversed.toList() : [];
+        final oldVideos =
+            !isReel ? kChannelVideos.reversed.toList() : <ChannelVideo>[];
 
         final hasFirestore = firestoreVideos.isNotEmpty;
         final hasOld = oldVideos.isNotEmpty;
@@ -232,9 +355,7 @@ class _VideoList extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                isReel
-                    ? 'لا توجد ريلز بعد'
-                    : appState.tr('videosSoon'),
+                isReel ? 'لا توجد ريلز بعد' : appState.tr('videosSoon'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   height: 1.6,
@@ -245,10 +366,35 @@ class _VideoList extends StatelessWidget {
           );
         }
 
+        // ===== ريلز: شبكة عمودية (2 per row) =====
+        if (isReel && firestoreVideos.isNotEmpty) {
+          return GridView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.62,
+            ),
+            itemCount: firestoreVideos.length,
+            itemBuilder: (context, i) {
+              final v = firestoreVideos[i];
+              return _VideoCard(
+                title: v.title,
+                thumbnailUrl: v.thumbnailUrl.isNotEmpty
+                    ? v.thumbnailUrl
+                    : YouTubeService.thumbnailFor(v.videoId),
+                isReel: true,
+                onTap: () => onOpen(v.url),
+              );
+            },
+          );
+        }
+
+        // ===== فيديوهات عادية: قائمة =====
         return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            // ===== Firestore Videos =====
             for (final v in firestoreVideos)
               Padding(
                 padding: const EdgeInsets.only(bottom: 14),
@@ -257,15 +403,14 @@ class _VideoList extends StatelessWidget {
                   thumbnailUrl: v.thumbnailUrl.isNotEmpty
                       ? v.thumbnailUrl
                       : YouTubeService.thumbnailFor(v.videoId),
-                  isReel: v.isReel,
+                  isReel: false,
                   onTap: () => onOpen(v.url),
                 ),
               ),
 
-            // ===== فاصل إذا فيه قائمتين =====
             if (hasFirestore && hasOld)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Row(
                   children: [
                     Expanded(
@@ -293,7 +438,6 @@ class _VideoList extends StatelessWidget {
                 ),
               ),
 
-            // ===== Old Videos =====
             for (final v in oldVideos)
               Padding(
                 padding: const EdgeInsets.only(bottom: 14),
@@ -312,7 +456,7 @@ class _VideoList extends StatelessWidget {
 }
 
 // ============================================================
-// _VideoCard — يعرض 16:9 أو 9:16
+// _VideoCard
 // ============================================================
 class _VideoCard extends StatelessWidget {
   final String title;
@@ -350,22 +494,21 @@ class _VideoCard extends StatelessWidget {
 
     final playBtn = Center(
       child: Container(
-        width: 56,
-        height: 56,
+        width: isReel ? 44 : 56,
+        height: isReel ? 44 : 56,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.black.withValues(alpha: 0.55),
           border: Border.all(color: AppColors.gold),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.play_arrow_rounded,
           color: AppColors.gold,
-          size: 34,
+          size: isReel ? 28 : 34,
         ),
       ),
     );
 
-    // ===== ريلز: عمودي (شبكة 2) =====
     if (isReel) {
       return Material(
         color: Colors.transparent,
@@ -382,11 +525,10 @@ class _VideoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(15)),
-                  child: AspectRatio(
-                    aspectRatio: 9 / 16,
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(15)),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -397,15 +539,15 @@ class _VideoCard extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(8),
                   child: Text(
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      height: 1.4,
+                      height: 1.3,
                       color: AppColors.cream,
                     ),
                   ),
@@ -417,7 +559,6 @@ class _VideoCard extends StatelessWidget {
       );
     }
 
-    // ===== فيديو عادي: 16:9 =====
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -469,53 +610,29 @@ class _VideoCard extends StatelessWidget {
 }
 
 // ============================================================
-// _IconBtn
-// ============================================================
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _IconBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.gold.withValues(alpha: 0.6)),
-        ),
-        child: Icon(icon, color: AppColors.softGold, size: 20),
-      ),
-    );
-  }
-}
-
-// ============================================================
 // _ChannelLogo
 // ============================================================
 class _ChannelLogo extends StatelessWidget {
-  const _ChannelLogo();
+  final double size;
+
+  const _ChannelLogo({required this.size});
 
   @override
   Widget build(BuildContext context) {
     return GlowSparks(
-      spread: 40,
-      sparks: 14,
-      intensity: 1.25,
+      spread: size * 0.35,
+      sparks: 10,
+      intensity: 1.0,
       child: Container(
-        width: 132,
-        height: 132,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.gold, width: 2),
+          border: Border.all(color: AppColors.gold, width: 1.8),
           boxShadow: [
             BoxShadow(
-              color: AppColors.gold.withValues(alpha: 0.45),
-              blurRadius: 28,
+              color: AppColors.gold.withValues(alpha: 0.4),
+              blurRadius: size * 0.2,
             ),
           ],
         ),
@@ -523,9 +640,9 @@ class _ChannelLogo extends StatelessWidget {
           child: Image.asset(
             'assets/images/logo.png',
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => const Icon(
+            errorBuilder: (context, error, stackTrace) => Icon(
               Icons.play_circle_fill_rounded,
-              size: 64,
+              size: size * 0.5,
               color: AppColors.gold,
             ),
           ),
