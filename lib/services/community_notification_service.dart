@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/community_notification.dart';
 import '../models/user_brief.dart';
@@ -93,25 +94,35 @@ class CommunityNotificationService {
     });
   }
 
+  /// ✅ إشعار من الإدارة (الموافقة/الرفض على الطلبات)
+  /// - يستخدم uid الحالي كـ fromUid (شرط Firestore Rules)
+  /// - fromName = "الإدارة"
+  /// - fromVerifiedType = "owner"
   Future<void> sendFromAdmin({
     required String toUid,
     required String type,
     String? targetId,
-    String? customTitle,
+    String customTitle = 'الإدارة',
   }) async {
     if (toUid.isEmpty) return;
-    final ref = _items(toUid).doc();
-    await ref.set({
-      'type': type,
-      'fromUid': 'system',
-      'fromName': customTitle ?? 'الإدارة',
-      'fromAvatar': 'man',
-      'fromVerified': true,
-      'fromVerifiedType': 'owner',
-      'targetId': targetId,
-      'createdAt': FieldValue.serverTimestamp(),
-      'isRead': false,
-    });
+
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUid == null) return;
+
+    try {
+      final ref = _items(toUid).doc();
+      await ref.set({
+        'type': type,
+        'fromUid': currentUid,
+        'fromName': customTitle,
+        'fromAvatar': 'man',
+        'fromVerified': true,
+        'fromVerifiedType': 'owner',
+        'targetId': targetId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'isRead': false,
+      });
+    } catch (_) {}
   }
 
   Future<void> markAllRead(String uid) async {
