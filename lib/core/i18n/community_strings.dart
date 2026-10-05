@@ -1,4 +1,4 @@
-/// ترجمات المجتمع (Community) — بكل اللغات السبع
+/// ترجمات المجتمع — بكل اللغات السبع
 library;
 
 // =====================================================================
@@ -56,7 +56,7 @@ const Map<String, String> communityAr = {
   'cFollowingState': 'متابَع',
   'cVerifyNow': 'وثّق الآن',
   'cProfileLoadError': 'تعذّر تحميل البروفايل',
-  'cUserNotFound': 'المستخدم غير موجود',
+  'cUserNotFound': 'مستخدم',
   'cLoginRequired': 'يجب تسجيل الدخول لعرض المجتمع',
   'cUserDataError': 'تعذّر تحميل بيانات المستخدم',
   'cOperationFailed': 'فشل العملية',
@@ -66,6 +66,19 @@ const Map<String, String> communityAr = {
   'cFollowersListSoon': 'قائمة المتابعين — قريباً',
   'cFollowingListSoon': 'قائمة المتابَعين — قريباً',
   'cProfileSoon': 'البروفايل — قريباً',
+  // ✅ جديد
+  'cWelcomePost': 'منشور الترحيب',
+  'cCommunityPosts': 'منشورات المجتمع',
+  'cVideos': 'الفيديوهات',
+  'cReels': 'الريلز',
+  'cPreviousVideos': 'فيديوهات سابقة',
+  'cNoReelsYet': 'لا توجد ريلز بعد',
+  'cVideosSoon': 'ستظهر الفيديوهات هنا قريباً',
+  'cMustFollowToChat': 'يجب متابعة المستخدم أولاً لتتمكن من المحادثة',
+  'cMessageRequestSent': 'تم إرسال طلب الرسالة ✅',
+  'cMessageRequestAlreadySent': 'تم إرسال طلب الرسالة مسبقاً، في انتظار القبول',
+  'cChatOpenFailed': 'فشل فتح المحادثة',
+  'cAdminSender': 'الإدارة',
 };
 
 // =====================================================================
@@ -123,7 +136,7 @@ const Map<String, String> communityEn = {
   'cFollowingState': 'Following',
   'cVerifyNow': 'Verify Now',
   'cProfileLoadError': 'Failed to load profile',
-  'cUserNotFound': 'User not found',
+  'cUserNotFound': 'User',
   'cLoginRequired': 'Login required to view community',
   'cUserDataError': 'Failed to load user data',
   'cOperationFailed': 'Operation failed',
@@ -133,6 +146,18 @@ const Map<String, String> communityEn = {
   'cFollowersListSoon': 'Followers list — coming soon',
   'cFollowingListSoon': 'Following list — coming soon',
   'cProfileSoon': 'Profile — coming soon',
+  'cWelcomePost': 'Welcome Post',
+  'cCommunityPosts': 'Community Posts',
+  'cVideos': 'Videos',
+  'cReels': 'Reels',
+  'cPreviousVideos': 'Previous videos',
+  'cNoReelsYet': 'No reels yet',
+  'cVideosSoon': 'Videos will appear here soon',
+  'cMustFollowToChat': 'You must follow this user first to chat',
+  'cMessageRequestSent': 'Message request sent ✅',
+  'cMessageRequestAlreadySent': 'Request already sent, awaiting approval',
+  'cChatOpenFailed': 'Failed to open chat',
+  'cAdminSender': 'Admin',
 };
 
 // =====================================================================
@@ -190,7 +215,7 @@ const Map<String, String> communityFr = {
   'cFollowingState': 'Abonné',
   'cVerifyNow': 'Vérifier',
   'cProfileLoadError': 'Échec du chargement du profil',
-  'cUserNotFound': 'Utilisateur introuvable',
+  'cUserNotFound': 'Utilisateur',
   'cLoginRequired': 'Connexion requise',
   'cUserDataError': 'Échec du chargement',
   'cOperationFailed': "Échec de l'opération",
@@ -200,6 +225,18 @@ const Map<String, String> communityFr = {
   'cFollowersListSoon': 'Liste des abonnés — bientôt',
   'cFollowingListSoon': 'Liste des abonnements — bientôt',
   'cProfileSoon': 'Profil — bientôt',
+  'cWelcomePost': 'Post de bienvenue',
+  'cCommunityPosts': 'Posts de la communauté',
+  'cVideos': 'Vidéos',
+  'cReels': 'Reels',
+  'cPreviousVideos': 'Vidéos précédentes',
+  'cNoReelsYet': 'Aucun reel',
+  'cVideosSoon': 'Les vidéos apparaîtront ici bientôt',
+  'cMustFollowToChat': 'Vous devez suivre cet utilisateur pour discuter',
+  'cMessageRequestSent': 'Demande de message envoyée ✅',
+  'cMessageRequestAlreadySent': 'Demande déjà envoyée, en attente',
+  'cChatOpenFailed': "Échec de l'ouverture de la discussion",
+  'cAdminSender': 'Admin',
 };
 
 // =====================================================================
@@ -257,7 +294,7 @@ const Map<String, String> communityUr = {
   'cFollowingState': 'فالو شدہ',
   'cVerifyNow': 'تصدیق کریں',
   'cProfileLoadError': 'پروفائل لوڈ نہیں ہو سکا',
-  'cUserNotFound': 'صارف نہیں ملا',
+  'cUserNotFound': 'صارف',
   'cLoginRequired': 'کمیونٹی دیکھنے کے لیے لاگ ان ضروری',
   'cUserDataError': 'صارف ڈیٹا لوڈ نہیں ہو سکا',
   'cOperationFailed': 'آپریشن ناکام',
@@ -267,6 +304,18 @@ const Map<String, String> communityUr = {
   'cFollowersListSoon': 'پیروکاروں کی فہرست — جلد',
   'cFollowingListSoon': 'پیروی کی فہرست — جلد',
   'cProfileSoon': 'پروفائل — جلد',
+  'cWelcomePost': 'خوش آمدید پوسٹ',
+  'cCommunityPosts': 'کمیونٹی پوسٹس',
+  'cVideos': 'ویڈیوز',
+  'cReels': 'ریلز',
+  'cPreviousVideos': 'پچھلی ویڈیوز',
+  'cNoReelsYet': 'ابھی کوئی ریل نہیں',
+  'cVideosSoon': 'ویڈیوز جلد یہاں ظاہر ہوں گی',
+  'cMustFollowToChat': 'چیٹ کے لیے پہلے فالو کرنا ضروری ہے',
+  'cMessageRequestSent': 'پیغام کی درخواست بھیج دی ✅',
+  'cMessageRequestAlreadySent': 'درخواست پہلے بھیجی جا چکی، انتظار',
+  'cChatOpenFailed': 'چیٹ نہیں کھل سکی',
+  'cAdminSender': 'ایڈمن',
 };
 
 // =====================================================================
@@ -324,7 +373,7 @@ const Map<String, String> communityNe = {
   'cFollowingState': 'फलो गरिएको',
   'cVerifyNow': 'प्रमाणित गर्नुहोस्',
   'cProfileLoadError': 'प्रोफाइल लोड गर्न सकिएन',
-  'cUserNotFound': 'प्रयोगकर्ता भेटिएन',
+  'cUserNotFound': 'प्रयोगकर्ता',
   'cLoginRequired': 'समुदाय हेर्न लगइन आवश्यक',
   'cUserDataError': 'प्रयोगकर्ता डाटा लोड गर्न सकिएन',
   'cOperationFailed': 'सञ्चालन असफल',
@@ -334,6 +383,18 @@ const Map<String, String> communityNe = {
   'cFollowersListSoon': 'फलोअरहरूको सूची — चाँडै',
   'cFollowingListSoon': 'फलोइङको सूची — चाँडै',
   'cProfileSoon': 'प्रोफाइल — चाँडै',
+  'cWelcomePost': 'स्वागत पोस्ट',
+  'cCommunityPosts': 'समुदाय पोस्टहरू',
+  'cVideos': 'भिडियोहरू',
+  'cReels': 'रीलहरू',
+  'cPreviousVideos': 'अघिल्लो भिडियोहरू',
+  'cNoReelsYet': 'अझै कुनै रील छैन',
+  'cVideosSoon': 'भिडियोहरू चाँडै यहाँ देखिनेछ',
+  'cMustFollowToChat': 'च्याटको लागि पहिले फलो गर्नुहोस्',
+  'cMessageRequestSent': 'सन्देश अनुरोध पठाइयो ✅',
+  'cMessageRequestAlreadySent': 'अनुरोध पहिले नै पठाइयो, प्रतीक्षामा',
+  'cChatOpenFailed': 'च्याट खोल्न सकिएन',
+  'cAdminSender': 'एडमिन',
 };
 
 // =====================================================================
@@ -391,7 +452,7 @@ const Map<String, String> communityId = {
   'cFollowingState': 'Mengikuti',
   'cVerifyNow': 'Verifikasi',
   'cProfileLoadError': 'Gagal memuat profil',
-  'cUserNotFound': 'Pengguna tidak ditemukan',
+  'cUserNotFound': 'Pengguna',
   'cLoginRequired': 'Login diperlukan',
   'cUserDataError': 'Gagal memuat data pengguna',
   'cOperationFailed': 'Operasi gagal',
@@ -401,6 +462,18 @@ const Map<String, String> communityId = {
   'cFollowersListSoon': 'Daftar pengikut — segera',
   'cFollowingListSoon': 'Daftar mengikuti — segera',
   'cProfileSoon': 'Profil — segera',
+  'cWelcomePost': 'Postingan Selamat Datang',
+  'cCommunityPosts': 'Postingan Komunitas',
+  'cVideos': 'Video',
+  'cReels': 'Reel',
+  'cPreviousVideos': 'Video sebelumnya',
+  'cNoReelsYet': 'Belum ada reel',
+  'cVideosSoon': 'Video akan segera muncul di sini',
+  'cMustFollowToChat': 'Anda harus mengikuti pengguna ini untuk mengobrol',
+  'cMessageRequestSent': 'Permintaan pesan terkirim ✅',
+  'cMessageRequestAlreadySent': 'Permintaan sudah dikirim, menunggu',
+  'cChatOpenFailed': 'Gagal membuka obrolan',
+  'cAdminSender': 'Admin',
 };
 
 // =====================================================================
@@ -458,7 +531,7 @@ const Map<String, String> communityMs = {
   'cFollowingState': 'Mengikuti',
   'cVerifyNow': 'Sahkan',
   'cProfileLoadError': 'Gagal memuatkan profil',
-  'cUserNotFound': 'Pengguna tidak dijumpai',
+  'cUserNotFound': 'Pengguna',
   'cLoginRequired': 'Log masuk diperlukan',
   'cUserDataError': 'Gagal memuatkan data pengguna',
   'cOperationFailed': 'Operasi gagal',
@@ -468,4 +541,16 @@ const Map<String, String> communityMs = {
   'cFollowersListSoon': 'Senarai pengikut — segera',
   'cFollowingListSoon': 'Senarai mengikuti — segera',
   'cProfileSoon': 'Profil — segera',
+  'cWelcomePost': 'Catatan Selamat Datang',
+  'cCommunityPosts': 'Catatan Komuniti',
+  'cVideos': 'Video',
+  'cReels': 'Reel',
+  'cPreviousVideos': 'Video terdahulu',
+  'cNoReelsYet': 'Belum ada reel',
+  'cVideosSoon': 'Video akan muncul di sini tidak lama lagi',
+  'cMustFollowToChat': 'Anda mesti mengikuti pengguna ini untuk bersembang',
+  'cMessageRequestSent': 'Permintaan mesej dihantar ✅',
+  'cMessageRequestAlreadySent': 'Permintaan sudah dihantar, menunggu',
+  'cChatOpenFailed': 'Gagal membuka sembang',
+  'cAdminSender': 'Admin',
 };
