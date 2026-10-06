@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/app_flow.dart';
 import '../core/app_state.dart';
@@ -16,6 +17,7 @@ import '../services/notification_service.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/language_picker_sheet.dart';
+import '../widgets/premium_promo_dialog.dart';
 import 'challenge_screen.dart';
 import 'chats_list_screen.dart';
 import 'notifications_screen.dart';
@@ -38,6 +40,11 @@ class _HomeShellState extends State<HomeShell> {
   final CommunityNotificationService _notifService =
       CommunityNotificationService();
 
+  // ===== Premium Promo =====
+  static const String _kOpenCount = 'app_open_count';
+  static const String _kShown2 = 'premium_promo_shown_2';
+  static const String _kShown5 = 'premium_promo_shown_5';
+
   @override
   void initState() {
     super.initState();
@@ -46,8 +53,11 @@ class _HomeShellState extends State<HomeShell> {
     reciterPrefs.load();
     themeState.load();
 
-    // ✅ تهيئة AdMob (مرة واحدة)
+    // ✅ تهيئة AdMob
     adsService.initialize();
+
+    // ✅ عداد الفتح + عرض Promo
+    _checkPromo();
 
     Future.delayed(const Duration(seconds: 3), () async {
       if (!mounted) return;
@@ -56,6 +66,46 @@ class _HomeShellState extends State<HomeShell> {
         await notificationService.reschedule(prayers: prayers);
       }
     });
+  }
+
+  // ============================================================
+  // Premium Promo — يظهر في المرة 2 و 5 فقط
+  // ============================================================
+  Future<void> _checkPromo() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final count = (prefs.getInt(_kOpenCount) ?? 0) + 1;
+      await prefs.setInt(_kOpenCount, count);
+
+      // لا تعرض للمالك (owner)
+      final email =
+          FirebaseAuth.instance.currentUser?.email?.toLowerCase() ?? '';
+      const ownerEmails = [
+        'abdelrahmenbenromdhan11@gmail.com',
+        'vevocom888@gmail.com',
+        'nooralimanechannel@gmail.com',
+        'nooralhidayahbusiness@gmail.com',
+      ];
+      if (ownerEmails.contains(email)) return;
+
+      bool shouldShow = false;
+
+      if (count == 2 && prefs.getBool(_kShown2) != true) {
+        shouldShow = true;
+        await prefs.setBool(_kShown2, true);
+      } else if (count == 5 && prefs.getBool(_kShown5) != true) {
+        shouldShow = true;
+        await prefs.setBool(_kShown5, true);
+      }
+
+      if (!shouldShow || !mounted) return;
+
+      // تأخير بسيط ليستقر التطبيق قبل العرض
+      await Future.delayed(const Duration(milliseconds: 1500));
+      if (!mounted) return;
+
+      await showPremiumPromoDialog(context);
+    } catch (_) {}
   }
 
   void _select(int index) => setState(() => _index = index);
@@ -143,6 +193,9 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  // ============================================================
+  // زر الشات
+  // ============================================================
   Widget _buildChatButton(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const SizedBox.shrink();
@@ -209,6 +262,9 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  // ============================================================
+  // زر الإشعارات
+  // ============================================================
   Widget _buildNotifButton(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const SizedBox.shrink();
