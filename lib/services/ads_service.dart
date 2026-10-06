@@ -35,7 +35,7 @@ class AdsService {
   static const String _androidAppId =
       'ca-app-pub-7354273374998913~5567231375';
   static const String _iosAppId =
-      'ca-app-pub-7354274273374998913~4615890593';
+      'ca-app-pub-7354273374998913~4615890593';
 
   static const String _androidRewardedId =
       'ca-app-pub-7354273374998913/5755827856';
@@ -67,7 +67,7 @@ class AdsService {
   }
 
   // ============================================================
-  // تهيئة AdMob (تُستدعى مرة واحدة عند بدء التطبيق)
+  // تهيئة AdMob
   // ============================================================
   Future<void> initialize() async {
     if (_initialized) return;
@@ -76,7 +76,6 @@ class AdsService {
 
     try {
       await MobileAds.instance.initialize();
-      // تحميل أول إعلان
       loadAd();
     } catch (e) {
       debugPrint('AdMob init error: $e');
@@ -84,7 +83,7 @@ class AdsService {
   }
 
   // ============================================================
-  // تحميل إعلان جديد
+  // تحميل إعلان
   // ============================================================
   Future<bool> loadAd() async {
     if (!isSupported) return false;
@@ -123,13 +122,11 @@ class AdsService {
   // ============================================================
   // عرض إعلان
   // ============================================================
-  /// يرجّع true لو المستخدم أكمل الإعلان واستحق المكافأة
   Future<bool> showAd({
     required void Function(int amount, String type) onUserEarnedReward,
   }) async {
     if (!isSupported) return false;
 
-    // لو ما فيه إعلان → حاول تحميل واحد
     if (_rewardedAd == null) {
       final loaded = await loadAd();
       if (!loaded) return false;
@@ -144,7 +141,6 @@ class AdsService {
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         _rewardedAd = null;
-        // حمّل الإعلان التالي مسبقاً
         loadAd();
         if (!completer.isCompleted) completer.complete(rewarded);
       },
@@ -166,14 +162,13 @@ class AdsService {
   }
 
   // ============================================================
-  // Firestore — إحصائيات الإعلانات
+  // Firestore — إحصائيات
   // ============================================================
   String _todayString() {
     final now = DateTime.now();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
-  /// يقرأ إحصائيات الإعلانات للمستخدم
   Future<Map<String, dynamic>> loadStats(String uid) async {
     try {
       final snap = await _db.collection('users').doc(uid).get();
@@ -198,7 +193,7 @@ class AdsService {
   }
 
   // ============================================================
-  // منح المكافأة (نقاط + عداد + Premium trial)
+  // منح المكافأة
   // ============================================================
   Future<AdRewardResult> rewardAd(String uid) async {
     final today = _todayString();
@@ -213,16 +208,13 @@ class AdsService {
 
         final data = snap.data() ?? {};
         final stats = (data['stats'] as Map?) ?? {};
-        final profile = (data['profile'] as Map?) ?? {};
 
-        // ── 1) اقرأ الحالة الحالية ──
         final lastDate = (stats['lastAdDate'] as String?) ?? '';
         final isNewDay = lastDate != today;
 
         int adsToday =
             isNewDay ? 0 : ((stats['adsWatchedToday'] as num?)?.toInt() ?? 0);
 
-        // ── 2) فحص الحد اليومي ──
         if (adsToday >= dailyAdLimit) {
           return const AdRewardResult(limitReached: true);
         }
@@ -233,7 +225,6 @@ class AdsService {
         final newPoints = currentPoints + pointsPerAd;
         final newAdsToday = adsToday + 1;
 
-        // ── 3) فحص Premium Trial ──
         final trialUsed = (stats['premiumTrialUsed'] as bool?) ?? false;
         bool grantedTrial = false;
 
