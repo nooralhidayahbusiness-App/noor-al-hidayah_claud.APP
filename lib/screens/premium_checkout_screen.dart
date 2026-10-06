@@ -11,7 +11,6 @@ import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
 
-// ============ ترجمات ============
 const Map<String, Map<String, String>> _chkTr = {
   'ar': {
     'title': 'تأكيد الدفع',
@@ -19,6 +18,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'step1Desc': 'سيتم فتح PayPal لدفع {amount}\$. بعد الدفع، ارجع هنا وأكمل.',
     'payNow': 'افتح PayPal',
     'paid': 'تم الدفع ✓',
+    'confirmPaid': 'لقد أكملت الدفع في PayPal',
     'step2': '2) أكمل بياناتك',
     'step2Desc': 'املأ البيانات التالية للمطابقة مع حساب PayPal',
     'name': 'الاسم الكامل',
@@ -29,7 +29,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'errName': 'أدخل اسمك',
     'errEmail': 'أدخل بريدك',
     'errPaypal': 'أدخل حساب PayPal',
-    'errPay': 'يجب الدفع أولاً قبل التأكيد',
+    'errPay': 'يجب تأكيد الدفع أولاً',
     'success': 'تم إرسال طلبك ✅',
     'successDesc': 'سيتم التفعيل خلال 24 ساعة',
     'summary': 'ملخص الطلب',
@@ -43,6 +43,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'step1Desc': 'PayPal will open to pay {amount}\$. After paying, come back here.',
     'payNow': 'Open PayPal',
     'paid': 'Paid ✓',
+    'confirmPaid': 'I have completed payment on PayPal',
     'step2': '2) Complete your info',
     'step2Desc': 'Fill in the following to match with your PayPal',
     'name': 'Full Name',
@@ -53,7 +54,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'errName': 'Enter your name',
     'errEmail': 'Enter your email',
     'errPaypal': 'Enter your PayPal',
-    'errPay': 'You must pay first',
+    'errPay': 'You must confirm payment first',
     'success': 'Request sent ✅',
     'successDesc': 'Will be activated within 24h',
     'summary': 'Request Summary',
@@ -67,6 +68,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'step1Desc': 'PayPal s\'ouvrira pour payer {amount}\$.',
     'payNow': 'Ouvrir PayPal',
     'paid': 'Payé ✓',
+    'confirmPaid': 'J\'ai effectué le paiement sur PayPal',
     'step2': '2) Complétez vos infos',
     'step2Desc': 'Remplissez les informations suivantes',
     'name': 'Nom complet',
@@ -77,7 +79,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'errName': 'Entrez votre nom',
     'errEmail': 'Entrez votre email',
     'errPaypal': 'Entrez votre PayPal',
-    'errPay': 'Vous devez payer d\'abord',
+    'errPay': 'Vous devez confirmer le paiement',
     'success': 'Demande envoyée ✅',
     'successDesc': 'Activée sous 24h',
     'summary': 'Résumé',
@@ -91,6 +93,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'step1Desc': 'PayPal کھلے گا {amount}\$ ادا کرنے کے لیے۔',
     'payNow': 'PayPal کھولیں',
     'paid': 'ادا ہو گیا ✓',
+    'confirmPaid': 'میں نے PayPal پر ادائیگی مکمل کر لی',
     'step2': '2) اپنی معلومات مکمل کریں',
     'step2Desc': 'درج ذیل معلومات بھریں',
     'name': 'پورا نام',
@@ -101,7 +104,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'errName': 'نام درج کریں',
     'errEmail': 'ای میل درج کریں',
     'errPaypal': 'PayPal درج کریں',
-    'errPay': 'پہلے ادائیگی کریں',
+    'errPay': 'پہلے ادائیگی کی تصدیق کریں',
     'success': 'درخواست بھیجی گئی ✅',
     'successDesc': '24 گھنٹوں میں فعال',
     'summary': 'خلاصہ',
@@ -115,7 +118,8 @@ const Map<String, Map<String, String>> _chkTr = {
     'step1Desc': 'PayPal खुल्नेछ {amount}\$ तिर्न।',
     'payNow': 'PayPal खोल्नुहोस्',
     'paid': 'तिरियो ✓',
-    'step2': '2) आफ्नो जानकारी भर्नुहोस्',
+    'confirmPaid': 'मैले PayPal मा भुक्तानी गरिसकेँ',
+    'step2': '2) जानकारी भर्नुहोस्',
     'step2Desc': 'तलको जानकारी भर्नुहोस्',
     'name': 'पूरा नाम',
     'email': 'इमेल',
@@ -125,7 +129,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'errName': 'नाम प्रविष्ट गर्नुहोस्',
     'errEmail': 'इमेल प्रविष्ट गर्नुहोस्',
     'errPaypal': 'PayPal प्रविष्ट गर्नुहोस्',
-    'errPay': 'पहिले तिर्नुहोस्',
+    'errPay': 'पहिले भुक्तानी पुष्टि गर्नुहोस्',
     'success': 'अनुरोध पठाइयो ✅',
     'successDesc': '24 घण्टामा सक्रिय',
     'summary': 'सारांश',
@@ -139,6 +143,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'step1Desc': 'PayPal akan terbuka untuk {amount}\$.',
     'payNow': 'Buka PayPal',
     'paid': 'Dibayar ✓',
+    'confirmPaid': 'Saya telah menyelesaikan pembayaran di PayPal',
     'step2': '2) Lengkapi info Anda',
     'step2Desc': 'Isi informasi berikut',
     'name': 'Nama Lengkap',
@@ -149,7 +154,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'errName': 'Masukkan nama',
     'errEmail': 'Masukkan email',
     'errPaypal': 'Masukkan PayPal',
-    'errPay': 'Anda harus bayar dulu',
+    'errPay': 'Konfirmasi pembayaran dulu',
     'success': 'Permintaan terkirim ✅',
     'successDesc': 'Aktif dalam 24 jam',
     'summary': 'Ringkasan',
@@ -163,6 +168,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'step1Desc': 'PayPal akan dibuka untuk {amount}\$.',
     'payNow': 'Buka PayPal',
     'paid': 'Dibayar ✓',
+    'confirmPaid': 'Saya telah selesaikan pembayaran di PayPal',
     'step2': '2) Lengkapkan maklumat',
     'step2Desc': 'Isi maklumat berikut',
     'name': 'Nama Penuh',
@@ -173,7 +179,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'errName': 'Masukkan nama',
     'errEmail': 'Masukkan e-mel',
     'errPaypal': 'Masukkan PayPal',
-    'errPay': 'Anda mesti bayar dahulu',
+    'errPay': 'Sahkan pembayaran dahulu',
     'success': 'Permintaan dihantar ✅',
     'successDesc': 'Diaktifkan dalam 24 jam',
     'summary': 'Ringkasan',
@@ -203,7 +209,8 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
   final _emailCtrl = TextEditingController();
   final _paypalCtrl = TextEditingController();
 
-  bool _paid = false;
+  bool _openedPaypal = false; // فتح الرابط
+  bool _confirmedPaid = false; // ✅ أكّد بنفسه
   bool _sending = false;
 
   @override
@@ -226,15 +233,14 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
     final url = PremiumService.paypalUrlFor(widget.plan.price);
     final uri = Uri.parse(url);
     try {
-      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (ok) {
-        setState(() => _paid = true);
-      }
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // ⚠️ لا نعتبره مدفوعاً — فقط "فتح"
+      if (mounted) setState(() => _openedPaypal = true);
     } catch (_) {}
   }
 
   Future<void> _submit() async {
-    if (!_paid) {
+    if (!_confirmedPaid) {
       showAuthMessage(context, _ck('errPay'), error: true);
       return;
     }
@@ -253,9 +259,7 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
       if (!mounted) return;
       _showSuccessDialog();
     } catch (e) {
-      if (mounted) {
-        showAuthMessage(context, '$e', error: true);
-      }
+      if (mounted) showAuthMessage(context, '$e', error: true);
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -273,11 +277,8 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
         ),
         title: Column(
           children: [
-            Icon(
-              Icons.check_circle_rounded,
-              color: AppColors.gold,
-              size: R.s(context, 54),
-            ),
+            Icon(Icons.check_circle_rounded,
+                color: AppColors.gold, size: R.s(context, 54)),
             SizedBox(height: R.s(context, 10)),
             Text(
               _ck('success'),
@@ -289,9 +290,7 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
         content: Text(
           _ck('successDesc'),
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.cream.withValues(alpha: 0.8),
-          ),
+          style: TextStyle(color: AppColors.cream.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
@@ -299,13 +298,9 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
               Navigator.of(ctx).pop();
               Navigator.of(context).pop();
             },
-            child: const Text(
-              'OK',
-              style: TextStyle(
-                color: AppColors.gold,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: const Text('OK',
+                style: TextStyle(
+                    color: AppColors.gold, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -382,11 +377,8 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.receipt_long_rounded,
-                color: AppColors.gold,
-                size: R.s(context, 20),
-              ),
+              Icon(Icons.receipt_long_rounded,
+                  color: AppColors.gold, size: R.s(context, 20)),
               SizedBox(width: R.s(context, 8)),
               Text(
                 _ck('summary'),
@@ -402,22 +394,18 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _ck('plan'),
-                style: TextStyle(
-                  color: AppColors.cream.withValues(alpha: 0.7),
-                  fontSize: R.f(context, 13),
-                ),
-              ),
+              Text(_ck('plan'),
+                  style: TextStyle(
+                      color: AppColors.cream.withValues(alpha: 0.7),
+                      fontSize: R.f(context, 13))),
               Text(
                 appState.isArabic
                     ? widget.plan.labelAr
                     : widget.plan.labelEn,
                 style: TextStyle(
-                  color: AppColors.softGold,
-                  fontSize: R.f(context, 13),
-                  fontWeight: FontWeight.bold,
-                ),
+                    color: AppColors.softGold,
+                    fontSize: R.f(context, 13),
+                    fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -425,20 +413,16 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _ck('amount'),
-                style: TextStyle(
-                  color: AppColors.cream.withValues(alpha: 0.7),
-                  fontSize: R.f(context, 13),
-                ),
-              ),
+              Text(_ck('amount'),
+                  style: TextStyle(
+                      color: AppColors.cream.withValues(alpha: 0.7),
+                      fontSize: R.f(context, 13))),
               Text(
                 '\$${widget.plan.price.toInt()}',
                 style: TextStyle(
-                  color: AppColors.gold,
-                  fontSize: R.f(context, 18),
-                  fontWeight: FontWeight.w900,
-                ),
+                    color: AppColors.gold,
+                    fontSize: R.f(context, 18),
+                    fontWeight: FontWeight.w900),
               ),
             ],
           ),
@@ -456,8 +440,12 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
           Row(
             children: [
               Icon(
-                _paid ? Icons.check_circle_rounded : Icons.payment_rounded,
-                color: _paid ? const Color(0xFF4CAF50) : AppColors.gold,
+                _confirmedPaid
+                    ? Icons.check_circle_rounded
+                    : Icons.payment_rounded,
+                color: _confirmedPaid
+                    ? const Color(0xFF4CAF50)
+                    : AppColors.gold,
                 size: R.s(context, 20),
               ),
               SizedBox(width: R.s(context, 8)),
@@ -484,25 +472,23 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
             ),
           ),
           SizedBox(height: R.s(context, 14)),
+
+          // زر فتح PayPal
           SizedBox(
             width: double.infinity,
             height: R.s(context, 50),
             child: ElevatedButton.icon(
               onPressed: _openPaypal,
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    _paid ? const Color(0xFF4CAF50) : const Color(0xFF0070BA),
+                backgroundColor: const Color(0xFF0070BA),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(R.s(context, 14)),
                 ),
               ),
-              icon: Icon(
-                _paid ? Icons.check_rounded : Icons.open_in_new_rounded,
-                size: R.s(context, 18),
-              ),
+              icon: Icon(Icons.open_in_new_rounded, size: R.s(context, 18)),
               label: Text(
-                _paid ? _ck('paid') : _ck('payNow'),
+                _openedPaypal ? _ck('paid') : _ck('payNow'),
                 style: TextStyle(
                   fontSize: R.f(context, 14),
                   fontWeight: FontWeight.bold,
@@ -510,6 +496,46 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
               ),
             ),
           ),
+
+          // ✅ checkbox التأكيد اليدوي
+          if (_openedPaypal) ...[
+            SizedBox(height: R.s(context, 12)),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: R.s(context, 8),
+                vertical: R.s(context, 4),
+              ),
+              decoration: BoxDecoration(
+                color: _confirmedPaid
+                    ? const Color(0xFF4CAF50).withValues(alpha: 0.12)
+                    : Colors.black.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(R.s(context, 12)),
+                border: Border.all(
+                  color: _confirmedPaid
+                      ? const Color(0xFF4CAF50)
+                      : AppColors.gold.withValues(alpha: 0.4),
+                  width: 1.2,
+                ),
+              ),
+              child: CheckboxListTile(
+                value: _confirmedPaid,
+                onChanged: (v) =>
+                    setState(() => _confirmedPaid = v ?? false),
+                activeColor: const Color(0xFF4CAF50),
+                checkColor: Colors.white,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(
+                  _ck('confirmPaid'),
+                  style: TextStyle(
+                    color: AppColors.softGold,
+                    fontSize: R.f(context, 12.5),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -525,11 +551,8 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.person_outline_rounded,
-                  color: AppColors.gold,
-                  size: R.s(context, 20),
-                ),
+                Icon(Icons.person_outline_rounded,
+                    color: AppColors.gold, size: R.s(context, 20)),
                 SizedBox(width: R.s(context, 8)),
                 Text(
                   _ck('step2'),
@@ -644,17 +667,12 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
       decoration: BoxDecoration(
         color: AppColors.gold.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(R.s(context, 14)),
-        border: Border.all(
-          color: AppColors.gold.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: AppColors.gold,
-            size: R.s(context, 18),
-          ),
+          Icon(Icons.info_outline_rounded,
+              color: AppColors.gold, size: R.s(context, 18)),
           SizedBox(width: R.s(context, 8)),
           Expanded(
             child: Text(
@@ -672,18 +690,20 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
   }
 
   Widget _buildSubmitButton(BuildContext context) {
+    final enabled = _confirmedPaid && !_sending;
     return SizedBox(
       height: R.s(context, 54),
       child: ElevatedButton.icon(
-        onPressed: _sending ? null : _submit,
+        onPressed: enabled ? _submit : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.gold,
           foregroundColor: AppColors.deepGreen,
-          disabledBackgroundColor: AppColors.gold.withValues(alpha: 0.4),
+          disabledBackgroundColor: AppColors.gold.withValues(alpha: 0.3),
+          disabledForegroundColor: AppColors.deepGreen.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(R.s(context, 18)),
           ),
-          elevation: 6,
+          elevation: enabled ? 6 : 0,
         ),
         icon: _sending
             ? SizedBox(
@@ -694,10 +714,7 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
                   color: AppColors.deepGreen,
                 ),
               )
-            : Icon(
-                Icons.send_rounded,
-                size: R.s(context, 20),
-              ),
+            : Icon(Icons.send_rounded, size: R.s(context, 20)),
         label: Text(
           _sending ? _ck('sending') : _ck('confirm'),
           style: TextStyle(
