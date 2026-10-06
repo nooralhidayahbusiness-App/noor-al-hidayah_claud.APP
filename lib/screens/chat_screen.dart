@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
-import '../models/chat.dart';
 import '../models/chat_message.dart';
 import '../models/user_brief.dart';
 import '../services/chat_service.dart';
