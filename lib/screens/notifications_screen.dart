@@ -28,6 +28,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verify_rejected': 'تم رفض طلب التوثيق',
     'new_video': 'نشر فيديو جديد في القناة 🎬',
     'new_reel': 'نشر ريل جديد في القناة 🎞️',
+    'premium_approved': '🎉 تم تفعيل اشتراكك في Premium!',
+    'premium_rejected': 'تم رفض طلب Premium، حاول مجدداً',
     'admin_sender': 'الإدارة',
   },
   'en': {
@@ -49,6 +51,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verify_rejected': 'Your verification request was rejected',
     'new_video': 'Published a new video 🎬',
     'new_reel': 'Published a new reel 🎞️',
+    'premium_approved': '🎉 Your Premium subscription is active!',
+    'premium_rejected': 'Premium request rejected, please try again',
     'admin_sender': 'Admin',
   },
   'fr': {
@@ -70,6 +74,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verify_rejected': 'Votre demande de vérification a été refusée',
     'new_video': 'A publié une nouvelle vidéo 🎬',
     'new_reel': 'A publié un nouveau reel 🎞️',
+    'premium_approved': '🎉 Votre abonnement Premium est actif !',
+    'premium_rejected': 'Demande Premium refusée, réessayez',
     'admin_sender': 'Admin',
   },
   'ur': {
@@ -91,6 +97,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verify_rejected': 'تصدیق کی درخواست مسترد',
     'new_video': 'چینل میں نئی ویڈیو 🎬',
     'new_reel': 'چینل میں نیا ریل 🎞️',
+    'premium_approved': '🎉 آپ کی Premium سبسکرپشن فعال!',
+    'premium_rejected': 'Premium درخواست مسترد، دوبارہ کوشش کریں',
     'admin_sender': 'ایڈمن',
   },
   'ne': {
@@ -112,6 +120,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verify_rejected': 'प्रमाणीकरण अनुरोध अस्वीकृत',
     'new_video': 'च्यानलमा नयाँ भिडियो 🎬',
     'new_reel': 'च्यानलमा नयाँ रील 🎞️',
+    'premium_approved': '🎉 तपाईंको Premium सदस्यता सक्रिय!',
+    'premium_rejected': 'Premium अनुरोध अस्वीकृत, फेरि प्रयास गर्नुहोस्',
     'admin_sender': 'एडमिन',
   },
   'id': {
@@ -133,6 +143,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verify_rejected': 'Permintaan verifikasi ditolak',
     'new_video': 'Video baru di saluran 🎬',
     'new_reel': 'Reel baru di saluran 🎞️',
+    'premium_approved': '🎉 Langganan Premium Anda aktif!',
+    'premium_rejected': 'Permintaan Premium ditolak, coba lagi',
     'admin_sender': 'Admin',
   },
   'ms': {
@@ -154,6 +166,8 @@ const Map<String, Map<String, String>> _localTr = {
     'verify_rejected': 'Permintaan pengesahan ditolak',
     'new_video': 'Video baru di saluran 🎬',
     'new_reel': 'Reel baru di saluran 🎞️',
+    'premium_approved': '🎉 Langganan Premium anda aktif!',
+    'premium_rejected': 'Permintaan Premium ditolak, cuba lagi',
     'admin_sender': 'Admin',
   },
 };
@@ -178,6 +192,8 @@ const Set<String> _adminTypes = {
   'verify_rejected',
   'new_video',
   'new_reel',
+  'premium_approved',
+  'premium_rejected',
 };
 
 class NotificationsScreen extends StatefulWidget {
@@ -476,6 +492,8 @@ class _NotifTile extends StatelessWidget {
   const _NotifTile({required this.notif, required this.onTap});
 
   bool get _isAdmin => _adminTypes.contains(notif.type);
+  bool get _isPremiumApproved => notif.type == 'premium_approved';
+  bool get _isPremiumRejected => notif.type == 'premium_rejected';
 
   @override
   Widget build(BuildContext context) {
@@ -486,18 +504,25 @@ class _NotifTile extends StatelessWidget {
           horizontal: R.s(context, 14),
           vertical: R.s(context, 10),
         ),
-        color: notif.isRead
-            ? Colors.transparent
-            : AppColors.gold.withValues(alpha: 0.08),
+        color: _isPremiumApproved
+            ? AppColors.gold.withValues(alpha: 0.12)
+            : notif.isRead
+                ? Colors.transparent
+                : AppColors.gold.withValues(alpha: 0.08),
         child: Row(
           children: [
-            _isAdmin
-                ? _AdminAvatar(size: R.s(context, 42))
-                : ProfileAvatar(
-                    email: '',
-                    avatar: notif.fromAvatar,
+            _isPremiumApproved || _isPremiumRejected
+                ? _PremiumAvatar(
                     size: R.s(context, 42),
-                  ),
+                    highlight: _isPremiumApproved,
+                  )
+                : _isAdmin
+                    ? _AdminAvatar(size: R.s(context, 42))
+                    : ProfileAvatar(
+                        email: '',
+                        avatar: notif.fromAvatar,
+                        size: R.s(context, 42),
+                      ),
             SizedBox(width: R.s(context, 10)),
             Expanded(
               child: Column(
@@ -588,6 +613,10 @@ class _NotifTile extends StatelessWidget {
         return _tr('new_video');
       case 'new_reel':
         return _tr('new_reel');
+      case 'premium_approved':
+        return _tr('premium_approved');
+      case 'premium_rejected':
+        return _tr('premium_rejected');
       default:
         return notif.type;
     }
@@ -617,6 +646,10 @@ class _NotifTile extends StatelessWidget {
         return Icons.smart_display_rounded;
       case 'new_reel':
         return Icons.movie_filter_rounded;
+      case 'premium_approved':
+        return Icons.workspace_premium_rounded;
+      case 'premium_rejected':
+        return Icons.cancel_outlined;
       default:
         return Icons.notifications_none;
     }
@@ -635,11 +668,14 @@ class _NotifTile extends StatelessWidget {
         return const Color(0xFF4CAF50);
       case 'photo_rejected':
       case 'verify_rejected':
+      case 'premium_rejected':
         return Colors.redAccent;
       case 'verified_me':
         return const Color(0xFFFFA000);
       case 'new_video':
       case 'new_reel':
+        return AppColors.gold;
+      case 'premium_approved':
         return AppColors.gold;
       default:
         return AppColors.gold;
@@ -707,6 +743,85 @@ class _AdminAvatar extends StatelessWidget {
         color: AppColors.gold,
         size: size * 0.5,
       ),
+    );
+  }
+}
+
+// ============================================================
+// _PremiumAvatar — درع Premium (نبض للموافقة)
+// ============================================================
+class _PremiumAvatar extends StatefulWidget {
+  final double size;
+  final bool highlight;
+
+  const _PremiumAvatar({
+    required this.size,
+    this.highlight = false,
+  });
+
+  @override
+  State<_PremiumAvatar> createState() => _PremiumAvatarState();
+}
+
+class _PremiumAvatarState extends State<_PremiumAvatar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+    if (widget.highlight) _pulse.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, child) {
+        final t = _pulse.value;
+        return Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                AppColors.gold.withValues(alpha: 0.3),
+                AppColors.deepGreen,
+              ],
+            ),
+            border: Border.all(
+              color: AppColors.gold,
+              width: 1.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color:
+                    AppColors.gold.withValues(alpha: 0.3 + 0.3 * t),
+                blurRadius: 8 + 8 * t,
+                spreadRadius: widget.highlight ? 1 : 0,
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.workspace_premium_rounded,
+            color: AppColors.gold,
+            size: widget.size * 0.5,
+          ),
+        );
+      },
     );
   }
 }
