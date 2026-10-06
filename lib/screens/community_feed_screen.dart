@@ -5,6 +5,8 @@ import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../models/post.dart';
 import '../services/community_service.dart';
+import '../widgets/animated_entry.dart';
+import '../widgets/islamic_empty_state.dart';
 import '../widgets/post_card.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
@@ -85,18 +87,29 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             final posts = snapshot.data ?? [];
 
             if (posts.isEmpty && welcomePost == null) {
-              return _buildEmpty(context);
+              return IslamicEmptyState(
+                icon: Icons.forum_outlined,
+                title: appState.tr('cNoPostsYet'),
+                message: appState.tr('cBeFirstPost'),
+                buttonLabel: appState.tr('cCreatePost'),
+                onButtonTap: _openCreatePost,
+              );
             }
 
-            // نبني قائمة موحدة: منشور الترحيب أولاً
             final all = <Widget>[];
 
+            // ===== منشور الترحيب =====
             if (welcomePost != null) {
-              all.add(_buildWelcomeLabel(context));
+              all.add(
+                AnimatedEntry(
+                  child: _buildWelcomeLabel(context),
+                ),
+              );
               all.add(PostCard(
                 key: ValueKey('welcome_${welcomePost.id}'),
                 post: welcomePost,
                 currentUid: widget.uid,
+                animationIndex: 0,
                 onTap: () => _openPostDetail(welcomePost),
                 onLike: () => _onLike(welcomePost),
                 onComment: () => _openPostDetail(welcomePost),
@@ -105,15 +118,23 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                 onAuthorTap: () => _onAuthorTap(welcomePost),
               ));
               if (posts.isNotEmpty) {
-                all.add(_buildDividerLabel(context));
+                all.add(
+                  AnimatedEntry(
+                    delay: const Duration(milliseconds: 100),
+                    child: _buildDividerLabel(context),
+                  ),
+                );
               }
             }
 
-            for (final post in posts) {
+            // ===== المنشورات =====
+            for (int i = 0; i < posts.length; i++) {
+              final post = posts[i];
               all.add(PostCard(
                 key: ValueKey('post_${post.id}'),
                 post: post,
                 currentUid: widget.uid,
+                animationIndex: welcomePost != null ? i + 1 : i,
                 onTap: () => _openPostDetail(post),
                 onLike: () => _onLike(post),
                 onComment: () => _openPostDetail(post),
@@ -147,21 +168,41 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         R.s(context, 16),
-        R.s(context, 8),
+        R.s(context, 10),
         R.s(context, 16),
-        R.s(context, 4),
+        R.s(context, 6),
       ),
       child: Row(
         children: [
-          Icon(Icons.waving_hand_rounded,
-              color: _gold, size: R.s(context, 16)),
-          SizedBox(width: R.s(context, 6)),
+          Container(
+            padding: EdgeInsets.all(R.s(context, 6)),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _gold.withValues(alpha: 0.15),
+              border: Border.all(
+                color: _gold.withValues(alpha: 0.6),
+              ),
+            ),
+            child: Icon(
+              Icons.waving_hand_rounded,
+              color: _gold,
+              size: R.s(context, 14),
+            ),
+          ),
+          SizedBox(width: R.s(context, 8)),
           Text(
             appState.tr('cWelcomePost'),
             style: TextStyle(
               color: _gold,
-              fontSize: R.f(context, 12),
+              fontSize: R.f(context, 12.5),
               fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(width: R.s(context, 8)),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: _gold.withValues(alpha: 0.3),
             ),
           ),
         ],
@@ -173,7 +214,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: R.s(context, 16),
-        vertical: R.s(context, 12),
+        vertical: R.s(context, 14),
       ),
       child: Row(
         children: [
@@ -224,50 +265,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildEmpty(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(R.s(context, 24)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(R.s(context, 18)),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _green.withValues(alpha: 0.5),
-                border: Border.all(color: _gold.withValues(alpha: 0.4)),
-              ),
-              child: Icon(
-                Icons.forum_outlined,
-                size: R.s(context, 42),
-                color: _gold,
-              ),
-            ),
-            SizedBox(height: R.s(context, 16)),
-            Text(
-              appState.tr('cNoPostsYet'),
-              style: TextStyle(
-                color: _softGold,
-                fontSize: R.f(context, 16),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: R.s(context, 6)),
-            Text(
-              appState.tr('cBeFirstPost'),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _cream.withValues(alpha: 0.6),
-                fontSize: R.f(context, 13),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
