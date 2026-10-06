@@ -36,8 +36,6 @@ const Map<String, Map<String, String>> _premTr = {
     'rejectedDesc': 'يمكنك المحاولة مجدداً',
     'tryAgain': 'حاول مجدداً',
     'daysLeft': 'باقي {n} يوم',
-    'trial': 'تجربة مجانية',
-    'trialDesc': 'شاهد 10 إعلانات لتفعيل 3 أيام مجاناً',
     'plan': 'الخطة',
     'amount': 'المبلغ',
     'paypal': 'PayPal',
@@ -68,8 +66,6 @@ const Map<String, Map<String, String>> _premTr = {
     'rejectedDesc': 'You can try again',
     'tryAgain': 'Try Again',
     'daysLeft': '{n} days left',
-    'trial': 'Free Trial',
-    'trialDesc': 'Watch 10 ads to unlock 3 days free',
     'plan': 'Plan',
     'amount': 'Amount',
     'paypal': 'PayPal',
@@ -100,25 +96,23 @@ const Map<String, Map<String, String>> _premTr = {
     'rejectedDesc': 'Vous pouvez réessayer',
     'tryAgain': 'Réessayer',
     'daysLeft': '{n} jours restants',
-    'trial': 'Essai gratuit',
-    'trialDesc': '10 pubs = 3 jours gratuits',
     'plan': 'Forfait',
     'amount': 'Montant',
     'paypal': 'PayPal',
     'paymentMethod': 'Mode de paiement',
     'paymentMethodDesc':
-        '💳 Paiement via PayPal (facile et sécurisé). Après paiement, confirmez — activation sous 24h.',
+        '💳 Paiement via PayPal. Après paiement, confirmez — activation sous 24h.',
   },
   'ur': {
     'title': 'پریمیم',
     'hero': 'اپنا تجربہ بہتر بنائیں',
-    'heroDesc': 'خصوصی خصوصیات + براہ راست تعاون',
+    'heroDesc': 'خصوصی خصوصیات',
     'features': 'خصوصیات',
     'plans': 'اپنا پلان منتخب کریں',
     'monthly': 'ماہانہ',
     'quarterly': '3 ماہ',
     'yearly': 'سالانہ',
-    'subscribe': 'ابھی سبسکرائب کریں',
+    'subscribe': 'سبسکرائب کریں',
     'popular': 'مقبول ترین',
     'save25': '25% بچائیں',
     'perMonth': '/ماہ',
@@ -129,113 +123,101 @@ const Map<String, Map<String, String>> _premTr = {
     'approved': 'آپ پریمیم ہیں 🎉',
     'approvedDesc': 'ختم ہوگا',
     'rejected': 'درخواست مسترد',
-    'rejectedDesc': 'آپ دوبارہ کوشش کر سکتے ہیں',
+    'rejectedDesc': 'دوبارہ کوشش کریں',
     'tryAgain': 'دوبارہ کوشش',
     'daysLeft': '{n} دن باقی',
-    'trial': 'مفت ٹرائل',
-    'trialDesc': '10 اشتہار = 3 دن مفت',
     'plan': 'پلان',
     'amount': 'رقم',
     'paypal': 'PayPal',
     'paymentMethod': 'ادائیگی کا طریقہ',
-    'paymentMethodDesc':
-        '💳 PayPal کے ذریعے ادائیگی۔ ادائیگی کے بعد، ایپ میں تصدیق کریں — 24 گھنٹوں میں فعال۔',
+    'paymentMethodDesc': '💳 PayPal کے ذریعے ادائیگی۔',
   },
   'ne': {
     'title': 'प्रिमियम',
     'hero': 'आफ्नो अनुभव सुधार्नुहोस्',
     'heroDesc': 'विशेष सुविधाहरू',
     'features': 'सुविधाहरू',
-    'plans': 'आफ्नो योजना छान्नुहोस्',
+    'plans': 'योजना छान्नुहोस्',
     'monthly': 'मासिक',
     'quarterly': '3 महिना',
     'yearly': 'वार्षिक',
-    'subscribe': 'अहिले सदस्यता लिनुहोस्',
+    'subscribe': 'सदस्यता लिनुहोस्',
     'popular': 'लोकप्रिय',
     'save25': '25% बचत',
     'perMonth': '/महिना',
     'perQuarter': '/3 महिना',
     'perYear': '/वर्ष',
-    'pending': 'तपाईंको अनुरोध लम्बित',
+    'pending': 'अनुरोध लम्बित',
     'pendingDesc': '24 घण्टामा सक्रिय',
-    'approved': 'तपाईं Premium हुनुहुन्छ 🎉',
-    'approvedDesc': 'समाप्त हुने मिति',
+    'approved': 'तपाईं Premium 🎉',
+    'approvedDesc': 'समाप्त हुने',
     'rejected': 'अनुरोध अस्वीकृत',
-    'rejectedDesc': 'फेरि प्रयास गर्नुहोस्',
+    'rejectedDesc': 'फेरि प्रयास',
     'tryAgain': 'फेरि प्रयास',
     'daysLeft': '{n} दिन बाँकी',
-    'trial': 'नि:शुल्क परीक्षण',
-    'trialDesc': '10 विज्ञापन = 3 दिन नि:शुल्क',
     'plan': 'योजना',
     'amount': 'रकम',
     'paypal': 'PayPal',
     'paymentMethod': 'भुक्तानी विधि',
-    'paymentMethodDesc':
-        '💳 PayPal मार्फत भुक्तानी। पछि पुष्टि गर्नुहोस् — 24 घण्टामा सक्रिय।',
+    'paymentMethodDesc': '💳 PayPal मार्फत।',
   },
   'id': {
     'title': 'Premium',
     'hero': 'Tingkatkan Pengalaman Anda',
-    'heroDesc': 'Fitur eksklusif + dukungan langsung',
+    'heroDesc': 'Fitur eksklusif + dukungan',
     'features': 'Fitur',
     'plans': 'Pilih Paket Anda',
     'monthly': 'Bulanan',
     'quarterly': '3 Bulan',
     'yearly': 'Tahunan',
-    'subscribe': 'Berlangganan Sekarang',
+    'subscribe': 'Berlangganan',
     'popular': 'Terpopuler',
     'save25': 'Hemat 25%',
-    'perMonth': '/bulan',
-    'perQuarter': '/3 bulan',
-    'perYear': '/tahun',
-    'pending': 'Permintaan Anda tertunda',
-    'pendingDesc': 'Diaktifkan dalam 24 jam',
+    'perMonth': '/bln',
+    'perQuarter': '/3 bln',
+    'perYear': '/thn',
+    'pending': 'Permintaan tertunda',
+    'pendingDesc': 'Aktif dalam 24 jam',
     'approved': 'Anda Premium 🎉',
-    'approvedDesc': 'Berakhir pada',
+    'approvedDesc': 'Berakhir',
     'rejected': 'Permintaan ditolak',
-    'rejectedDesc': 'Anda bisa mencoba lagi',
+    'rejectedDesc': 'Coba lagi',
     'tryAgain': 'Coba Lagi',
     'daysLeft': '{n} hari tersisa',
-    'trial': 'Uji Coba Gratis',
-    'trialDesc': '10 iklan = 3 hari gratis',
     'plan': 'Paket',
     'amount': 'Jumlah',
     'paypal': 'PayPal',
     'paymentMethod': 'Metode Pembayaran',
-    'paymentMethodDesc':
-        '💳 Pembayaran via PayPal. Setelah bayar, konfirmasi — aktif dalam 24 jam.',
+    'paymentMethodDesc': '💳 Pembayaran via PayPal.',
   },
   'ms': {
     'title': 'Premium',
     'hero': 'Tingkatkan Pengalaman Anda',
-    'heroDesc': 'Ciri eksklusif + sokongan',
+    'heroDesc': 'Ciri eksklusif',
     'features': 'Ciri-ciri',
     'plans': 'Pilih Pelan Anda',
     'monthly': 'Bulanan',
     'quarterly': '3 Bulan',
     'yearly': 'Tahunan',
-    'subscribe': 'Langgan Sekarang',
-    'popular': 'Paling Popular',
+    'subscribe': 'Langgan',
+    'popular': 'Popular',
     'save25': 'Jimat 25%',
-    'perMonth': '/bulan',
-    'perQuarter': '/3 bulan',
-    'perYear': '/tahun',
-    'pending': 'Permintaan anda tertunda',
-    'pendingDesc': 'Diaktifkan dalam 24 jam',
+    'perMonth': '/bln',
+    'perQuarter': '/3 bln',
+    'perYear': '/thn',
+    'pending': 'Permintaan tertunda',
+    'pendingDesc': 'Aktif dalam 24 jam',
     'approved': 'Anda Premium 🎉',
-    'approvedDesc': 'Tamat pada',
+    'approvedDesc': 'Tamat',
     'rejected': 'Permintaan ditolak',
-    'rejectedDesc': 'Anda boleh cuba lagi',
+    'rejectedDesc': 'Cuba lagi',
     'tryAgain': 'Cuba Lagi',
     'daysLeft': '{n} hari berbaki',
-    'trial': 'Percubaan Percuma',
-    'trialDesc': '10 iklan = 3 hari percuma',
     'plan': 'Pelan',
     'amount': 'Jumlah',
     'paypal': 'PayPal',
     'paymentMethod': 'Kaedah Pembayaran',
-    'paymentMethodDesc':
-        '💳 Pembayaran melalui PayPal. Selepas bayar, sahkan — aktif dalam 24 jam.',
+    'paymentMethodDesc': '💳 Pembayaran melalui PayPal.',
   },
 };
 
@@ -272,7 +254,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         stream: premiumService.myRequestStream(),
                         builder: (context, snap) {
                           final req = snap.data;
-
                           if (req != null && req.isPending) {
                             return _buildPending(context, req);
                           }
@@ -282,7 +263,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
                           if (req != null && req.isApproved) {
                             return _buildApproved(context, req);
                           }
-
                           return _buildMain(context);
                         },
                       ),
@@ -321,75 +301,11 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
-  // ============================================================
-  // الحالة 1: العرض الرئيسي
-  // ============================================================
   Widget _buildMain(BuildContext context) {
     return ListView(
       padding: EdgeInsets.all(R.s(context, 16)),
       children: [
-        AnimatedEntry(
-          child: Container(
-            padding: EdgeInsets.all(R.s(context, 20)),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(R.s(context, 24)),
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.gold.withValues(alpha: 0.2),
-                  AppColors.deepGreen.withValues(alpha: 0.9),
-                ],
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-              ),
-              border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.5),
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(R.s(context, 16)),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.gold.withValues(alpha: 0.15),
-                    border: Border.all(color: AppColors.gold, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.gold.withValues(alpha: 0.4),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.workspace_premium_rounded,
-                    color: AppColors.gold,
-                    size: R.s(context, 42),
-                  ),
-                ),
-                SizedBox(height: R.s(context, 14)),
-                Text(
-                  _pr('hero'),
-                  style: TextStyle(
-                    color: AppColors.softGold,
-                    fontSize: R.f(context, 22),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: R.s(context, 6)),
-                Text(
-                  _pr('heroDesc'),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.cream.withValues(alpha: 0.75),
-                    fontSize: R.f(context, 13),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        AnimatedEntry(child: _buildHero(context)),
         SizedBox(height: R.s(context, 20)),
         AnimatedEntry(
           delay: const Duration(milliseconds: 100),
@@ -405,43 +321,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
         SizedBox(height: R.s(context, 10)),
         AnimatedEntry(
           delay: const Duration(milliseconds: 150),
-          child: GlassCard(
-            ornament: false,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (int i = 0; i < premiumFeatures.length; i++) ...[
-                  if (i > 0)
-                    Divider(
-                      height: R.s(context, 16),
-                      color: AppColors.gold.withValues(alpha: 0.15),
-                    ),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        color: AppColors.gold,
-                        size: R.s(context, 18),
-                      ),
-                      SizedBox(width: R.s(context, 10)),
-                      Expanded(
-                        child: Text(
-                          appState.isArabic
-                              ? premiumFeatures[i]['ar']!
-                              : premiumFeatures[i]['en']!,
-                          style: TextStyle(
-                            color: AppColors.cream,
-                            fontSize: R.f(context, 13),
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
+          child: _buildFeaturesList(context),
         ),
         SizedBox(height: R.s(context, 20)),
         AnimatedEntry(
@@ -466,8 +346,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   child: _PlanCard(
                     plan: plan,
                     selected: _selectedPlanId == plan.id,
-                    onTap: () =>
-                        setState(() => _selectedPlanId = plan.id),
+                    onTap: () => setState(() => _selectedPlanId = plan.id),
                   ),
                 ),
             ],
@@ -488,10 +367,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 ),
                 elevation: 6,
               ),
-              icon: Icon(
-                Icons.workspace_premium_rounded,
-                size: R.s(context, 22),
-              ),
+              icon: Icon(Icons.workspace_premium_rounded,
+                  size: R.s(context, 22)),
               label: Text(
                 _pr('subscribe'),
                 style: TextStyle(
@@ -511,6 +388,142 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
+  Widget _buildHero(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(R.s(context, 20)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(R.s(context, 24)),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.gold.withValues(alpha: 0.2),
+            AppColors.deepGreen.withValues(alpha: 0.9),
+          ],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(R.s(context, 16)),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.gold.withValues(alpha: 0.15),
+              border: Border.all(color: AppColors.gold, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gold.withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Icon(Icons.workspace_premium_rounded,
+                color: AppColors.gold, size: R.s(context, 42)),
+          ),
+          SizedBox(height: R.s(context, 14)),
+          Text(
+            _pr('hero'),
+            style: TextStyle(
+              color: AppColors.softGold,
+              fontSize: R.f(context, 22),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: R.s(context, 6)),
+          Text(
+            _pr('heroDesc'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.cream.withValues(alpha: 0.75),
+              fontSize: R.f(context, 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // ✅ الميزات مع الصور الفعلية
+  // ============================================================
+  Widget _buildFeaturesList(BuildContext context) {
+    return GlassCard(
+      ornament: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int i = 0; i < premiumFeatures.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: R.s(context, 16),
+                color: AppColors.gold.withValues(alpha: 0.15),
+              ),
+            _buildFeatureRow(context, premiumFeatures[i]),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureRow(BuildContext context, PremiumFeatureItem feature) {
+    return Row(
+      children: [
+        SizedBox(
+          width: R.s(context, 26),
+          height: R.s(context, 22),
+          child: feature.assetIcons != null
+              // ✅ عرض الصور
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (int i = 0; i < feature.assetIcons!.length; i++) ...[
+                      if (i > 0) SizedBox(width: R.s(context, 2)),
+                      ColorFiltered(
+                        colorFilter: const ColorFilter.mode(
+                          AppColors.gold,
+                          BlendMode.srcIn,
+                        ),
+                        child: Image.asset(
+                          feature.assetIcons![i],
+                          width: R.s(context, 18),
+                          height: R.s(context, 18),
+                          errorBuilder: (_, _, _) => Icon(
+                            feature.icon,
+                            color: AppColors.gold,
+                            size: R.s(context, 18),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                )
+              // ✅ عرض الأيقونة
+              : Icon(
+                  feature.icon,
+                  color: AppColors.gold,
+                  size: R.s(context, 18),
+                ),
+        ),
+        SizedBox(width: R.s(context, 10)),
+        Expanded(
+          child: Text(
+            appState.isArabic ? feature.textAr : feature.textEn,
+            style: TextStyle(
+              color: AppColors.cream,
+              fontSize: R.f(context, 13),
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPaymentInfo(BuildContext context) {
     return GlassCard(
       ornament: false,
@@ -519,11 +532,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.info_outline_rounded,
-                color: AppColors.gold,
-                size: R.s(context, 18),
-              ),
+              Icon(Icons.info_outline_rounded,
+                  color: AppColors.gold, size: R.s(context, 18)),
               SizedBox(width: R.s(context, 8)),
               Text(
                 _pr('paymentMethod'),
@@ -550,7 +560,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
   }
 
   // ============================================================
-  // الحالة 2: قيد المراجعة
+  // الحالة 2: pending
   // ============================================================
   Widget _buildPending(BuildContext context, PremiumRequest req) {
     return Center(
@@ -566,11 +576,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 color: AppColors.gold.withValues(alpha: 0.15),
                 border: Border.all(color: AppColors.gold, width: 2),
               ),
-              child: Icon(
-                Icons.hourglass_top_rounded,
-                color: AppColors.gold,
-                size: R.s(context, 48),
-              ),
+              child: Icon(Icons.hourglass_top_rounded,
+                  color: AppColors.gold, size: R.s(context, 48)),
             ),
             SizedBox(height: R.s(context, 20)),
             Text(
@@ -599,7 +606,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   _rowInfo(context, _pr('plan'),
                       appState.isArabic ? req.planLabel : req.plan),
                   SizedBox(height: R.s(context, 6)),
-                  _rowInfo(context, _pr('amount'), '\$${req.amount.toInt()}'),
+                  _rowInfo(context, _pr('amount'),
+                      '\$${req.amount.toInt()}'),
                   SizedBox(height: R.s(context, 6)),
                   _rowInfo(context, _pr('paypal'), req.paypalAccount),
                 ],
@@ -612,7 +620,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
   }
 
   // ============================================================
-  // الحالة 3: مرفوض
+  // الحالة 3: rejected
   // ============================================================
   Widget _buildRejected(BuildContext context, PremiumRequest req) {
     return Center(
@@ -628,11 +636,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 color: Colors.redAccent.withValues(alpha: 0.15),
                 border: Border.all(color: Colors.redAccent, width: 2),
               ),
-              child: Icon(
-                Icons.cancel_outlined,
-                color: Colors.redAccent,
-                size: R.s(context, 48),
-              ),
+              child: Icon(Icons.cancel_outlined,
+                  color: Colors.redAccent, size: R.s(context, 48)),
             ),
             SizedBox(height: R.s(context, 20)),
             Text(
@@ -684,7 +689,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
   }
 
   // ============================================================
-  // الحالة 4: Premium نشط
+  // الحالة 4: approved
   // ============================================================
   Widget _buildApproved(BuildContext context, PremiumRequest req) {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -725,11 +730,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.workspace_premium_rounded,
-                    color: AppColors.gold,
-                    size: R.s(context, 54),
-                  ),
+                  child: Icon(Icons.workspace_premium_rounded,
+                      color: AppColors.gold, size: R.s(context, 54)),
                 ),
                 SizedBox(height: R.s(context, 20)),
                 Text(
@@ -781,8 +783,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
                       _rowInfo(context, _pr('plan'),
                           appState.isArabic ? req.planLabel : req.plan),
                       SizedBox(height: R.s(context, 6)),
-                      _rowInfo(
-                          context, _pr('amount'), '\$${req.amount.toInt()}'),
+                      _rowInfo(context, _pr('amount'),
+                          '\$${req.amount.toInt()}'),
                     ],
                   ),
                 ),
@@ -825,7 +827,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
       (p) => p.id == _selectedPlanId,
       orElse: () => premiumPlans[0],
     );
-
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PremiumCheckoutScreen(plan: plan),
@@ -928,8 +929,8 @@ class _PlanCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.gold,
-                            borderRadius:
-                                BorderRadius.circular(R.s(context, 10)),
+                            borderRadius: BorderRadius.circular(
+                                R.s(context, 10)),
                           ),
                           child: Text(
                             plan.badge!,
