@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
@@ -37,6 +38,12 @@ const Map<String, Map<String, String>> _premTr = {
     'daysLeft': 'باقي {n} يوم',
     'trial': 'تجربة مجانية',
     'trialDesc': 'شاهد 10 إعلانات لتفعيل 3 أيام مجاناً',
+    'plan': 'الخطة',
+    'amount': 'المبلغ',
+    'paypal': 'PayPal',
+    'paymentMethod': 'طريقة الدفع',
+    'paymentMethodDesc':
+        '💳 يتم الدفع عبر PayPal (سهل وآمن). بعد الدفع، أكّد طلبك في التطبيق وسيتم التفعيل خلال 24 ساعة.',
   },
   'en': {
     'title': 'Premium',
@@ -63,6 +70,12 @@ const Map<String, Map<String, String>> _premTr = {
     'daysLeft': '{n} days left',
     'trial': 'Free Trial',
     'trialDesc': 'Watch 10 ads to unlock 3 days free',
+    'plan': 'Plan',
+    'amount': 'Amount',
+    'paypal': 'PayPal',
+    'paymentMethod': 'Payment Method',
+    'paymentMethodDesc':
+        '💳 Payment via PayPal (easy & secure). After paying, confirm your request in the app — activated within 24h.',
   },
   'fr': {
     'title': 'Premium',
@@ -89,6 +102,12 @@ const Map<String, Map<String, String>> _premTr = {
     'daysLeft': '{n} jours restants',
     'trial': 'Essai gratuit',
     'trialDesc': '10 pubs = 3 jours gratuits',
+    'plan': 'Forfait',
+    'amount': 'Montant',
+    'paypal': 'PayPal',
+    'paymentMethod': 'Mode de paiement',
+    'paymentMethodDesc':
+        '💳 Paiement via PayPal (facile et sécurisé). Après paiement, confirmez — activation sous 24h.',
   },
   'ur': {
     'title': 'پریمیم',
@@ -115,6 +134,12 @@ const Map<String, Map<String, String>> _premTr = {
     'daysLeft': '{n} دن باقی',
     'trial': 'مفت ٹرائل',
     'trialDesc': '10 اشتہار = 3 دن مفت',
+    'plan': 'پلان',
+    'amount': 'رقم',
+    'paypal': 'PayPal',
+    'paymentMethod': 'ادائیگی کا طریقہ',
+    'paymentMethodDesc':
+        '💳 PayPal کے ذریعے ادائیگی۔ ادائیگی کے بعد، ایپ میں تصدیق کریں — 24 گھنٹوں میں فعال۔',
   },
   'ne': {
     'title': 'प्रिमियम',
@@ -141,6 +166,12 @@ const Map<String, Map<String, String>> _premTr = {
     'daysLeft': '{n} दिन बाँकी',
     'trial': 'नि:शुल्क परीक्षण',
     'trialDesc': '10 विज्ञापन = 3 दिन नि:शुल्क',
+    'plan': 'योजना',
+    'amount': 'रकम',
+    'paypal': 'PayPal',
+    'paymentMethod': 'भुक्तानी विधि',
+    'paymentMethodDesc':
+        '💳 PayPal मार्फत भुक्तानी। पछि पुष्टि गर्नुहोस् — 24 घण्टामा सक्रिय।',
   },
   'id': {
     'title': 'Premium',
@@ -167,6 +198,12 @@ const Map<String, Map<String, String>> _premTr = {
     'daysLeft': '{n} hari tersisa',
     'trial': 'Uji Coba Gratis',
     'trialDesc': '10 iklan = 3 hari gratis',
+    'plan': 'Paket',
+    'amount': 'Jumlah',
+    'paypal': 'PayPal',
+    'paymentMethod': 'Metode Pembayaran',
+    'paymentMethodDesc':
+        '💳 Pembayaran via PayPal. Setelah bayar, konfirmasi — aktif dalam 24 jam.',
   },
   'ms': {
     'title': 'Premium',
@@ -193,6 +230,12 @@ const Map<String, Map<String, String>> _premTr = {
     'daysLeft': '{n} hari berbaki',
     'trial': 'Percubaan Percuma',
     'trialDesc': '10 iklan = 3 hari percuma',
+    'plan': 'Pelan',
+    'amount': 'Jumlah',
+    'paypal': 'PayPal',
+    'paymentMethod': 'Kaedah Pembayaran',
+    'paymentMethodDesc':
+        '💳 Pembayaran melalui PayPal. Selepas bayar, sahkan — aktif dalam 24 jam.',
   },
 };
 
@@ -230,7 +273,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         builder: (context, snap) {
                           final req = snap.data;
 
-                          // ===== الحالات =====
                           if (req != null && req.isPending) {
                             return _buildPending(context, req);
                           }
@@ -241,7 +283,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
                             return _buildApproved(context, req);
                           }
 
-                          // ===== العرض الرئيسي =====
                           return _buildMain(context);
                         },
                       ),
@@ -287,7 +328,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
     return ListView(
       padding: EdgeInsets.all(R.s(context, 16)),
       children: [
-        // ===== Hero =====
         AnimatedEntry(
           child: Container(
             padding: EdgeInsets.all(R.s(context, 20)),
@@ -350,10 +390,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
             ),
           ),
         ),
-
         SizedBox(height: R.s(context, 20)),
-
-        // ===== الميزات =====
         AnimatedEntry(
           delay: const Duration(milliseconds: 100),
           child: Text(
@@ -406,10 +443,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
             ),
           ),
         ),
-
         SizedBox(height: R.s(context, 20)),
-
-        // ===== الخطط =====
         AnimatedEntry(
           delay: const Duration(milliseconds: 200),
           child: Text(
@@ -439,10 +473,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
             ],
           ),
         ),
-
         SizedBox(height: R.s(context, 14)),
-
-        // ===== زر الاشتراك =====
         AnimatedEntry(
           delay: const Duration(milliseconds: 300),
           child: SizedBox(
@@ -471,10 +502,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
             ),
           ),
         ),
-
         SizedBox(height: R.s(context, 20)),
-
-        // ===== معلومات الدفع =====
         AnimatedEntry(
           delay: const Duration(milliseconds: 350),
           child: _buildPaymentInfo(context),
@@ -498,9 +526,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
               ),
               SizedBox(width: R.s(context, 8)),
               Text(
-                appState.isArabic
-                    ? 'طريقة الدفع'
-                    : 'Payment Method',
+                _pr('paymentMethod'),
                 style: TextStyle(
                   color: AppColors.softGold,
                   fontSize: R.f(context, 13),
@@ -511,9 +537,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
           ),
           SizedBox(height: R.s(context, 8)),
           Text(
-            appState.isArabic
-                ? '💳 يتم الدفع عبر PayPal (سهل وآمن). بعد الدفع، أكّد طلبك في التطبيق وسيتم التفعيل خلال 24 ساعة.'
-                : '💳 Payment via PayPal (easy & secure). After paying, confirm your request in the app — activated within 24h.',
+            _pr('paymentMethodDesc'),
             style: TextStyle(
               color: AppColors.cream.withValues(alpha: 0.75),
               fontSize: R.f(context, 12),
@@ -530,7 +554,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
   // ============================================================
   Widget _buildPending(BuildContext context, PremiumRequest req) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.all(R.s(context, 24)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -572,12 +596,12 @@ class _PremiumScreenState extends State<PremiumScreen> {
               ornament: false,
               child: Column(
                 children: [
-                  _rowInfo(context, 'الخطة',
+                  _rowInfo(context, _pr('plan'),
                       appState.isArabic ? req.planLabel : req.plan),
                   SizedBox(height: R.s(context, 6)),
-                  _rowInfo(context, 'المبلغ', '\$${req.amount.toInt()}'),
+                  _rowInfo(context, _pr('amount'), '\$${req.amount.toInt()}'),
                   SizedBox(height: R.s(context, 6)),
-                  _rowInfo(context, 'PayPal', req.paypalAccount),
+                  _rowInfo(context, _pr('paypal'), req.paypalAccount),
                 ],
               ),
             ),
@@ -663,28 +687,26 @@ class _PremiumScreenState extends State<PremiumScreen> {
   // الحالة 4: Premium نشط
   // ============================================================
   Widget _buildApproved(BuildContext context, PremiumRequest req) {
-    final uid = req.uid;
-
-    return StreamBuilder(
-      stream: _userPremiumStream(uid),
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(req.uid)
+          .snapshots(),
       builder: (context, snap) {
         final data = snap.data?.data() ?? {};
         final profile = (data['profile'] as Map?) ?? {};
         final premium = (profile['premium'] as Map?) ?? {};
-        final active = (premium['active'] as bool?) ?? false;
+
         final expTs = premium['expiresAt'];
         DateTime? expiry;
-        if (expTs is dynamic) {
-          try {
-            expiry = expTs.toDate();
-          } catch (_) {}
+        if (expTs is Timestamp) {
+          expiry = expTs.toDate();
         }
 
-        final isValid = premiumService.constructorHelperActive(active, expiry);
-        final daysLeft = premiumService.constructorHelperDays(expiry);
+        final daysLeft = PremiumService.daysRemaining(expiry);
 
         return Center(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: EdgeInsets.all(R.s(context, 24)),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -728,7 +750,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                       fontSize: R.f(context, 13),
                     ),
                   ),
-                  SizedBox(height: R.s(context, 6)),
+                  SizedBox(height: R.s(context, 10)),
                   Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: R.s(context, 14),
@@ -742,7 +764,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                       ),
                     ),
                     child: Text(
-                      _pr('daysLeft').replaceAll('$daysLeft', '$daysLeft'),
+                      _pr('daysLeft').replaceAll('{n}', '$daysLeft'),
                       style: const TextStyle(
                         color: AppColors.gold,
                         fontSize: 13,
@@ -756,10 +778,11 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   ornament: false,
                   child: Column(
                     children: [
-                      _rowInfo(context, 'الخطة',
+                      _rowInfo(context, _pr('plan'),
                           appState.isArabic ? req.planLabel : req.plan),
                       SizedBox(height: R.s(context, 6)),
-                      _rowInfo(context, 'المبلغ', '\$${req.amount.toInt()}'),
+                      _rowInfo(
+                          context, _pr('amount'), '\$${req.amount.toInt()}'),
                     ],
                   ),
                 ),
@@ -769,13 +792,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
         );
       },
     );
-  }
-
-  Stream _userPremiumStream(String uid) {
-    return FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .snapshots();
   }
 
   Widget _rowInfo(BuildContext context, String label, String value) {
@@ -861,7 +877,6 @@ class _PlanCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Radio
             Container(
               width: R.s(context, 22),
               height: R.s(context, 22),
@@ -888,8 +903,6 @@ class _PlanCard extends StatelessWidget {
                   : null,
             ),
             SizedBox(width: R.s(context, 14)),
-
-            // Label + badge
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -915,8 +928,8 @@ class _PlanCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.gold,
-                            borderRadius: BorderRadius.circular(
-                                R.s(context, 10)),
+                            borderRadius:
+                                BorderRadius.circular(R.s(context, 10)),
                           ),
                           child: Text(
                             plan.badge!,
@@ -941,8 +954,6 @@ class _PlanCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // السعر
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -972,13 +983,4 @@ class _PlanCard extends StatelessWidget {
       ),
     );
   }
-}
-
-// Helper to access PremiumService static methods
-extension _PremiumServiceHelpers on PremiumService {
-  bool constructorHelperActive(bool active, DateTime? expiry) =>
-      PremiumService.isActive(premiumActive: active, expiresAt: expiry);
-
-  int constructorHelperDays(DateTime? expiry) =>
-      PremiumService.daysRemaining(expiry);
 }
