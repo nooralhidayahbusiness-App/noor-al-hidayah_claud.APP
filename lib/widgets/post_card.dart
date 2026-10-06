@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../models/post.dart';
+import 'animated_entry.dart';
 import 'verified_badge.dart';
 
 class PostCard extends StatefulWidget {
@@ -18,6 +19,9 @@ class PostCard extends StatefulWidget {
   final VoidCallback? onMore;
   final VoidCallback? onAuthorTap;
 
+  /// لتأخير الظهور حسب ترتيب المنشور
+  final int animationIndex;
+
   const PostCard({
     super.key,
     required this.post,
@@ -28,6 +32,7 @@ class PostCard extends StatefulWidget {
     this.onRepost,
     this.onMore,
     this.onAuthorTap,
+    this.animationIndex = 0,
   });
 
   @override
@@ -35,7 +40,7 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   static const Color _gold = Color(0xFFD4AF37);
   static const Color _softGold = Color(0xFFF1DC9A);
   static const Color _deepGreen = Color(0xFF041F18);
@@ -43,22 +48,18 @@ class _PostCardState extends State<PostCard>
   static const Color _emerald = Color(0xFF14664C);
   static const Color _cream = Color(0xFFFFF8E7);
 
-  late final AnimationController _entryCtrl = AnimationController(
+  // نبضة للقلب عند الإعجاب
+  late final AnimationController _likePulse = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 500),
-  )..forward();
-
-  late final Animation<double> _fade = CurvedAnimation(
-    parent: _entryCtrl,
-    curve: Curves.easeOut,
+    duration: const Duration(milliseconds: 350),
   );
 
-  late final Animation<Offset> _slide = Tween<Offset>(
-    begin: const Offset(0, 0.06),
-    end: Offset.zero,
+  late final Animation<double> _likeScale = Tween<double>(
+    begin: 1.0,
+    end: 1.4,
   ).animate(CurvedAnimation(
-    parent: _entryCtrl,
-    curve: Curves.easeOutCubic,
+    parent: _likePulse,
+    curve: Curves.elasticOut,
   ));
 
   Post get post => widget.post;
@@ -69,30 +70,46 @@ class _PostCardState extends State<PostCard>
 
   @override
   void dispose() {
-    _entryCtrl.dispose();
+    _likePulse.dispose();
     super.dispose();
   }
 
   @override
+  void didUpdateWidget(covariant PostCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // لو الإعجاب تغير → شغّل النبضة
+    final wasLiked = oldWidget.post.isLikedBy(currentUid);
+    if (!wasLiked && _isLiked) {
+      _likePulse.forward(from: 0);
+    }
+  }
+
+  void _handleLike() {
+    widget.onLike?.call();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // تأخير بسيط حسب ترتيب المنشور (يظهر واحد تلو الآخر)
+    final delay = Duration(
+      milliseconds: (widget.animationIndex * 60).clamp(0, 400),
+    );
+
     return Directionality(
       textDirection: appState.direction,
-      child: FadeTransition(
-        opacity: _fade,
-        child: SlideTransition(
-          position: _slide,
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: R.s(context, 12),
-              vertical: R.s(context, 6),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: widget.onTap,
-                borderRadius: BorderRadius.circular(R.s(context, 16)),
-                child: _buildCard(context),
-              ),
+      child: AnimatedEntry(
+        delay: delay,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: R.s(context, 12),
+            vertical: R.s(context, 6),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: BorderRadius.circular(R.s(context, 16)),
+              child: _buildCard(context),
             ),
           ),
         ),
@@ -103,7 +120,7 @@ class _PostCardState extends State<PostCard>
   Widget _buildCard(BuildContext context) {
     return Stack(
       children: [
-        // ===== البطاقة =====
+        // ===== البطاقة الرئيسية =====
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(R.s(context, 16)),
@@ -149,33 +166,44 @@ class _PostCardState extends State<PostCard>
           ),
         ),
 
-        // ===== الزخرفة: نجمة في الزاوية اليمنى العليا =====
+        // ===== نجمة ثمانية - زاوية يمين أعلى =====
         Positioned(
           top: 0,
           right: 0,
           child: _OrnamentStar(
-            size: R.s(context, 28),
+            size: R.s(context, 30),
             color: _gold,
           ),
         ),
 
-        // ===== الزخرفة: معين ذهبي في الأسفل =====
+        // ===== نجمة ثمانية - زاوية يسار أسفل =====
+        Positioned(
+          bottom: 0,
+          left: 0,
+          child: _OrnamentStar(
+            size: R.s(context, 22),
+            color: _gold.withValues(alpha: 0.6),
+          ),
+        ),
+
+        // ===== المعين الذهبي المتوهج في الأسفل-الوسط =====
         Positioned(
           bottom: 0,
           left: 0,
           right: 0,
           child: Center(
             child: Transform.translate(
-              offset: Offset(0, R.s(context, 4)),
+              offset: Offset(0, R.s(context, 5)),
               child: Container(
-                width: R.s(context, 8),
-                height: R.s(context, 8),
+                width: R.s(context, 10),
+                height: R.s(context, 10),
                 decoration: BoxDecoration(
                   color: _gold,
                   boxShadow: [
                     BoxShadow(
-                      color: _gold.withValues(alpha: 0.6),
-                      blurRadius: 6,
+                      color: _gold.withValues(alpha: 0.7),
+                      blurRadius: 8,
+                      spreadRadius: 1,
                     ),
                   ],
                 ),
@@ -264,12 +292,12 @@ class _PostCardState extends State<PostCard>
                     ),
                   ),
                   if (post.badges.isNotEmpty) ...[
-                    SizedBox(width: R.s(context, 4)),
+                    SizedBox(width: R.s(context, 5)),
                     for (int i = 0; i < post.badges.length; i++) ...[
                       if (i > 0) SizedBox(width: R.s(context, 2)),
                       VerifiedBadge(
                         type: post.badges[i],
-                        size: R.s(context, 15),
+                        size: R.s(context, 16),
                       ),
                     ],
                   ],
@@ -323,7 +351,7 @@ class _PostCardState extends State<PostCard>
   }
 
   Widget _buildAvatar(BuildContext context) {
-    final size = R.s(context, 42);
+    final size = R.s(context, 44);
 
     Uint8List? bytes;
     if (post.userPhotoBase64.isNotEmpty) {
@@ -351,11 +379,11 @@ class _PostCardState extends State<PostCard>
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: _gold, width: 1.5),
+          border: Border.all(color: _gold, width: 1.8),
           boxShadow: [
             BoxShadow(
-              color: _gold.withValues(alpha: 0.25),
-              blurRadius: 6,
+              color: _gold.withValues(alpha: 0.35),
+              blurRadius: 8,
               spreadRadius: 0,
             ),
           ],
@@ -396,7 +424,7 @@ class _PostCardState extends State<PostCard>
       style: TextStyle(
         color: _cream,
         fontSize: R.f(context, 14),
-        height: 1.5,
+        height: 1.55,
       ),
     );
   }
@@ -414,14 +442,45 @@ class _PostCardState extends State<PostCard>
       ),
       child: Row(
         children: [
-          _buildActionButton(
-            context,
-            icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-            color: _isLiked
-                ? const Color(0xFFE84E6A)
-                : _cream.withValues(alpha: 0.7),
-            label: _formatCount(post.likesCount),
-            onTap: widget.onLike,
+          // ===== إعجاب مع نبضة =====
+          InkWell(
+            onTap: _handleLike,
+            borderRadius: BorderRadius.circular(R.s(context, 8)),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: R.s(context, 4),
+                vertical: R.s(context, 2),
+              ),
+              child: Row(
+                children: [
+                  ScaleTransition(
+                    scale: _likeScale,
+                    child: Icon(
+                      _isLiked
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      size: R.s(context, 18),
+                      color: _isLiked
+                          ? const Color(0xFFE84E6A)
+                          : _cream.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  if (_formatCount(post.likesCount).isNotEmpty) ...[
+                    SizedBox(width: R.s(context, 4)),
+                    Text(
+                      _formatCount(post.likesCount),
+                      style: TextStyle(
+                        color: _isLiked
+                            ? const Color(0xFFE84E6A)
+                            : _cream.withValues(alpha: 0.7),
+                        fontSize: R.f(context, 12),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
           SizedBox(width: R.s(context, 18)),
           _buildActionButton(
@@ -539,7 +598,7 @@ class _OrnamentStar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Opacity(
-      opacity: 0.35,
+      opacity: 0.4,
       child: SizedBox(
         width: size,
         height: size,
@@ -568,7 +627,6 @@ class _StarPainter extends CustomPainter {
     final outerR = size.width / 2;
     final innerR = outerR * 0.42;
 
-    // 8-point star
     final path = Path();
     for (int i = 0; i < 16; i++) {
       final angle = (i * 3.14159265) / 8 - 1.5708;
@@ -586,31 +644,9 @@ class _StarPainter extends CustomPainter {
     canvas.drawPath(path, paint);
   }
 
-  double _cos(double x) {
-    // تقريب بسيط
-    return _taylorCos(x);
-  }
+  double _cos(double x) => _sin(x + 1.57079632);
 
   double _sin(double x) {
-    return _taylorSin(x);
-  }
-
-  double _taylorCos(double x) {
-    // cos(x) via dart:math
-    return _mathCos(x);
-  }
-
-  double _taylorSin(double x) {
-    return _mathSin(x);
-  }
-
-  double _mathCos(double x) {
-    // نبني cos من sin
-    return _mathSin(x + 1.57079632);
-  }
-
-  double _mathSin(double x) {
-    // تقريب
     x = x % (2 * 3.14159265);
     double term = x;
     double sum = x;
