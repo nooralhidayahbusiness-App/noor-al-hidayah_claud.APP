@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/channel_config.dart';
 import '../../core/fonts.dart';
+import '../../core/responsive.dart';
 import '../../core/theme.dart';
 import '../../models/channel_video_data.dart';
 import '../../services/link_service.dart';
