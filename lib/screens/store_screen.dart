@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/app_state.dart';
+import '../core/responsive.dart';
 import '../core/theme.dart';
-import '../core/theme_palette.dart';
-import '../core/theme_state.dart';
-import '../data/store_items.dart';
-import '../services/user_service.dart';
-import '../widgets/auth_widgets.dart';
+import '../core/themed_colors.dart';
+import '../services/auth_service.dart';
+import '../services/premium_service.dart';
+import '../widgets/animated_entry.dart';
 import '../widgets/glass_card.dart';
-import '../widgets/themed_background.dart';
-import '../widgets/theme_preview.dart';
-import 'my_purchases_screen.dart';
-import 'premium_screen.dart';
+import '../data/store_items.dart';
 
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
@@ -20,311 +17,139 @@ class StoreScreen extends StatefulWidget {
   State<StoreScreen> createState() => _StoreScreenState();
 }
 
-class _StoreScreenState extends State<StoreScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 4, vsync: this);
-
+class _StoreScreenState extends State<StoreScreen> {
+  bool _isPremium = false;
   bool _loading = true;
-  int _points = 0;
-  Map<String, dynamic> _inventory = {};
-  String? _busyId;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadPremium();
   }
 
-  @override
-  void dispose() {
-    _tabs.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    setState(() => _loading = true);
-    try {
-      await userService.migrateInventory();
-      final stats = await userService.loadStats();
-      final inv = await userService.loadInventory();
-      if (mounted) {
-        setState(() {
-          _points = (stats['points'] as num?)?.toInt() ?? 0;
-          _inventory = inv;
-        });
-      }
-    } finally {
+  Future<void> _loadPremium() async {
+    final uid = AuthService.currentUid;
+    if (uid != null) {
+      final p = await PremiumService.isUserPremium(uid);
+      if (mounted) setState(() { _isPremium = p; _loading = false; });
+    } else {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  List<String> _ownedList(String type) {
-    final key = _listKey(type);
-    final list = (_inventory[key] as List?) ?? ['default'];
-    return list.map((e) => e.toString()).toList();
-  }
-
-  String _listKey(String type) => switch (type) {
-        'background' => 'backgrounds',
-        'adhan' => 'adhans',
-        'adhanBackground' => 'adhanBackgrounds',
-        'theme' => 'themes',
-        _ => 'backgrounds',
-      };
-
-  String _activeKey(String type) => switch (type) {
-        'background' => 'activeBackground',
-        'adhan' => 'activeAdhan',
-        'adhanBackground' => 'activeAdhanBackground',
-        'theme' => 'activeTheme',
-        _ => 'activeBackground',
-      };
-
-  bool _isOwned(StoreItem item) =>
-      item.price == 0 || _ownedList(item.type).contains(item.id);
-
-  bool _isActive(StoreItem item) {
-    if (item.type == 'adhanBackground') {
-      return themeState.adhanBackgroundId == item.id;
-    }
-    return (_inventory[_activeKey(item.type)] as String?) == item.id;
-  }
-
-  Future<void> _activate(StoreItem item) async {
-    switch (item.type) {
-      case 'background':
-        await themeState.setBackground(item.id);
-        break;
-      case 'adhan':
-        await themeState.setAdhan(item.id);
-        break;
-      case 'adhanBackground':
-        await themeState.setAdhanBackground(item.id);
-        break;
-      case 'theme':
-        await themeState.setTheme(item.id);
-        break;
-    }
-  }
-
-  Future<void> _onItemTap(StoreItem item) async {
-    if (_busyId != null) return;
-
-    if (_isOwned(item)) {
-      if (_isActive(item)) return;
-      setState(() => _busyId = item.id);
-      try {
-        await _activate(item);
-        await _load();
-        if (mounted) {
-          showAuthMessage(context, appState.tr('itemActivated'));
-        }
-      } finally {
-        if (mounted) setState(() => _busyId = null);
-      }
-      return;
-    }
-
-    if (_points < item.price) {
-      showAuthMessage(context, appState.tr('notEnoughPoints'), error: true);
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.deepGreen,
-        title: Text(
-          appState.tr('confirmPurchase'),
-          style: const TextStyle(color: AppColors.softGold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    appState.isArabic ? item.nameAr : item.nameEn,
-                    style: const TextStyle(
-                      color: AppColors.gold,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                if (item.isVip) const _VipBadge(),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '${appState.tr('price')}: ${item.price} ${appState.tr('points')}',
-              style: const TextStyle(color: AppColors.cream),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${appState.tr('yourBalance')}: $_points',
-              style: TextStyle(
-                color: AppColors.cream.withValues(alpha: 0.75),
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(appState.tr('cancel'),
-                style: const TextStyle(color: AppColors.softGold)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(appState.tr('buy'),
-                style: const TextStyle(color: AppColors.gold)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _busyId = item.id);
-    try {
-      await userService.addPoints(-item.price);
-      await userService.unlockItem(_listKey(item.type), item.id);
-      await _activate(item);
-      await _load();
-      if (mounted) {
-        showAuthMessage(context, appState.tr('purchaseSuccess'));
-      }
-    } finally {
-      if (mounted) setState(() => _busyId = null);
-    }
-  }
-
-  Future<void> _openMyPurchases() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const MyPurchasesScreen()),
-    );
-    await _load();
-  }
-
-  Future<void> _openPremium() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const PremiumScreen()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final appState = AppState.of(context);
+    final uid = AuthService.currentUid;
+
     return Scaffold(
-      body: ThemedBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 20, 0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      color: AppColors.softGold,
-                      icon: const Icon(Icons.arrow_back_rounded),
+      backgroundColor: AppColors.deepGreen,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          appState.tr('store'),
+          style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
+        ),
+        iconTheme: IconThemeData(color: AppColors.gold),
+      ),
+      body: _loading
+          ? Center(child: CircularProgressIndicator(color: AppColors.gold))
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(R.s(context, 16)),
+              child: Column(
+                children: [
+                  // Premium banner (نابض)
+                  if (!_isPremium) _buildPremiumBanner(context, appState),
+
+                  // نقاط المستخدم
+                  _buildPointsHeader(context, appState, uid),
+
+                  SizedBox(height: R.s(context, 16)),
+
+                  // تبويبات المتجر: خلفيات، أذان، ثيمات، خلفيات أذان
+                  DefaultTabController(
+                    length: 4,
+                    child: Column(
+                      children: [
+                        TabBar(
+                          indicatorColor: AppColors.gold,
+                          labelColor: AppColors.gold,
+                          unselectedLabelColor: AppColors.cream.withOpacity(0.6),
+                          tabs: [
+                            Tab(text: appState.tr('backgrounds')),
+                            Tab(text: appState.tr('adhan')),
+                            Tab(text: appState.tr('themes')),
+                            Tab(text: appState.tr('adhan_backgrounds')),
+                          ],
+                        ),
+                        SizedBox(
+                          height: R.s(context, 500),
+                          child: TabBarView(
+                            children: [
+                              _buildItemsGrid(context, appState, StoreItems.backgrounds, 'backgrounds'),
+                              _buildItemsGrid(context, appState, StoreItems.adhans, 'adhans'),
+                              _buildItemsGrid(context, appState, StoreItems.themes, 'themes'),
+                              _buildItemsGrid(context, appState, StoreItems.adhanBackgrounds, 'adhanBackgrounds'),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildPremiumBanner(BuildContext context, AppState appState) {
+    return AnimatedEntry(
+      child: GestureDetector(
+        onTap: () {
+          // الانتقال إلى شاشة Premium
+          Navigator.pushNamed(context, '/premium');
+        },
+        child: Container(
+          margin: EdgeInsets.only(bottom: R.s(context, 16)),
+          padding: EdgeInsets.all(R.s(context, 16)),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.gold, AppColors.softGold],
+            ),
+            borderRadius: BorderRadius.circular(R.s(context, 16)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.gold.withOpacity(0.5),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.workspace_premium, color: AppColors.deepGreen, size: R.s(context, 32)),
+              SizedBox(width: R.s(context, 12)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      appState.tr('store'),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.softGold,
+                      appState.tr('premium_title'),
+                      style: TextStyle(
+                        color: AppColors.deepGreen,
+                        fontSize: R.f(context, 16),
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      tooltip: appState.tr('myPurchases'),
-                      onPressed: _openMyPurchases,
-                      color: AppColors.softGold,
-                      icon: const Icon(Icons.shopping_bag_rounded),
+                    Text(
+                      appState.tr('premium_store_hint'),
+                      style: TextStyle(color: AppColors.deepGreen.withOpacity(0.8), fontSize: R.f(context, 12)),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // ===== بطاقة Premium =====
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _PremiumBanner(onTap: _openPremium),
-              ),
-              const SizedBox(height: 12),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: GlassCard(
-                  child: Row(
-                    children: [
-                      const Icon(Icons.stars_rounded,
-                          color: AppColors.gold, size: 26),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          appState.tr('yourBalance'),
-                          style: const TextStyle(
-                            color: AppColors.cream,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '$_points',
-                        style: const TextStyle(
-                          color: AppColors.gold,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TabBar(
-                controller: _tabs,
-                isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                indicatorColor: AppColors.gold,
-                labelColor: AppColors.gold,
-                unselectedLabelColor:
-                    AppColors.cream.withValues(alpha: 0.6),
-                indicatorWeight: 3,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
-                tabs: [
-                  Tab(text: appState.tr('tabBackgrounds')),
-                  Tab(text: appState.tr('tabAdhans')),
-                  Tab(text: appState.tr('tabAdhanBgs')),
-                  Tab(text: appState.tr('tabThemes')),
-                ],
-              ),
-              Expanded(
-                child: _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                            color: AppColors.gold))
-                    : TabBarView(
-                        controller: _tabs,
-                        children: [
-                          _buildGrid('background'),
-                          _buildGrid('adhan'),
-                          _buildGrid('adhanBackground'),
-                          _buildGrid('theme'),
-                        ],
-                      ),
-              ),
+              Icon(Icons.arrow_forward_ios, color: AppColors.deepGreen, size: R.s(context, 16)),
             ],
           ),
         ),
@@ -332,463 +157,211 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildGrid(String type) {
-    final items = itemsOfType(type);
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.78,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, i) => _StoreTile(
-        item: items[i],
-        owned: _isOwned(items[i]),
-        active: _isActive(items[i]),
-        busy: _busyId == items[i].id,
-        nameAr: appState.isArabic,
-        onTap: () => _onItemTap(items[i]),
-      ),
-    );
-  }
-}
+  Widget _buildPointsHeader(BuildContext context, AppState appState, String? uid) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: uid != null
+          ? FirebaseFirestore.instance.collection('users').doc(uid).snapshots()
+          : const Stream.empty(),
+      builder: (context, snap) {
+        final data = snap.data?.data() as Map<String, dynamic>?;
+        final stats = (data?['stats'] ?? {}) as Map<String, dynamic>;
+        final points = (stats['points'] ?? 0) as int;
 
-// ============================================================
-// _PremiumBanner — بطاقة Premium في أعلى المتجر
-// ============================================================
-class _PremiumBanner extends StatefulWidget {
-  final VoidCallback onTap;
-
-  const _PremiumBanner({required this.onTap});
-
-  @override
-  State<_PremiumBanner> createState() => _PremiumBannerState();
-}
-
-class _PremiumBannerState extends State<_PremiumBanner>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2000),
-  )..repeat(reverse: true);
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ar = appState.isArabic;
-    return AnimatedBuilder(
-      animation: _pulse,
-      builder: (context, child) {
-        final t = _pulse.value;
-        return GestureDetector(
-          onTap: widget.onTap,
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [
-                  AppColors.gold.withValues(alpha: 0.25 + 0.08 * t),
-                  AppColors.deepGreen.withValues(alpha: 0.9),
-                ],
+        return GlassCard(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.stars, color: AppColors.gold, size: R.s(context, 24)),
+              SizedBox(width: R.s(context, 8)),
+              Text(
+                '$points ${appState.tr('points')}',
+                style: TextStyle(
+                  color: AppColors.gold,
+                  fontSize: R.f(context, 18),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.6 + 0.3 * t),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.gold.withValues(alpha: 0.2 + 0.2 * t),
-                  blurRadius: 14 + 6 * t,
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.gold.withValues(alpha: 0.2),
-                    border: Border.all(color: AppColors.gold, width: 1.5),
-                  ),
-                  child: const Icon(
-                    Icons.workspace_premium_rounded,
-                    color: AppColors.gold,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            ar ? 'Premium' : 'Premium',
-                            style: const TextStyle(
-                              color: AppColors.softGold,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.gold,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'NEW',
-                              style: TextStyle(
-                                color: AppColors.deepGreen,
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        ar
-                            ? 'ميزات حصرية + دعم مباشر للتطوير'
-                            : 'Exclusive features + direct support',
-                        style: TextStyle(
-                          color: AppColors.cream.withValues(alpha: 0.75),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.gold.withValues(alpha: 0.8),
-                  size: 22,
-                ),
-              ],
-            ),
+            ],
           ),
         );
       },
     );
   }
-}
 
-class _StoreTile extends StatelessWidget {
-  const _StoreTile({
-    required this.item,
-    required this.owned,
-    required this.active,
-    required this.busy,
-    required this.nameAr,
-    required this.onTap,
-  });
+  Widget _buildItemsGrid(
+    BuildContext context,
+    AppState appState,
+    List<StoreItem> items,
+    String category,
+  ) {
+    return GridView.builder(
+      padding: EdgeInsets.only(top: R.s(context, 12)),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: R.s(context, 12),
+        mainAxisSpacing: R.s(context, 12),
+        childAspectRatio: 0.85,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _buildStoreItemCard(context, appState, item, category);
+      },
+    );
+  }
 
-  final StoreItem item;
-  final bool owned;
-  final bool active;
-  final bool busy;
-  final bool nameAr;
-  final VoidCallback onTap;
+  Widget _buildStoreItemCard(
+    BuildContext context,
+    AppState appState,
+    StoreItem item,
+    String category,
+  ) {
+    final uid = AuthService.currentUid;
+    final isPremium = _isPremium;
 
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: busy ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: active
-                ? AppColors.gold
-                : (item.isVip
-                    ? const Color(0xFFFFD700)
-                    : AppColors.gold.withValues(alpha: 0.3)),
-            width: active ? 2.5 : (item.isVip ? 1.8 : 1.2),
-          ),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: AppColors.gold.withValues(alpha: 0.5),
-                    blurRadius: 16,
-                    spreadRadius: 1,
-                  )
-                ]
-              : (item.isVip
-                  ? [
-                      BoxShadow(
-                        color: const Color(0xFFFFD700)
-                            .withValues(alpha: 0.25),
-                        blurRadius: 12,
-                      )
-                    ]
-                  : null),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(17),
-          child: Stack(
-            fit: StackFit.expand,
+    return StreamBuilder<DocumentSnapshot>(
+      stream: uid != null
+          ? FirebaseFirestore.instance.collection('users').doc(uid).snapshots()
+          : const Stream.empty(),
+      builder: (context, snap) {
+        final data = snap.data?.data() as Map<String, dynamic>?;
+        final inventory = (data?['inventory'] ?? {}) as Map<String, dynamic>;
+        final owned = (inventory[category] as List?)?.contains(item.id) ?? false;
+        final active = inventory['active${category[0].toUpperCase()}${category.substring(1)}'] == item.id;
+
+        final canBuy = isPremium || (data?['stats']?['points'] ?? 0) >= item.cost;
+
+        return GlassCard(
+          child: Column(
             children: [
-              if (item.type == 'theme')
-                ThemePreview(palette: paletteFor(item.id))
-              else if (item.imagePath != null)
-                Image.asset(
-                  item.imagePath!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => _gradientBg(),
-                )
-              else
-                _gradientBg(),
-
-              if (item.type != 'theme')
-                DecoratedBox(
+              Expanded(
+                child: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.1),
-                        Colors.black.withValues(alpha: 0.75),
-                      ],
+                    image: DecorationImage(
+                      image: AssetImage(item.preview),
+                      fit: BoxFit.cover,
                     ),
+                    borderRadius: BorderRadius.circular(R.s(context, 12)),
                   ),
                 ),
-
-              if (item.isVip)
-                const Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _VipBadge(),
-                      SizedBox(height: 4),
-                      _AnimatedBadge(),
-                    ],
-                  ),
-                ),
-
-              if (active)
-                const Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Icon(Icons.check_circle_rounded,
-                      color: AppColors.gold, size: 22),
-                ),
-
-              Positioned(
-                top: item.isVip ? null : 8,
-                bottom: 8,
-                right: 8,
-                child: _buildBadge(),
               ),
-
-              Positioned(
-                left: 10,
-                right: 10,
-                bottom: 40,
-                child: Column(
-                  children: [
-                    Icon(item.icon, color: AppColors.gold, size: 26),
-                    const SizedBox(height: 6),
-                    Text(
-                      nameAr ? item.nameAr : item.nameEn,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        height: 1.3,
-                        shadows: [
-                          Shadow(color: Colors.black87, blurRadius: 6),
-                        ],
+              SizedBox(height: R.s(context, 8)),
+              Text(
+                appState.tr(item.nameKey),
+                style: TextStyle(color: AppColors.cream, fontSize: R.f(context, 13)),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: R.s(context, 6)),
+              if (active)
+                _badge(context, appState.tr('active'), AppColors.emerald)
+              else if (owned)
+                _badge(context, appState.tr('owned'), AppColors.gold)
+              else
+                GestureDetector(
+                  onTap: canBuy
+                      ? () async {
+                          // شراء
+                          await _purchaseItem(context, appState, item, category, isPremium);
+                        }
+                      : null,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: R.s(context, 12),
+                      vertical: R.s(context, 6),
+                    ),
+                    decoration: BoxDecoration(
+                      color: canBuy ? AppColors.gold : Colors.grey,
+                      borderRadius: BorderRadius.circular(R.s(context, 20)),
+                    ),
+                    child: Text(
+                      isPremium ? appState.tr('free') : '${item.cost} ${appState.tr('points')}',
+                      style: TextStyle(
+                        color: AppColors.deepGreen,
+                        fontWeight: FontWeight.bold,
+                        fontSize: R.f(context, 12),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
             ],
           ),
-        ),
+        );
+      },
+    );
+  }
+
+  Widget _badge(BuildContext context, String text, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: R.s(context, 12), vertical: R.s(context, 6)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(R.s(context, 20)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: AppColors.deepGreen, fontWeight: FontWeight.bold, fontSize: R.f(context, 12)),
       ),
     );
   }
 
-  Widget _gradientBg() => DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: item.gradient,
-          ),
-        ),
-      );
+  Future<void> _purchaseItem(
+    BuildContext context,
+    AppState appState,
+    StoreItem item,
+    String category,
+    bool isPremium,
+  ) async {
+    final uid = AuthService.currentUid;
+    if (uid == null) return;
 
-  Widget _buildBadge() {
-    if (busy) {
-      return Container(
-        padding: const EdgeInsets.all(6),
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.black54,
-        ),
-        child: const SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppColors.gold,
-          ),
-        ),
-      );
+    try {
+      final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+
+      await FirebaseFirestore.instance.runTransaction((tx) async {
+        final snap = await tx.get(userRef);
+        final data = snap.data() as Map<String, dynamic>;
+        final stats = (data['stats'] ?? {}) as Map<String, dynamic>;
+        final points = (stats['points'] ?? 0) as int;
+        final inventory = (data['inventory'] ?? {}) as Map<String, dynamic>;
+
+        final owned = (inventory[category] as List?)?.contains(item.id) ?? false;
+        if (owned) return;
+
+        if (!isPremium && points < item.cost) {
+          throw Exception('نقاط غير كافية');
+        }
+
+        final newPoints = isPremium ? points : points - item.cost;
+        final newList = List<String>.from(inventory[category] ?? []);
+        newList.add(item.id);
+
+        tx.update(userRef, {
+          'stats.points': newPoints,
+          'inventory.$category': newList,
+          'inventory.active${category[0].toUpperCase()}${category.substring(1)}': item.id,
+        });
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(appState.tr('purchase_success')), backgroundColor: AppColors.emerald),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
     }
-    if (active) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.gold,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          appState.tr('active'),
-          style: const TextStyle(
-            color: Color(0xFF041F18),
-            fontWeight: FontWeight.w700,
-            fontSize: 11,
-          ),
-        ),
-      );
-    }
-    if (owned) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(10),
-          border:
-              Border.all(color: AppColors.gold.withValues(alpha: 0.6)),
-        ),
-        child: Text(
-          appState.tr('tapToActivate'),
-          style: const TextStyle(
-            color: AppColors.gold,
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.gold),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.stars_rounded,
-              color: AppColors.gold, size: 12),
-          const SizedBox(width: 3),
-          Text(
-            '${item.price}',
-            style: const TextStyle(
-              color: AppColors.gold,
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
-class _VipBadge extends StatelessWidget {
-  const _VipBadge();
+class StoreItem {
+  final String id;
+  final String nameKey;
+  final String preview;
+  final int cost;
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
-        ),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFD700).withValues(alpha: 0.6),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: const Text(
-        'VIP',
-        style: TextStyle(
-          color: Color(0xFF2A1500),
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-}
-
-class _AnimatedBadge extends StatelessWidget {
-  const _AnimatedBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: const Color(0xFFFFD700),
-          width: 1,
-        ),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.auto_awesome_rounded,
-              color: Color(0xFFFFD700), size: 10),
-          SizedBox(width: 3),
-          Text(
-            'ANIMATION',
-            style: TextStyle(
-              color: Color(0xFFFFD700),
-              fontSize: 8,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  const StoreItem({required this.id, required this.nameKey, required this.preview, required this.cost});
 }
