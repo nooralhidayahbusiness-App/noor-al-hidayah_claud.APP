@@ -30,13 +30,10 @@ class AdsService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // ============================================================
-  // معرفات AdMob
+  // معرفات AdMob (App IDs موجودة في ملفات المنصة)
+  // - Android: android/app/src/main/AndroidManifest.xml
+  // - iOS: ios/Runner/Info.plist (لاحقاً)
   // ============================================================
-  static const String _androidAppId =
-      'ca-app-pub-7354273374998913~5567231375';
-  static const String _iosAppId =
-      'ca-app-pub-7354273374998913~4615890593';
-
   static const String _androidRewardedId =
       'ca-app-pub-7354273374998913/5755827856';
   static const String _iosRewardedId =
