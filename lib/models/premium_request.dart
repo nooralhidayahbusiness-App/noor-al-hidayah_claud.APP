@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// حالة الطلب
 enum PremiumRequestStatus {
   pending,
   approved,
@@ -11,9 +10,9 @@ class PremiumRequest {
   final String uid;
   final String name;
   final String email;
-  final String paypalAccount; // @username أو email
-  final String plan; // 'monthly' | 'quarterly' | 'yearly'
-  final double amount; // بالدولار
+  final String paypalAccount;
+  final String plan;
+  final double amount;
   final String status;
   final DateTime requestedAt;
   final DateTime? reviewedAt;
@@ -33,6 +32,14 @@ class PremiumRequest {
   });
 
   factory PremiumRequest.fromMap(String uid, Map<String, dynamic> m) {
+    DateTime? parseTs(dynamic v) {
+      if (v == null) return null;
+      if (v is Timestamp) return v.toDate();
+      if (v is String) return DateTime.tryParse(v);
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+      return null;
+    }
+
     return PremiumRequest(
       uid: uid,
       name: (m['name'] as String?) ?? '',
@@ -42,8 +49,8 @@ class PremiumRequest {
       amount: (m['amount'] as num?)?.toDouble() ?? 0,
       status: (m['status'] as String?) ?? 'pending',
       requestedAt:
-          (m['requestedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      reviewedAt: (m['reviewedAt'] as Timestamp?)?.toDate(),
+          parseTs(m['requestedAt']) ?? DateTime.now(),
+      reviewedAt: parseTs(m['reviewedAt']),
       reviewedBy: m['reviewedBy'] as String?,
     );
   }
@@ -95,14 +102,16 @@ class PremiumRequest {
   }
 }
 
-/// خطط Premium
+// ============================================================
+// Premium Plan
+// ============================================================
 class PremiumPlan {
   final String id;
   final String labelAr;
   final String labelEn;
   final double price;
   final int days;
-  final String? badge; // "الأكثر شهرة" أو "وفّر 25%"
+  final String? badge;
 
   const PremiumPlan({
     required this.id,
@@ -140,21 +149,102 @@ const List<PremiumPlan> premiumPlans = [
   ),
 ];
 
-/// قائمة الـ 15 ميزة
-const List<Map<String, String>> premiumFeatures = [
-  {'ar': '👑 تاج متحرك فوق اسمك', 'en': '👑 Animated crown above your name'},
-  {'ar': '✨ دائرة ذهبية متحركة حول صورتك', 'en': '✨ Animated gold ring around your photo'},
-  {'ar': '🏷️ شارات premium.png + true.me.png', 'en': '🏷️ premium.png + true.me.png badges'},
-  {'ar': '🚫 بدون إعلانات', 'en': '🚫 No ads'},
-  {'ar': '🎨 كل الألوان والخلفيات والثيمات مجانية', 'en': '🎨 All colors, backgrounds & themes free'},
-  {'ar': '💰 10,000 نقطة شهرياً', 'en': '💰 10,000 points monthly'},
-  {'ar': '📌 تثبيت 3 منشورات', 'en': '📌 Pin 3 posts'},
-  {'ar': '✍️ اسم ذهبي متوهج', 'en': '✍️ Glowing gold name'},
-  {'ar': '📝 منشورات أطول (1000 حرف)', 'en': '📝 Longer posts (1000 chars)'},
-  {'ar': '🚀 أولوية في الـ Feed', 'en': '🚀 Priority in feed'},
-  {'ar': '🎯 ضعف نقاط التحديات', 'en': '🎯 Double challenge points'},
-  {'ar': '👁️ رؤية الحسابات الخاصة', 'en': '👁️ View private accounts'},
-  {'ar': '📊 إحصاءات متقدمة', 'en': '📊 Advanced statistics'},
-  {'ar': '🎁 هدية شهرية (مؤذن VIP)', 'en': '🎁 Monthly gift (VIP reciter)'},
-  {'ar': '⭐ دعم مباشر للتطوير', 'en': '⭐ Direct support for development'},
+// ============================================================
+// ✅ Premium Feature — مع دعم الصور والأيقونات
+// ============================================================
+class PremiumFeatureItem {
+  final String textAr;
+  final String textEn;
+  final IconData icon;
+  final List<String>? assetIcons; // إذا موجودة، تُعرض بدل icon
+
+  const PremiumFeatureItem({
+    required this.textAr,
+    required this.textEn,
+    required this.icon,
+    this.assetIcons,
+  });
+}
+
+/// 15 ميزة Premium
+const List<PremiumFeatureItem> premiumFeatures = [
+  PremiumFeatureItem(
+    icon: Icons.workspace_premium_rounded,
+    textAr: 'تاج متحرك فوق اسمك',
+    textEn: 'Animated crown above your name',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.auto_awesome_rounded,
+    textAr: 'دائرة ذهبية متحركة حول صورتك',
+    textEn: 'Animated gold ring around your photo',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.verified_rounded,
+    assetIcons: [
+      'assets/icons/premium.png',
+      'assets/icons/true.me.png',
+    ],
+    textAr: 'شارات مميزة',
+    textEn: 'Premium badges',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.block_rounded,
+    textAr: 'بدون إعلانات',
+    textEn: 'No ads',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.palette_rounded,
+    textAr: 'كل الألوان والخلفيات والثيمات مجانية',
+    textEn: 'All colors, backgrounds & themes free',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.stars_rounded,
+    textAr: '10,000 نقطة شهرياً',
+    textEn: '10,000 points monthly',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.push_pin_rounded,
+    textAr: 'تثبيت 3 منشورات',
+    textEn: 'Pin 3 posts',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.edit_rounded,
+    textAr: 'اسم ذهبي متوهج',
+    textEn: 'Glowing gold name',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.article_rounded,
+    textAr: 'منشورات أطول (1000 حرف)',
+    textEn: 'Longer posts (1000 chars)',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.trending_up_rounded,
+    textAr: 'أولوية في الـ Feed',
+    textEn: 'Priority in feed',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.track_changes_rounded,
+    textAr: 'ضعف نقاط التحديات',
+    textEn: 'Double challenge points',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.visibility_rounded,
+    textAr: 'رؤية الحسابات الخاصة',
+    textEn: 'View private accounts',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.bar_chart_rounded,
+    textAr: 'إحصاءات متقدمة',
+    textEn: 'Advanced statistics',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.card_giftcard_rounded,
+    textAr: 'هدية شهرية (مؤذن VIP)',
+    textEn: 'Monthly gift (VIP reciter)',
+  ),
+  PremiumFeatureItem(
+    icon: Icons.favorite_rounded,
+    textAr: 'دعم مباشر للتطوير',
+    textEn: 'Direct support for development',
+  ),
 ];
