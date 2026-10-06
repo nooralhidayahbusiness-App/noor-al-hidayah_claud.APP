@@ -1,4 +1,4 @@
-
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,6 +27,7 @@ const Map<String, Map<String, String>> _clTr = {
     'reject': 'رفض',
     'noMessages': 'لا رسائل',
     'userNotFound': 'مستخدم',
+    'pending': 'طلب مرسل',
   },
   'en': {
     'title': 'Chats',
@@ -37,6 +38,7 @@ const Map<String, Map<String, String>> _clTr = {
     'reject': 'Reject',
     'noMessages': 'No messages',
     'userNotFound': 'User',
+    'pending': 'Request sent',
   },
   'fr': {
     'title': 'Discussions',
@@ -47,16 +49,18 @@ const Map<String, Map<String, String>> _clTr = {
     'reject': 'Refuser',
     'noMessages': 'Aucun message',
     'userNotFound': 'Utilisateur',
+    'pending': 'Demande envoyée',
   },
   'ur': {
     'title': 'چیٹس',
     'empty': 'ابھی کوئی چیٹ نہیں',
-    'emptyDesc': 'کسی صارف کی پروفائل سے شروع کریں',
+    'emptyDesc': 'کسٹم صارف کی پروفائل سے شروع کریں',
     'requests': 'پیغام کی درخواستیں',
     'accept': 'قبول',
     'reject': 'مسترد',
     'noMessages': 'کوئی پیغام نہیں',
     'userNotFound': 'صارف',
+    'pending': 'درخواست بھیجی',
   },
   'ne': {
     'title': 'च्याटहरू',
@@ -67,6 +71,7 @@ const Map<String, Map<String, String>> _clTr = {
     'reject': 'अस्वीकार',
     'noMessages': 'कुनै सन्देश छैन',
     'userNotFound': 'प्रयोगकर्ता',
+    'pending': 'अनुरोध पठाइयो',
   },
   'id': {
     'title': 'Obrolan',
@@ -77,6 +82,7 @@ const Map<String, Map<String, String>> _clTr = {
     'reject': 'Tolak',
     'noMessages': 'Tidak ada pesan',
     'userNotFound': 'Pengguna',
+    'pending': 'Permintaan terkirim',
   },
   'ms': {
     'title': 'Sembang',
@@ -87,6 +93,7 @@ const Map<String, Map<String, String>> _clTr = {
     'reject': 'Tolak',
     'noMessages': 'Tiada mesej',
     'userNotFound': 'Pengguna',
+    'pending': 'Permintaan dihantar',
   },
 };
 
@@ -148,7 +155,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
 
                           if (chats.isEmpty && requests.isEmpty) {
                             return IslamicEmptyState(
-                              icon: Icons.chat_bubble_outline,
+                              icon: Icons.forum_outlined,
                               title: _cl('empty'),
                               message: _cl('emptyDesc'),
                             );
@@ -166,12 +173,12 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                                     R.s(context, 16),
                                     R.s(context, 8),
                                     R.s(context, 16),
-                                    R.s(context, 6),
+                                    R.s(context, 4),
                                   ),
                                   child: Row(
                                     children: [
                                       Icon(
-                                        Icons.mark_email_unread_outlined,
+                                        Icons.mail_outline_rounded,
                                         color: AppColors.gold,
                                         size: R.s(context, 16),
                                       ),
@@ -189,25 +196,34 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                                 ),
                                 for (int i = 0; i < requests.length; i++)
                                   AnimatedEntry(
-                                    delay: Duration(milliseconds: i * 60),
+                                    delay: Duration(
+                                        milliseconds: i * 60),
                                     child: _RequestTile(
                                       request: requests[i],
                                       myUid: _uid!,
                                       onAccept: () async {
                                         await chatService
-                                            .acceptRequest(requests[i].chatId);
+                                            .acceptRequest(
+                                                requests[i].chatId);
                                         if (mounted) setState(() {});
                                       },
                                       onReject: () async {
                                         await chatService
-                                            .rejectRequest(requests[i].chatId);
+                                            .rejectRequest(
+                                                requests[i].chatId);
                                         if (mounted) setState(() {});
                                       },
                                     ),
                                   ),
-                                Divider(
-                                  color: AppColors.gold.withValues(alpha: 0.2),
-                                  height: R.s(context, 20),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: R.s(context, 12),
+                                    horizontal: R.s(context, 16),
+                                  ),
+                                  child: Divider(
+                                    color: AppColors.gold
+                                        .withValues(alpha: 0.2),
+                                  ),
                                 ),
                               ],
 
@@ -300,92 +316,222 @@ class _ChatTile extends StatelessWidget {
         final avatar = user?.avatar ?? 'man';
         final photoBytes = user?.photoBytes;
 
-        return InkWell(
-          onTap: onTap,
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: R.s(context, 14),
-              vertical: R.s(context, 10),
-            ),
-            color: hasUnread
-                ? AppColors.gold.withValues(alpha: 0.06)
-                : Colors.transparent,
-            child: Row(
-              children: [
-                _ListAvatar(
-                  avatar: avatar,
-                  photoBytes: photoBytes,
-                  hasUnread: hasUnread,
-                ),
-                SizedBox(width: R.s(context, 12)),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppColors.cream,
-                          fontSize: R.f(context, 14),
-                          fontWeight: hasUnread
-                              ? FontWeight.w900
-                              : FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: R.s(context, 3)),
-                      Text(
-                        chat.lastMessage.isEmpty
-                            ? _cl('noMessages')
-                            : chat.lastMessage,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: hasUnread
-                              ? AppColors.gold
-                              : AppColors.cream.withValues(alpha: 0.6),
-                          fontSize: R.f(context, 12),
-                          fontWeight: hasUnread
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
-                    ],
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: R.s(context, 14),
+                vertical: R.s(context, 10),
+              ),
+              decoration: BoxDecoration(
+                color: hasUnread
+                    ? AppColors.gold.withValues(alpha: 0.06)
+                    : Colors.transparent,
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.gold.withValues(alpha: 0.12),
+                    width: 0.7,
                   ),
                 ),
-                if (hasUnread)
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: R.s(context, 9),
-                      vertical: R.s(context, 3),
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFD32F2F), Color(0xFFE53935)],
-                        begin: Alignment.topRight,
-                        end: Alignment.bottomLeft,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFD32F2F)
-                              .withValues(alpha: 0.5),
-                          blurRadius: 8,
-                          spreadRadius: 0,
+              ),
+              child: Row(
+                children: [
+                  _AvatarRing(
+                    avatar: avatar,
+                    photoBytes: photoBytes,
+                    highlighted: hasUnread,
+                  ),
+                  SizedBox(width: R.s(context, 12)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppColors.cream,
+                            fontSize: R.f(context, 14),
+                            fontWeight: hasUnread
+                                ? FontWeight.w900
+                                : FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: R.s(context, 4)),
+                        Row(
+                          children: [
+                            if (chat.lastMessageSenderUid == myUid) ...[
+                              Icon(
+                                Icons.check,
+                                color:
+                                    AppColors.softGold.withValues(alpha: 0.7),
+                                size: R.s(context, 13),
+                              ),
+                              SizedBox(width: R.s(context, 3)),
+                            ],
+                            Expanded(
+                              child: Text(
+                                chat.lastMessage.isEmpty
+                                    ? _cl('noMessages')
+                                    : chat.lastMessage,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: hasUnread
+                                      ? AppColors.gold
+                                      : AppColors.cream
+                                          .withValues(alpha: 0.55),
+                                  fontSize: R.f(context, 12),
+                                  fontWeight: hasUnread
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    child: Text(
-                      unread > 99 ? '99+' : '$unread',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: R.f(context, 11),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ),
-              ],
+                  if (hasUnread)
+                    Padding(
+                      padding: EdgeInsets.only(right: R.s(context, 4)),
+                      child: _PulsingBadge(count: unread),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ============================================================
+// _AvatarRing — Avatar بحلقة ذهبية + توهج
+// ============================================================
+class _AvatarRing extends StatelessWidget {
+  final String avatar;
+  final Uint8List? photoBytes;
+  final bool highlighted;
+
+  const _AvatarRing({
+    required this.avatar,
+    this.photoBytes,
+    this.highlighted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final size = R.s(context, 50);
+    final fallback = avatar == 'woman'
+        ? 'assets/images/hijab.png'
+        : 'assets/images/arabian.png';
+
+    Widget child;
+    if (photoBytes != null && photoBytes!.isNotEmpty) {
+      child = Image.memory(
+        photoBytes!,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) => Image.asset(
+          fallback,
+          fit: BoxFit.cover,
+        ),
+      );
+    } else {
+      child = Image.asset(
+        fallback,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => Icon(
+          Icons.person,
+          color: AppColors.gold,
+          size: size * 0.5,
+        ),
+      );
+    }
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: highlighted ? AppColors.gold : AppColors.gold.withValues(alpha: 0.7),
+          width: highlighted ? 2 : 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gold
+                .withValues(alpha: highlighted ? 0.5 : 0.25),
+            blurRadius: highlighted ? 12 : 6,
+            spreadRadius: highlighted ? 1 : 0,
+          ),
+        ],
+      ),
+      child: ClipOval(child: child),
+    );
+  }
+}
+
+// ============================================================
+// _PulsingBadge — Badge نابض
+// ============================================================
+class _PulsingBadge extends StatefulWidget {
+  final int count;
+
+  const _PulsingBadge({required this.count});
+
+  @override
+  State<_PulsingBadge> createState() => _PulsingBadgeState();
+}
+
+class _PulsingBadgeState extends State<_PulsingBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, child) {
+        final t = _ctrl.value;
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: R.s(context, 8),
+            vertical: R.s(context, 3),
+          ),
+          decoration: BoxDecoration(
+            color: const Color(0xFFD32F2F),
+            borderRadius: BorderRadius.circular(R.s(context, 12)),
+            boxShadow: [
+              BoxShadow(
+                color:
+                    const Color(0xFFD32F2F).withValues(alpha: 0.4 + 0.4 * t),
+                blurRadius: 6 + 6 * t,
+                spreadRadius: 1 + 2 * t,
+              ),
+            ],
+          ),
+          child: Text(
+            widget.count > 99 ? '99+' : '${widget.count}',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: R.f(context, 11),
+              fontWeight: FontWeight.bold,
             ),
           ),
         );
@@ -427,11 +573,7 @@ class _RequestTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _ListAvatar(
-                avatar: avatar,
-                photoBytes: photoBytes,
-                hasUnread: false,
-              ),
+              _AvatarRing(avatar: avatar, photoBytes: photoBytes),
               SizedBox(width: R.s(context, 12)),
               Expanded(
                 child: Text(
@@ -447,12 +589,14 @@ class _RequestTile extends StatelessWidget {
               ),
               _SmallBtn(
                 label: _cl('accept'),
+                icon: Icons.check_rounded,
                 color: AppColors.gold,
                 onTap: onAccept,
               ),
               SizedBox(width: R.s(context, 6)),
               _SmallBtn(
-                label: _cl('reject'),
+                label: '',
+                icon: Icons.close_rounded,
                 color: Colors.redAccent,
                 onTap: onReject,
               ),
@@ -464,16 +608,15 @@ class _RequestTile extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _SmallBtn
-// ============================================================
 class _SmallBtn extends StatelessWidget {
   final String label;
+  final IconData icon;
   final Color color;
   final VoidCallback onTap;
 
   const _SmallBtn({
     required this.label,
+    required this.icon,
     required this.color,
     required this.onTap,
   });
@@ -484,90 +627,32 @@ class _SmallBtn extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: R.s(context, 12),
+          horizontal: label.isEmpty ? R.s(context, 8) : R.s(context, 10),
           vertical: R.s(context, 7),
         ),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.18),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(R.s(context, 10)),
           border: Border.all(color: color, width: 1),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: R.f(context, 11),
-            fontWeight: FontWeight.bold,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: R.s(context, 14)),
+            if (label.isNotEmpty) ...[
+              SizedBox(width: R.s(context, 4)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: R.f(context, 11),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
-    );
-  }
-}
-
-// ============================================================
-// _ListAvatar — حلقة ذهبية + توهج عند unread
-// ============================================================
-class _ListAvatar extends StatelessWidget {
-  final String avatar;
-  final Uint8List? photoBytes;
-  final bool hasUnread;
-
-  const _ListAvatar({
-    required this.avatar,
-    this.photoBytes,
-    required this.hasUnread,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final size = R.s(context, 50);
-    final fallback = avatar == 'woman'
-        ? 'assets/images/hijab.png'
-        : 'assets/images/arabian.png';
-
-    Widget child;
-    if (photoBytes != null && photoBytes!.isNotEmpty) {
-      child = Image.memory(
-        photoBytes!,
-        fit: BoxFit.cover,
-        gaplessPlayback: true,
-        errorBuilder: (_, _, _) => Image.asset(
-          fallback,
-          fit: BoxFit.cover,
-        ),
-      );
-    } else {
-      child = Image.asset(
-        fallback,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => Icon(
-          Icons.person,
-          color: AppColors.gold,
-          size: size * 0.5,
-        ),
-      );
-    }
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: AppColors.gold,
-          width: hasUnread ? 2.2 : 1.6,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.gold
-                .withValues(alpha: hasUnread ? 0.5 : 0.3),
-            blurRadius: hasUnread ? 12 : 6,
-            spreadRadius: hasUnread ? 1 : 0,
-          ),
-        ],
-      ),
-      child: ClipOval(child: child),
     );
   }
 }
