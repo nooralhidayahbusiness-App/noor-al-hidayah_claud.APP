@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../core/app_flow.dart';
@@ -61,16 +62,39 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
+  // ✅ فحص Premium
+  bool _isPremiumActive() {
+    final premium = (_profile['premium'] as Map?) ?? {};
+    final active = (premium['active'] as bool?) ?? false;
+    if (!active) return false;
+    final expTs = premium['expiresAt'];
+    DateTime? expiry;
+    if (expTs is Timestamp) expiry = expTs.toDate();
+    if (expiry == null) return false;
+    return expiry.isAfter(DateTime.now());
+  }
+
+  // ✅ Badges — مع Premium
   List<String> _badges() {
     final list = <String>[];
     final vt = _profile['verifiedType'] as String?;
     final verified = (_profile['verified'] as bool?) ?? false;
+
+    // Owner
     if (vt == 'owner') {
       return const ['owner'];
     }
+
+    // Premium
+    if (_isPremiumActive()) {
+      list.add('premium');
+    }
+
+    // Verified
     if (verified && (vt == 'me' || vt == 'user')) {
       list.add(vt!);
     }
+
     return list;
   }
 
@@ -215,6 +239,8 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Widget _buildHeader(String email) {
     final avatar = profileState.avatar ?? 'man';
+    final isPremium = _isPremiumActive();
+
     return GlassCard(
       child: Column(
         children: [
@@ -228,6 +254,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   avatar: avatar,
                   size: R.s(context, 78),
                   photoBytes: profileState.photoBytes,
+                  showCrown: isPremium,
                 ),
                 Container(
                   margin: EdgeInsets.all(R.s(context, 4)),
@@ -416,11 +443,8 @@ class _AccountScreenState extends State<AccountScreen> {
         ornament: false,
         child: Row(
           children: [
-            Icon(
-              Icons.hourglass_top_rounded,
-              color: AppColors.gold,
-              size: R.s(context, 22),
-            ),
+            Icon(Icons.hourglass_top_rounded,
+                color: AppColors.gold, size: R.s(context, 22)),
             SizedBox(width: R.s(context, 10)),
             Expanded(
               child: Column(
@@ -466,11 +490,8 @@ class _AccountScreenState extends State<AccountScreen> {
                   color: AppColors.gold.withValues(alpha: 0.6),
                 ),
               ),
-              child: Icon(
-                Icons.verified_user_rounded,
-                color: AppColors.gold,
-                size: R.s(context, 20),
-              ),
+              child: Icon(Icons.verified_user_rounded,
+                  color: AppColors.gold, size: R.s(context, 20)),
             ),
             SizedBox(width: R.s(context, 10)),
             Expanded(
@@ -498,11 +519,9 @@ class _AccountScreenState extends State<AccountScreen> {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: R.s(context, 18),
-              color: AppColors.softGold.withValues(alpha: 0.7),
-            ),
+            Icon(Icons.chevron_right_rounded,
+                size: R.s(context, 18),
+                color: AppColors.softGold.withValues(alpha: 0.7)),
           ],
         ),
       ),
