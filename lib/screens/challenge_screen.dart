@@ -7,6 +7,7 @@ import '../services/user_service.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/rewarded_ad_card.dart';
 import 'challenge_play_screen.dart';
 import 'challenge_result_screen.dart';
 import '../services/auth_service.dart';
@@ -83,7 +84,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
     final correct = result;
     final gained = correct * 20;
 
-    // هل لعب أمس؟ لحساب streak
     final oldProgress = await userService.loadProgress('challenges');
     final lastPlayed = oldProgress['lastPlayedDate'] as String?;
     final oldStats = await userService.loadStats();
@@ -97,7 +97,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
     final oldCompleted =
         (oldProgress['totalCompleted'] as num?)?.toInt() ?? 0;
 
-    // 1) حفظ تقدم التحديات
     await userService.saveProgress('challenges', {
       'lastPlayedDate': _todayKey(),
       'todayPoints': gained,
@@ -105,10 +104,8 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       'totalCompleted': oldCompleted + 1,
     });
 
-    // 2) إضافة النقاط
     await userService.addPoints(gained);
 
-    // 3) تحديث الإحصائيات
     await userService.incrementStats({
       'challengesCompleted': 1,
       'totalCorrectAnswers': correct,
@@ -117,7 +114,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
 
     if (!mounted) return;
 
-    // 4) عرض شاشة النتائج
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ChallengeResultScreen(
@@ -191,37 +187,37 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       return;
     }
 
-    // ✅ حسابات المالك: الكوبون غير محدود
-final isOwner = authService.isOwner;
+    final isOwner = authService.isOwner;
 
-if (!isOwner) {
-  // المستخدم العادي: مرة واحدة فقط
-  final alreadyUsed = await userService.hasUsedCoupon(upper);
-  if (alreadyUsed) {
+    if (!isOwner) {
+      final alreadyUsed = await userService.hasUsedCoupon(upper);
+      if (alreadyUsed) {
+        if (!mounted) return;
+        showAuthMessage(context, appState.tr('couponAlreadyUsed'),
+            error: true);
+        return;
+      }
+    }
+
+    await userService.addPoints(1000);
+    if (!isOwner) {
+      await userService.markCouponUsed(upper);
+    }
     if (!mounted) return;
-    showAuthMessage(context, appState.tr('couponAlreadyUsed'),
-        error: true);
-    return;
-  }
-}
-
-await userService.addPoints(1000);
-if (!isOwner) {
-  await userService.markCouponUsed(upper);
-}
-if (!mounted) return;
-showAuthMessage(
-  context,
-  isOwner ? 'تم! +1000 نقطة (غير محدود) 🎉' : appState.tr('couponSuccess'),
-);
-await _load();
+    showAuthMessage(
+      context,
+      isOwner
+          ? 'تم! +1000 نقطة (غير محدود) 🎉'
+          : appState.tr('couponSuccess'),
+    );
+    await _load();
   }
 
   Future<void> _openStore() async {
-  await Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => const StoreScreen()),
-  );
-  await _load();
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const StoreScreen()),
+    );
+    await _load();
   }
 
   @override
@@ -331,6 +327,12 @@ await _load();
                 ),
               ),
             const SizedBox(height: 16),
+
+            // ═══════════════════════════════════════════════
+            // ✅ بطاقة الإعلانات المكافئة (50 نقطة/إعلان)
+            // ═══════════════════════════════════════════════
+            RewardedAdCard(onRewardEarned: _load),
+
             GlassCard(
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
