@@ -135,13 +135,55 @@ String _pt(String key) {
 }
 
 // ===== الميزات المعروضة (6 فقط) =====
-const List<Map<String, String>> _promoFeatures = [
-  {'ar': '👑 تاج متحرك فوق اسمك', 'en': '👑 Animated crown above your name'},
-  {'ar': '🚫 بدون إعلانات', 'en': '🚫 No ads'},
-  {'ar': '💰 10,000 نقطة شهرياً', 'en': '💰 10,000 points monthly'},
-  {'ar': '🎨 كل الخلفيات والثيمات مجانية', 'en': '🎨 All backgrounds & themes free'},
-  {'ar': '👁️ رؤية الحسابات الخاصة', 'en': '👁️ View private accounts'},
-  {'ar': '⚡ أولوية في الـ Feed', 'en': '⚡ Priority in feed'},
+class _PromoFeature {
+  final IconData icon;
+  final List<String>? assetIcons;
+  final String textAr;
+  final String textEn;
+
+  const _PromoFeature({
+    required this.icon,
+    required this.textAr,
+    required this.textEn,
+    this.assetIcons,
+  });
+}
+
+const List<_PromoFeature> _promoFeatures = [
+  _PromoFeature(
+    icon: Icons.workspace_premium_rounded,
+    textAr: 'تاج متحرك فوق اسمك',
+    textEn: 'Animated crown above your name',
+  ),
+  _PromoFeature(
+    icon: Icons.verified_rounded,
+    assetIcons: [
+      'assets/icons/premium.png',
+      'assets/icons/true.me.png',
+    ],
+    textAr: 'شارات مميزة',
+    textEn: 'Premium badges',
+  ),
+  _PromoFeature(
+    icon: Icons.block_rounded,
+    textAr: 'بدون إعلانات',
+    textEn: 'No ads',
+  ),
+  _PromoFeature(
+    icon: Icons.stars_rounded,
+    textAr: '10,000 نقطة شهرياً',
+    textEn: '10,000 points monthly',
+  ),
+  _PromoFeature(
+    icon: Icons.palette_rounded,
+    textAr: 'كل الخلفيات والثيمات مجانية',
+    textEn: 'All backgrounds & themes free',
+  ),
+  _PromoFeature(
+    icon: Icons.visibility_rounded,
+    textAr: 'رؤية الحسابات الخاصة',
+    textEn: 'View private accounts',
+  ),
 ];
 
 /// يعرض نافذة Premium Promo
@@ -330,64 +372,95 @@ class _PremiumPromoDialogState extends State<_PremiumPromoDialog> {
   // Features
   // ============================================================
   Widget _buildFeatures(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(R.s(context, 12)),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(R.s(context, 14)),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.star_rounded,
+  return Container(
+    padding: EdgeInsets.all(R.s(context, 12)),
+    decoration: BoxDecoration(
+      color: Colors.black.withValues(alpha: 0.25),
+      borderRadius: BorderRadius.circular(R.s(context, 14)),
+      border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.star_rounded,
+              color: AppColors.gold,
+              size: R.s(context, 16),
+            ),
+            SizedBox(width: R.s(context, 6)),
+            Text(
+              _pt('features'),
+              style: TextStyle(
+                color: AppColors.gold,
+                fontSize: R.f(context, 12),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: R.s(context, 10)),
+        for (int i = 0; i < _promoFeatures.length; i++) ...[
+          if (i > 0) SizedBox(height: R.s(context, 6)),
+          _buildFeatureRow(context, _promoFeatures[i]),
+        ],
+      ],
+    ),
+  );
+}
+
+Widget _buildFeatureRow(BuildContext context, _PromoFeature feature) {
+  return Row(
+    children: [
+      SizedBox(
+        width: R.s(context, 26),
+        height: R.s(context, 20),
+        child: feature.assetIcons != null
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (int i = 0; i < feature.assetIcons!.length; i++) ...[
+                    if (i > 0) SizedBox(width: R.s(context, 2)),
+                    ColorFiltered(
+                      colorFilter: const ColorFilter.mode(
+                        AppColors.gold,
+                        BlendMode.srcIn,
+                      ),
+                      child: Image.asset(
+                        feature.assetIcons![i],
+                        width: R.s(context, 16),
+                        height: R.s(context, 16),
+                        errorBuilder: (_, _, _) => Icon(
+                          feature.icon,
+                          color: AppColors.gold,
+                          size: R.s(context, 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              )
+            : Icon(
+                feature.icon,
                 color: AppColors.gold,
                 size: R.s(context, 16),
               ),
-              SizedBox(width: R.s(context, 6)),
-              Text(
-                _pt('features'),
-                style: TextStyle(
-                  color: AppColors.gold,
-                  fontSize: R.f(context, 12),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: R.s(context, 10)),
-          for (int i = 0; i < _promoFeatures.length; i++) ...[
-            if (i > 0) SizedBox(height: R.s(context, 6)),
-            Row(
-              children: [
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.gold,
-                  size: R.s(context, 15),
-                ),
-                SizedBox(width: R.s(context, 8)),
-                Expanded(
-                  child: Text(
-                    appState.isArabic
-                        ? _promoFeatures[i]['ar']!
-                        : _promoFeatures[i]['en']!,
-                    style: TextStyle(
-                      color: AppColors.cream,
-                      fontSize: R.f(context, 12),
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
       ),
-    );
-  }
+      SizedBox(width: R.s(context, 8)),
+      Expanded(
+        child: Text(
+          appState.isArabic ? feature.textAr : feature.textEn,
+          style: TextStyle(
+            color: AppColors.cream,
+            fontSize: R.f(context, 12),
+            height: 1.4,
+          ),
+        ),
+      ),
+    ],
+  );
+}
 
   // ============================================================
   // Plans
