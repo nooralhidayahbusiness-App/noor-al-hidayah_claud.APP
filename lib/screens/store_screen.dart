@@ -11,6 +11,7 @@ import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
 import '../widgets/theme_preview.dart';
 import 'my_purchases_screen.dart';
+import 'premium_screen.dart';
 
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
@@ -209,6 +210,12 @@ class _StoreScreenState extends State<StoreScreen>
     await _load();
   }
 
+  Future<void> _openPremium() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PremiumScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -245,6 +252,14 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               ),
               const SizedBox(height: 12),
+
+              // ===== بطاقة Premium =====
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _PremiumBanner(onTap: _openPremium),
+              ),
+              const SizedBox(height: 12),
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: GlassCard(
@@ -336,6 +351,141 @@ class _StoreScreenState extends State<StoreScreen>
         nameAr: appState.isArabic,
         onTap: () => _onItemTap(items[i]),
       ),
+    );
+  }
+}
+
+// ============================================================
+// _PremiumBanner — بطاقة Premium في أعلى المتجر
+// ============================================================
+class _PremiumBanner extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _PremiumBanner({required this.onTap});
+
+  @override
+  State<_PremiumBanner> createState() => _PremiumBannerState();
+}
+
+class _PremiumBannerState extends State<_PremiumBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2000),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = appState.isArabic;
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, child) {
+        final t = _pulse.value;
+        return GestureDetector(
+          onTap: widget.onTap,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  AppColors.gold.withValues(alpha: 0.25 + 0.08 * t),
+                  AppColors.deepGreen.withValues(alpha: 0.9),
+                ],
+              ),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.6 + 0.3 * t),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gold.withValues(alpha: 0.2 + 0.2 * t),
+                  blurRadius: 14 + 6 * t,
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.gold.withValues(alpha: 0.2),
+                    border: Border.all(color: AppColors.gold, width: 1.5),
+                  ),
+                  child: const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppColors.gold,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            ar ? 'Premium' : 'Premium',
+                            style: const TextStyle(
+                              color: AppColors.softGold,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.gold,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'NEW',
+                              style: TextStyle(
+                                color: AppColors.deepGreen,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        ar
+                            ? 'ميزات حصرية + دعم مباشر للتطوير'
+                            : 'Exclusive features + direct support',
+                        style: TextStyle(
+                          color: AppColors.cream.withValues(alpha: 0.75),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.gold.withValues(alpha: 0.8),
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
