@@ -9,6 +9,7 @@ import '../models/user_brief.dart';
 import '../services/chat_service.dart';
 import '../services/community_service.dart';
 import '../services/follow_service.dart';
+import '../widgets/animated_entry.dart';
 import '../widgets/post_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/verified_badge.dart';
@@ -111,25 +112,56 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  // ============================================================
+  // Content — مع AnimatedEntry متدرّج
+  // ============================================================
   Widget _buildContent(BuildContext context, UserBrief user) {
     return ListView(
       padding: EdgeInsets.only(bottom: R.s(context, 24)),
       children: [
         SizedBox(height: R.s(context, 18)),
-        _buildAvatarSection(context, user),
+
+        AnimatedEntry(
+          child: _buildAvatarSection(context, user),
+        ),
         SizedBox(height: R.s(context, 12)),
-        _buildNameSection(context, user),
+
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 80),
+          child: _buildNameSection(context, user),
+        ),
+
         if (user.bio.trim().isNotEmpty) ...[
           SizedBox(height: R.s(context, 8)),
-          _buildBioSection(context, user.bio.trim()),
+          AnimatedEntry(
+            delay: const Duration(milliseconds: 140),
+            child: _buildBioSection(context, user.bio.trim()),
+          ),
         ],
+
         SizedBox(height: R.s(context, 14)),
-        _buildActionButton(context, user),
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 200),
+          child: _buildActionButton(context, user),
+        ),
         SizedBox(height: R.s(context, 16)),
-        _buildCountsRow(context, user),
+
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 260),
+          child: _buildCountsRow(context, user),
+        ),
         SizedBox(height: R.s(context, 20)),
-        _buildDivider(context),
-        _buildPostsHeader(context),
+
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 320),
+          child: _buildDivider(context),
+        ),
+
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 380),
+          child: _buildPostsHeader(context),
+        ),
+
         _buildPostsList(context, user),
       ],
     );
@@ -347,7 +379,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     final chatId = ChatService.chatIdFor(_currentUid!, user.uid);
 
-    // 1) هل Chat موجود؟ (آمن)
     bool hasChat = false;
     try {
       final existing = await chatService.chatStream(chatId).first;
@@ -371,7 +402,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return;
     }
 
-    // 2) عام → افتح مباشرة
     if (user.isPublic) {
       try {
         await chatService.getOrCreateChat(
@@ -395,7 +425,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return;
     }
 
-    // 3) خاص → طلب
     try {
       final hasPending = await chatService.hasPendingRequest(
         fromUid: _currentUid!,
@@ -523,6 +552,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             return PostCard(
               post: post,
               currentUid: _currentUid ?? '',
+              animationIndex: i,
               onTap: () => _openPostDetail(post),
               onLike: () => _onLike(post),
               onComment: () => _openPostDetail(post),
