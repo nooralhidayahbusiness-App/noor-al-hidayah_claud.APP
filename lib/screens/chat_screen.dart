@@ -1,4 +1,4 @@
-
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -10,6 +10,7 @@ import '../models/chat_message.dart';
 import '../models/user_brief.dart';
 import '../services/chat_service.dart';
 import '../services/follow_service.dart';
+import '../widgets/animated_entry.dart';
 
 // ============ ترجمات ============
 const Map<String, Map<String, String>> _chatTr = {
@@ -111,7 +112,6 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // علّم الرسائل كمقروءة عند الفتح
     WidgetsBinding.instance.addPostFrameCallback((_) {
       chatService.markAsRead(chatId: widget.chatId, myUid: widget.myUid);
     });
@@ -215,21 +215,15 @@ class _ChatScreenState extends State<ChatScreen> {
             _MiniAvatar(avatar: avatar, photoBytes: user?.photoBytes),
             const SizedBox(width: 10),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    name.isEmpty ? _ct('userNotFound') : name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: AppColors.softGold,
-                      fontSize: R.f(context, 15),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              child: Text(
+                name.isEmpty ? _ct('userNotFound') : name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: AppColors.softGold,
+                  fontSize: R.f(context, 15),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -254,7 +248,6 @@ class _ChatScreenState extends State<ChatScreen> {
           return _buildEmpty(context);
         }
 
-        // علّم كمقروء عند وصول رسالة جديدة
         WidgetsBinding.instance.addPostFrameCallback((_) {
           chatService.markAsRead(
             chatId: widget.chatId,
@@ -276,14 +269,26 @@ class _ChatScreenState extends State<ChatScreen> {
             final prev = i > 0 ? messages[i - 1] : null;
             final showDate = _shouldShowDate(prev, m);
 
+            // أنيميشن للرسائل الجديدة (آخر 5)
+            final isRecent = i >= messages.length - 5;
+
             return Column(
               children: [
                 if (showDate) _DateLabel(date: m.createdAt),
-                _MessageBubble(
-                  message: m,
-                  isMine: isMine,
-                  showTail: _shouldShowTail(messages, i, isMine),
-                ),
+                isRecent
+                    ? AnimatedEntry(
+                        key: ValueKey('m_${m.id}'),
+                        slideOffset: 8,
+                        duration: const Duration(milliseconds: 300),
+                        child: _MessageBubble(
+                          message: m,
+                          isMine: isMine,
+                        ),
+                      )
+                    : _MessageBubble(
+                        message: m,
+                        isMine: isMine,
+                      ),
               ],
             );
           },
@@ -299,17 +304,35 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              color: AppColors.gold.withValues(alpha: 0.5),
-              size: R.s(context, 48),
+            Container(
+              padding: EdgeInsets.all(R.s(context, 18)),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.green.withValues(alpha: 0.5),
+                border: Border.all(
+                  color: AppColors.gold.withValues(alpha: 0.4),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.gold.withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.chat_bubble_outline,
+                color: AppColors.gold,
+                size: R.s(context, 42),
+              ),
             ),
-            SizedBox(height: R.s(context, 12)),
+            SizedBox(height: R.s(context, 14)),
             Text(
               _ct('empty'),
               style: TextStyle(
-                color: AppColors.cream.withValues(alpha: 0.6),
-                fontSize: R.f(context, 13),
+                color: AppColors.softGold,
+                fontSize: R.f(context, 15),
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -324,7 +347,10 @@ class _ChatScreenState extends State<ChatScreen> {
       decoration: BoxDecoration(
         color: AppColors.green.withValues(alpha: 0.95),
         border: Border(
-          top: BorderSide(color: AppColors.gold.withValues(alpha: 0.3)),
+          top: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.35),
+            width: 1,
+          ),
         ),
       ),
       child: Row(
@@ -385,8 +411,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.gold.withValues(alpha: 0.4),
-                    blurRadius: 8,
+                    color: AppColors.gold.withValues(alpha: 0.45),
+                    blurRadius: 10,
+                    spreadRadius: 0,
                   ),
                 ],
               ),
@@ -410,9 +437,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // ============================================================
-  // Helpers
-  // ============================================================
   static bool _shouldShowDate(ChatMessage? prev, ChatMessage curr) {
     if (prev == null) return true;
     final pd = DateTime(
@@ -421,27 +445,18 @@ class _ChatScreenState extends State<ChatScreen> {
         curr.createdAt.year, curr.createdAt.month, curr.createdAt.day);
     return pd != cd;
   }
-
-  static bool _shouldShowTail(
-      List<ChatMessage> msgs, int i, bool isMine) {
-    if (i == msgs.length - 1) return true;
-    final next = msgs[i + 1];
-    return next.senderUid != msgs[i].senderUid;
-  }
 }
 
 // ============================================================
-// _MessageBubble
+// _MessageBubble — فقاعة أنيقة مع زوايا ذكية
 // ============================================================
 class _MessageBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isMine;
-  final bool showTail;
 
   const _MessageBubble({
     required this.message,
     required this.isMine,
-    required this.showTail,
   });
 
   @override
@@ -462,7 +477,7 @@ class _MessageBubble extends StatelessWidget {
               ),
               padding: EdgeInsets.symmetric(
                 horizontal: R.s(context, 12),
-                vertical: R.s(context, 8),
+                vertical: R.s(context, 9),
               ),
               decoration: BoxDecoration(
                 gradient: isMine
@@ -486,8 +501,17 @@ class _MessageBubble extends StatelessWidget {
                 border: isMine
                     ? null
                     : Border.all(
-                        color: AppColors.gold.withValues(alpha: 0.3),
+                        color: AppColors.gold.withValues(alpha: 0.35),
                       ),
+                boxShadow: isMine
+                    ? [
+                        BoxShadow(
+                          color: AppColors.gold.withValues(alpha: 0.25),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
               child: Text(
                 message.text,
@@ -508,7 +532,7 @@ class _MessageBubble extends StatelessWidget {
 }
 
 // ============================================================
-// _DateLabel
+// _DateLabel — فاصل التاريخ
 // ============================================================
 class _DateLabel extends StatelessWidget {
   final DateTime date;
@@ -535,17 +559,20 @@ class _DateLabel extends StatelessWidget {
       child: Center(
         child: Container(
           padding: EdgeInsets.symmetric(
-            horizontal: R.s(context, 12),
-            vertical: R.s(context, 4),
+            horizontal: R.s(context, 14),
+            vertical: R.s(context, 5),
           ),
           decoration: BoxDecoration(
-            color: AppColors.green.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(R.s(context, 12)),
+            color: AppColors.green.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(R.s(context, 14)),
+            border: Border.all(
+              color: AppColors.gold.withValues(alpha: 0.25),
+            ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: AppColors.cream.withValues(alpha: 0.7),
+              color: AppColors.softGold.withValues(alpha: 0.9),
               fontSize: R.f(context, 11),
               fontWeight: FontWeight.w600,
             ),
@@ -557,7 +584,7 @@ class _DateLabel extends StatelessWidget {
 }
 
 // ============================================================
-// _MiniAvatar
+// _MiniAvatar — صورة صغيرة مع حلقة ذهبية
 // ============================================================
 class _MiniAvatar extends StatelessWidget {
   final String avatar;
@@ -600,7 +627,14 @@ class _MiniAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.gold, width: 1.5),
+        border: Border.all(color: AppColors.gold, width: 1.6),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gold.withValues(alpha: 0.35),
+            blurRadius: 6,
+            spreadRadius: 0,
+          ),
+        ],
       ),
       child: ClipOval(child: child),
     );
