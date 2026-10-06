@@ -9,6 +9,7 @@ import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
+import '../services/ads_service.dart';
 import '../services/chat_service.dart';
 import '../services/community_notification_service.dart';
 import '../services/notification_service.dart';
@@ -44,6 +45,10 @@ class _HomeShellState extends State<HomeShell> {
     profileState.load();
     reciterPrefs.load();
     themeState.load();
+
+    // ✅ تهيئة AdMob (مرة واحدة)
+    adsService.initialize();
+
     Future.delayed(const Duration(seconds: 3), () async {
       if (!mounted) return;
       final prayers = notificationService.collectPrayerTimes();
@@ -138,9 +143,6 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  // ============================================================
-  // زر الشات (chat.png ذهبي صغير + badge)
-  // ============================================================
   Widget _buildChatButton(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const SizedBox.shrink();
@@ -207,9 +209,6 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  // ============================================================
-  // زر الإشعارات
-  // ============================================================
   Widget _buildNotifButton(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const SizedBox.shrink();
