@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 
-/// شعار واحد — مع تلوين ذهبي تلقائي
-/// - 'owner' → owner.png (ذهبي مع لمعان)
-/// - 'premium' → premium.png (ذهبي مع لمعان)
-/// - 'me' → true.me.png (ذهبي مع لمعان)
+/// شعار واحد — مع تلوين ذهبي تلقائي + لمعان متحرك
+/// - 'owner' → owner.png (ذهبي + لمعان + نبض)
+/// - 'premium' → premium.png (ذهبي + لمعان + نبض)
+/// - 'me' → true.me.png (ذهبي + لمعان)
 /// - 'user' → true.users.png (ذهبي بدون لمعان)
 /// - 'none' → لا شيء
 class VerifiedBadge extends StatefulWidget {
@@ -23,15 +23,21 @@ class VerifiedBadge extends StatefulWidget {
 }
 
 class _VerifiedBadgeState extends State<VerifiedBadge>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _shimmer = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1800),
+    duration: const Duration(milliseconds: 2200),
   )..repeat();
+
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
     _shimmer.dispose();
+    _pulse.dispose();
     super.dispose();
   }
 
@@ -50,10 +56,13 @@ class _VerifiedBadgeState extends State<VerifiedBadge>
     }
   }
 
-  bool get _isSpecial =>
+  bool get _hasShimmer =>
       widget.type == 'owner' ||
       widget.type == 'premium' ||
       widget.type == 'me';
+
+  bool get _hasPulse =>
+      widget.type == 'owner' || widget.type == 'premium';
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +70,7 @@ class _VerifiedBadgeState extends State<VerifiedBadge>
       return const SizedBox.shrink();
     }
 
-    // ✅ صورة مُلوّنة ذهبياً
+    // 1) صورة ذهبية
     final goldIcon = ColorFiltered(
       colorFilter: const ColorFilter.mode(
         AppColors.gold,
@@ -80,9 +89,11 @@ class _VerifiedBadgeState extends State<VerifiedBadge>
       ),
     );
 
-    // ===== شعارات خاصة: لمعان متحرك =====
-    if (_isSpecial) {
-      return AnimatedBuilder(
+    Widget result = goldIcon;
+
+    // 2) لمعان (owner / premium / me)
+    if (_hasShimmer) {
+      result = AnimatedBuilder(
         animation: _shimmer,
         builder: (context, child) {
           final t = _shimmer.value;
@@ -94,7 +105,7 @@ class _VerifiedBadgeState extends State<VerifiedBadge>
                 end: Alignment(-1.0 + 2 * t + 1, 0.3),
                 colors: const [
                   Color(0x00FFFFFF),
-                  Color(0xCCFFFFFF),
+                  Color(0xDDFFFFFF),
                   Color(0x00FFFFFF),
                 ],
                 stops: const [0.35, 0.5, 0.65],
@@ -103,10 +114,26 @@ class _VerifiedBadgeState extends State<VerifiedBadge>
             child: child,
           );
         },
-        child: goldIcon,
+        child: result,
       );
     }
 
-    return goldIcon;
+    // 3) نبض خفيف (owner / premium)
+    if (_hasPulse) {
+      result = AnimatedBuilder(
+        animation: _pulse,
+        builder: (context, child) {
+          final t = _pulse.value;
+          final scale = 1.0 + 0.08 * t;
+          return Transform.scale(
+            scale: scale,
+            child: child,
+          );
+        },
+        child: result,
+      );
+    }
+
+    return result;
   }
 }
