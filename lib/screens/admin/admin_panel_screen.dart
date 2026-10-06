@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/responsive.dart';
 import '../../core/theme.dart';
+import '../../services/premium_service.dart';
 import '../../services/verification_service.dart';
 import '../../services/youtube_service.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/themed_background.dart';
 import 'add_video_screen.dart';
 import 'photo_requests_screen.dart';
+import 'premium_requests_screen.dart';
 import 'verification_requests_screen.dart';
 
 // ============ ترجمات ============
@@ -17,6 +19,7 @@ const Map<String, Map<String, String>> _apTr = {
     'title': 'لوحة التحكم',
     'requestsVerify': 'طلبات التوثيق',
     'requestsPhoto': 'طلبات تغيير الصورة',
+    'requestsPremium': 'طلبات Premium',
     'addVideo': 'إضافة فيديو للقناة',
     'pending': 'قيد الانتظار',
     'noRequests': 'لا توجد طلبات حالياً',
@@ -27,6 +30,7 @@ const Map<String, Map<String, String>> _apTr = {
     'title': 'Admin Panel',
     'requestsVerify': 'Verification Requests',
     'requestsPhoto': 'Photo Change Requests',
+    'requestsPremium': 'Premium Requests',
     'addVideo': 'Add Video to Channel',
     'pending': 'pending',
     'noRequests': 'No pending requests',
@@ -37,6 +41,7 @@ const Map<String, Map<String, String>> _apTr = {
     'title': 'Panneau Admin',
     'requestsVerify': 'Demandes de vérification',
     'requestsPhoto': 'Demandes de changement de photo',
+    'requestsPremium': 'Demandes Premium',
     'addVideo': 'Ajouter une vidéo',
     'pending': 'en attente',
     'noRequests': 'Aucune demande',
@@ -47,6 +52,7 @@ const Map<String, Map<String, String>> _apTr = {
     'title': 'ایڈمن پینل',
     'requestsVerify': 'تصدیق کی درخواستیں',
     'requestsPhoto': 'تصویر تبدیلی کی درخواستیں',
+    'requestsPremium': 'پریمیم درخواستیں',
     'addVideo': 'چینل میں ویڈیو شامل کریں',
     'pending': 'زیر التواء',
     'noRequests': 'کوئی درخواست نہیں',
@@ -57,6 +63,7 @@ const Map<String, Map<String, String>> _apTr = {
     'title': 'एडमिन प्यानल',
     'requestsVerify': 'प्रमाणीकरण अनुरोधहरू',
     'requestsPhoto': 'फोटो परिवर्तन अनुरोधहरू',
+    'requestsPremium': 'प्रिमियम अनुरोधहरू',
     'addVideo': 'च्यानलमा भिडियो थप्नुहोस्',
     'pending': 'पर्खाइमा',
     'noRequests': 'कुनै अनुरोध छैन',
@@ -67,6 +74,7 @@ const Map<String, Map<String, String>> _apTr = {
     'title': 'Panel Admin',
     'requestsVerify': 'Permintaan Verifikasi',
     'requestsPhoto': 'Permintaan Ubah Foto',
+    'requestsPremium': 'Permintaan Premium',
     'addVideo': 'Tambah Video',
     'pending': 'tertunda',
     'noRequests': 'Tidak ada permintaan',
@@ -77,6 +85,7 @@ const Map<String, Map<String, String>> _apTr = {
     'title': 'Panel Admin',
     'requestsVerify': 'Permintaan Pengesahan',
     'requestsPhoto': 'Permintaan Tukar Foto',
+    'requestsPremium': 'Permintaan Premium',
     'addVideo': 'Tambah Video',
     'pending': 'tertunda',
     'noRequests': 'Tiada permintaan',
@@ -100,6 +109,7 @@ class AdminPanelScreen extends StatefulWidget {
 class _AdminPanelScreenState extends State<AdminPanelScreen> {
   int _pendingVerifications = 0;
   int _pendingPhotoUpdates = 0;
+  int _pendingPremium = 0;
   int _videosCount = 0;
   bool _loading = true;
 
@@ -114,13 +124,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     final results = await Future.wait([
       verificationService.pendingCount(),
       verificationService.pendingPhotoUpdatesCount(),
+      premiumService.pendingCount(),
       youtubeService.count(),
     ]);
     if (mounted) {
       setState(() {
         _pendingVerifications = results[0];
         _pendingPhotoUpdates = results[1];
-        _videosCount = results[2];
+        _pendingPremium = results[2];
+        _videosCount = results[3];
         _loading = false;
       });
     }
@@ -139,6 +151,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const PhotoRequestsScreen(),
+      ),
+    );
+    await _load();
+  }
+
+  Future<void> _openPremiumRequests() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const PremiumRequestsScreen(),
       ),
     );
     await _load();
@@ -228,6 +249,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                                     ),
                                   ),
                                   SizedBox(height: R.s(context, 14)),
+
+                                  // ===== 1) طلبات التوثيق =====
                                   _AdminCard(
                                     icon: Icons.verified_user_rounded,
                                     title: _ap('requestsVerify'),
@@ -238,6 +261,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                                     onTap: _openRequests,
                                   ),
                                   SizedBox(height: R.s(context, 10)),
+
+                                  // ===== 2) طلبات تغيير الصورة =====
                                   _AdminCard(
                                     icon: Icons.photo_camera_back_rounded,
                                     title: _ap('requestsPhoto'),
@@ -248,6 +273,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                                     onTap: _openPhotoRequests,
                                   ),
                                   SizedBox(height: R.s(context, 10)),
+
+                                  // ===== 3) طلبات Premium =====
+                                  _AdminCard(
+                                    icon: Icons.workspace_premium_rounded,
+                                    title: _ap('requestsPremium'),
+                                    subtitle: _pendingPremium > 0
+                                        ? '$_pendingPremium ${_ap('pending')}'
+                                        : _ap('noRequests'),
+                                    badge: _pendingPremium,
+                                    onTap: _openPremiumRequests,
+                                  ),
+                                  SizedBox(height: R.s(context, 10)),
+
+                                  // ===== 4) إضافة فيديو =====
                                   _AdminCard(
                                     icon: Icons.play_circle_fill_rounded,
                                     title: _ap('addVideo'),
