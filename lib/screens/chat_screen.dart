@@ -1,4 +1,4 @@
-
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
+import '../models/chat.dart';
 import '../models/chat_message.dart';
 import '../models/user_brief.dart';
 import '../services/chat_service.dart';
 import '../services/follow_service.dart';
 import '../widgets/animated_entry.dart';
+import '../widgets/islamic_empty_state.dart';
 
 // ============ ترجمات ============
 const Map<String, Map<String, String>> _chatTr = {
@@ -141,7 +143,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (_scrollCtrl.hasClients) {
             _scrollCtrl.animateTo(
               _scrollCtrl.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 350),
               curve: Curves.easeOut,
             );
           }
@@ -215,15 +217,21 @@ class _ChatScreenState extends State<ChatScreen> {
             _MiniAvatar(avatar: avatar, photoBytes: user?.photoBytes),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                name.isEmpty ? _ct('userNotFound') : name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: AppColors.softGold,
-                  fontSize: R.f(context, 15),
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    name.isEmpty ? _ct('userNotFound') : name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.softGold,
+                      fontSize: R.f(context, 15),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -245,7 +253,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
         final messages = snap.data ?? [];
         if (messages.isEmpty) {
-          return _buildEmpty(context);
+          return IslamicEmptyState(
+            icon: Icons.chat_bubble_outline,
+            title: _ct('empty'),
+            message: '',
+          );
         }
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -269,75 +281,22 @@ class _ChatScreenState extends State<ChatScreen> {
             final prev = i > 0 ? messages[i - 1] : null;
             final showDate = _shouldShowDate(prev, m);
 
-            // أنيميشن للرسائل الجديدة (آخر 5)
-            final isRecent = i >= messages.length - 5;
-
             return Column(
               children: [
                 if (showDate) _DateLabel(date: m.createdAt),
-                isRecent
-                    ? AnimatedEntry(
-                        key: ValueKey('m_${m.id}'),
-                        slideOffset: 8,
-                        duration: const Duration(milliseconds: 300),
-                        child: _MessageBubble(
-                          message: m,
-                          isMine: isMine,
-                        ),
-                      )
-                    : _MessageBubble(
-                        message: m,
-                        isMine: isMine,
-                      ),
+                AnimatedEntry(
+                  duration: const Duration(milliseconds: 250),
+                  slideOffset: 8,
+                  child: _MessageBubble(
+                    message: m,
+                    isMine: isMine,
+                  ),
+                ),
               ],
             );
           },
         );
       },
-    );
-  }
-
-  Widget _buildEmpty(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(R.s(context, 24)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(R.s(context, 18)),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.green.withValues(alpha: 0.5),
-                border: Border.all(
-                  color: AppColors.gold.withValues(alpha: 0.4),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.gold.withValues(alpha: 0.25),
-                    blurRadius: 16,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.chat_bubble_outline,
-                color: AppColors.gold,
-                size: R.s(context, 42),
-              ),
-            ),
-            SizedBox(height: R.s(context, 14)),
-            Text(
-              _ct('empty'),
-              style: TextStyle(
-                color: AppColors.softGold,
-                fontSize: R.f(context, 15),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -347,10 +306,7 @@ class _ChatScreenState extends State<ChatScreen> {
       decoration: BoxDecoration(
         color: AppColors.green.withValues(alpha: 0.95),
         border: Border(
-          top: BorderSide(
-            color: AppColors.gold.withValues(alpha: 0.35),
-            width: 1,
-          ),
+          top: BorderSide(color: AppColors.gold.withValues(alpha: 0.3)),
         ),
       ),
       child: Row(
@@ -413,7 +369,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   BoxShadow(
                     color: AppColors.gold.withValues(alpha: 0.45),
                     blurRadius: 10,
-                    spreadRadius: 0,
                   ),
                 ],
               ),
@@ -448,7 +403,7 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 // ============================================================
-// _MessageBubble — فقاعة أنيقة مع زوايا ذكية
+// _MessageBubble — فقاعة أنيقة مع tail
 // ============================================================
 class _MessageBubble extends StatelessWidget {
   final ChatMessage message;
@@ -462,10 +417,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        top: R.s(context, 2),
-        bottom: R.s(context, 2),
-      ),
+      padding: EdgeInsets.symmetric(vertical: R.s(context, 3)),
       child: Row(
         mainAxisAlignment:
             isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -476,8 +428,8 @@ class _MessageBubble extends StatelessWidget {
                 maxWidth: MediaQuery.of(context).size.width * 0.75,
               ),
               padding: EdgeInsets.symmetric(
-                horizontal: R.s(context, 12),
-                vertical: R.s(context, 9),
+                horizontal: R.s(context, 14),
+                vertical: R.s(context, 10),
               ),
               decoration: BoxDecoration(
                 gradient: isMine
@@ -487,28 +439,31 @@ class _MessageBubble extends StatelessWidget {
                         end: Alignment.bottomLeft,
                       )
                     : null,
-                color: isMine ? null : AppColors.green,
+                color: isMine
+                    ? null
+                    : AppColors.green.withValues(alpha: 0.85),
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(R.s(context, 16)),
-                  topRight: Radius.circular(R.s(context, 16)),
+                  topLeft: Radius.circular(R.s(context, 18)),
+                  topRight: Radius.circular(R.s(context, 18)),
                   bottomLeft: Radius.circular(
-                    isMine ? R.s(context, 16) : R.s(context, 4),
+                    isMine ? R.s(context, 18) : R.s(context, 4),
                   ),
                   bottomRight: Radius.circular(
-                    isMine ? R.s(context, 4) : R.s(context, 16),
+                    isMine ? R.s(context, 4) : R.s(context, 18),
                   ),
                 ),
                 border: isMine
                     ? null
                     : Border.all(
-                        color: AppColors.gold.withValues(alpha: 0.35),
+                        color: AppColors.gold.withValues(alpha: 0.25),
                       ),
                 boxShadow: isMine
                     ? [
                         BoxShadow(
-                          color: AppColors.gold.withValues(alpha: 0.25),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+                          color:
+                              AppColors.gold.withValues(alpha: 0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
                       ]
                     : null,
@@ -519,8 +474,9 @@ class _MessageBubble extends StatelessWidget {
                   color:
                       isMine ? AppColors.deepGreen : AppColors.cream,
                   fontSize: R.f(context, 14),
-                  height: 1.4,
-                  fontWeight: isMine ? FontWeight.w600 : FontWeight.w500,
+                  height: 1.45,
+                  fontWeight:
+                      isMine ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
             ),
@@ -555,36 +511,51 @@ class _DateLabel extends StatelessWidget {
     }
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: R.s(context, 10)),
-      child: Center(
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: R.s(context, 14),
-            vertical: R.s(context, 5),
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.green.withValues(alpha: 0.65),
-            borderRadius: BorderRadius.circular(R.s(context, 14)),
-            border: Border.all(
-              color: AppColors.gold.withValues(alpha: 0.25),
+      padding: EdgeInsets.symmetric(vertical: R.s(context, 12)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Divider(
+              color: AppColors.gold.withValues(alpha: 0.2),
             ),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: AppColors.softGold.withValues(alpha: 0.9),
-              fontSize: R.f(context, 11),
-              fontWeight: FontWeight.w600,
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: R.s(context, 10)),
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: R.s(context, 12),
+                vertical: R.s(context, 4),
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.green.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(R.s(context, 12)),
+                border: Border.all(
+                  color: AppColors.gold.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: AppColors.softGold.withValues(alpha: 0.9),
+                  fontSize: R.f(context, 11),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
-        ),
+          Expanded(
+            child: Divider(
+              color: AppColors.gold.withValues(alpha: 0.2),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 // ============================================================
-// _MiniAvatar — صورة صغيرة مع حلقة ذهبية
+// _MiniAvatar
 // ============================================================
 class _MiniAvatar extends StatelessWidget {
   final String avatar;
@@ -594,7 +565,7 @@ class _MiniAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = R.s(context, 38);
+    final size = R.s(context, 40);
     final fallback = avatar == 'woman'
         ? 'assets/images/hijab.png'
         : 'assets/images/arabian.png';
@@ -630,9 +601,8 @@ class _MiniAvatar extends StatelessWidget {
         border: Border.all(color: AppColors.gold, width: 1.6),
         boxShadow: [
           BoxShadow(
-            color: AppColors.gold.withValues(alpha: 0.35),
-            blurRadius: 6,
-            spreadRadius: 0,
+            color: AppColors.gold.withValues(alpha: 0.3),
+            blurRadius: 8,
           ),
         ],
       ),
