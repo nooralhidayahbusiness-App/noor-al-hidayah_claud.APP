@@ -227,6 +227,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  // ============================================================
+  // Action Buttons: [💬] [متابعة/وثّق]
+  // ============================================================
   Widget _buildActionButton(BuildContext context, UserBrief user) {
     if (_isOwnProfile) {
       if (user.verified) return const SizedBox.shrink();
@@ -338,13 +341,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (_currentUid == null) return;
 
     if (!isFollowing) {
-      _showSnack('يجب متابعة المستخدم أولاً لتتمكن من المحادثة');
+      _showSnack(appState.tr('cMustFollowToChat'));
       return;
     }
 
     final chatId = ChatService.chatIdFor(_currentUid!, user.uid);
 
-    // 1) فحص Chat موجود (آمن)
+    // 1) هل Chat موجود؟ (آمن)
     bool hasChat = false;
     try {
       final existing = await chatService.chatStream(chatId).first;
@@ -387,7 +390,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
         );
       } catch (e) {
-        _showSnack('فشل فتح المحادثة: $e');
+        _showSnack('${appState.tr('cChatOpenFailed')}: $e');
       }
       return;
     }
@@ -399,7 +402,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         toUid: user.uid,
       );
       if (hasPending) {
-        _showSnack('تم إرسال طلب الرسالة مسبقاً، في انتظار القبول');
+        _showSnack(appState.tr('cMessageRequestAlreadySent'));
         return;
       }
 
@@ -407,12 +410,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         fromUid: _currentUid!,
         toUid: user.uid,
       );
-      _showSnack('تم إرسال طلب الرسالة ✅');
+      _showSnack(appState.tr('cMessageRequestSent'));
     } catch (e) {
-      _showSnack('فشل: $e');
+      _showSnack('${appState.tr('cOperationFailed')}: $e');
     }
   }
 
+  // ============================================================
+  // Counts Row
+  // ============================================================
   Widget _buildCountsRow(BuildContext context, UserBrief user) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -693,7 +699,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 }
 
 // ============================================================
-// _ChatButton — chat.png ذهبي صغير + خلفية شفافة
+// _ChatButton — chat.png ذهبي + خلفية شفافة
 // ============================================================
 class _ChatButton extends StatelessWidget {
   final bool enabled;
