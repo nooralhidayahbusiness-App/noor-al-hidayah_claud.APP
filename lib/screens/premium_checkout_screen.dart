@@ -18,6 +18,7 @@ const Map<String, Map<String, String>> _chkTr = {
     'step1': '1) ادفع عبر PayPal',
     'step1Desc': 'سيتم فتح PayPal لدفع {amount}\$. بعد الدفع، ارجع هنا وأكمل.',
     'payNow': 'افتح PayPal',
+    'paid': 'تم الدفع ✓',
     'step2': '2) أكمل بياناتك',
     'step2Desc': 'املأ البيانات التالية للمطابقة مع حساب PayPal',
     'name': 'الاسم الكامل',
@@ -39,8 +40,9 @@ const Map<String, Map<String, String>> _chkTr = {
   'en': {
     'title': 'Confirm Payment',
     'step1': '1) Pay via PayPal',
-    'step1Desc': 'PayPal will open to pay \${amount}. After paying, come back here.',
+    'step1Desc': 'PayPal will open to pay {amount}\$. After paying, come back here.',
     'payNow': 'Open PayPal',
+    'paid': 'Paid ✓',
     'step2': '2) Complete your info',
     'step2Desc': 'Fill in the following to match with your PayPal',
     'name': 'Full Name',
@@ -62,8 +64,9 @@ const Map<String, Map<String, String>> _chkTr = {
   'fr': {
     'title': 'Confirmer le paiement',
     'step1': '1) Payez via PayPal',
-    'step1Desc': 'PayPal s\'ouvrira pour payer \${amount}\$.',
+    'step1Desc': 'PayPal s\'ouvrira pour payer {amount}\$.',
     'payNow': 'Ouvrir PayPal',
+    'paid': 'Payé ✓',
     'step2': '2) Complétez vos infos',
     'step2Desc': 'Remplissez les informations suivantes',
     'name': 'Nom complet',
@@ -85,8 +88,9 @@ const Map<String, Map<String, String>> _chkTr = {
   'ur': {
     'title': 'ادائیگی کی تصدیق',
     'step1': '1) PayPal سے ادا کریں',
-    'step1Desc': 'PayPal کھلے گا \${amount}\$ ادا کرنے کے لیے۔',
+    'step1Desc': 'PayPal کھلے گا {amount}\$ ادا کرنے کے لیے۔',
     'payNow': 'PayPal کھولیں',
+    'paid': 'ادا ہو گیا ✓',
     'step2': '2) اپنی معلومات مکمل کریں',
     'step2Desc': 'درج ذیل معلومات بھریں',
     'name': 'پورا نام',
@@ -108,8 +112,9 @@ const Map<String, Map<String, String>> _chkTr = {
   'ne': {
     'title': 'भुक्तानी पुष्टि',
     'step1': '1) PayPal बाट तिर्नुहोस्',
-    'step1Desc': 'PayPal खुल्नेछ \${amount}\$ तिर्न।',
+    'step1Desc': 'PayPal खुल्नेछ {amount}\$ तिर्न।',
     'payNow': 'PayPal खोल्नुहोस्',
+    'paid': 'तिरियो ✓',
     'step2': '2) आफ्नो जानकारी भर्नुहोस्',
     'step2Desc': 'तलको जानकारी भर्नुहोस्',
     'name': 'पूरा नाम',
@@ -131,8 +136,9 @@ const Map<String, Map<String, String>> _chkTr = {
   'id': {
     'title': 'Konfirmasi Pembayaran',
     'step1': '1) Bayar via PayPal',
-    'step1Desc': 'PayPal akan terbuka untuk \${amount}\$.',
+    'step1Desc': 'PayPal akan terbuka untuk {amount}\$.',
     'payNow': 'Buka PayPal',
+    'paid': 'Dibayar ✓',
     'step2': '2) Lengkapi info Anda',
     'step2Desc': 'Isi informasi berikut',
     'name': 'Nama Lengkap',
@@ -154,8 +160,9 @@ const Map<String, Map<String, String>> _chkTr = {
   'ms': {
     'title': 'Sahkan Pembayaran',
     'step1': '1) Bayar via PayPal',
-    'step1Desc': 'PayPal akan dibuka untuk \${amount}\$.',
+    'step1Desc': 'PayPal akan dibuka untuk {amount}\$.',
     'payNow': 'Buka PayPal',
+    'paid': 'Dibayar ✓',
     'step2': '2) Lengkapkan maklumat',
     'step2Desc': 'Isi maklumat berikut',
     'name': 'Nama Penuh',
@@ -216,7 +223,7 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
   }
 
   Future<void> _openPaypal() async {
-    final url = premiumService.constructorHelperPaypalUrl(widget.plan.price);
+    final url = PremiumService.paypalUrlFor(widget.plan.price);
     final uri = Uri.parse(url);
     try {
       final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -322,27 +329,14 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
                       child: ListView(
                         padding: EdgeInsets.all(R.s(context, 18)),
                         children: [
-                          // ===== ملخص =====
                           _buildSummary(context),
-
                           SizedBox(height: R.s(context, 20)),
-
-                          // ===== خطوة 1: الدفع =====
                           _buildStep1(context),
-
                           SizedBox(height: R.s(context, 20)),
-
-                          // ===== خطوة 2: البيانات =====
                           _buildStep2(context),
-
                           SizedBox(height: R.s(context, 20)),
-
-                          // ===== ملاحظة =====
                           _buildNote(context),
-
                           SizedBox(height: R.s(context, 20)),
-
-                          // ===== زر الإرسال =====
                           _buildSubmitButton(context),
                         ],
                       ),
@@ -480,7 +474,7 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
           SizedBox(height: R.s(context, 10)),
           Text(
             _ck('step1Desc').replaceAll(
-              '\${amount}',
+              '{amount}',
               '${widget.plan.price.toInt()}',
             ),
             style: TextStyle(
@@ -508,9 +502,7 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
                 size: R.s(context, 18),
               ),
               label: Text(
-                _paid
-                    ? (appState.isArabic ? 'تم الدفع ✓' : 'Paid ✓')
-                    : _ck('payNow'),
+                _paid ? _ck('paid') : _ck('payNow'),
                 style: TextStyle(
                   fontSize: R.f(context, 14),
                   fontWeight: FontWeight.bold,
@@ -564,9 +556,7 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
               label: _ck('name'),
               icon: Icons.person_rounded,
               validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return _ck('errName');
-                }
+                if (v == null || v.trim().isEmpty) return _ck('errName');
                 return null;
               },
             ),
@@ -578,9 +568,7 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
               icon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return _ck('errEmail');
-                }
+                if (v == null || v.trim().isEmpty) return _ck('errEmail');
                 return null;
               },
             ),
@@ -591,9 +579,7 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
               label: _ck('paypal'),
               icon: Icons.account_balance_wallet_outlined,
               validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return _ck('errPaypal');
-                }
+                if (v == null || v.trim().isEmpty) return _ck('errPaypal');
                 return null;
               },
             ),
@@ -722,10 +708,4 @@ class _PremiumCheckoutScreenState extends State<PremiumCheckoutScreen> {
       ),
     );
   }
-}
-
-// Helper for paypal URL
-extension _PremiumServiceCheckoutHelpers on PremiumService {
-  String constructorHelperPaypalUrl(double amount) =>
-      PremiumService.paypalUrlFor(amount);
 }
