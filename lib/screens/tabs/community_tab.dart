@@ -29,58 +29,61 @@ class _CommunityTabState extends State<CommunityTab> {
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        color: AppColors.deepGreen.withValues(alpha: 0.65),
-                        border: Border.all(
-                          color: AppColors.gold.withValues(alpha: 0.3),
+        return Directionality(
+          textDirection: appState.direction,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          color: AppColors.deepGreen.withValues(alpha: 0.65),
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _SwitchButton(
+                                label: appState.tr('tabCommunity'),
+                                active: _section == _Section.community,
+                                onTap: () => setState(
+                                    () => _section = _Section.community),
+                              ),
+                            ),
+                            Expanded(
+                              child: _SwitchButton(
+                                label: appState.tr('myChannel'),
+                                active: _section == _Section.channel,
+                                onTap: () => setState(
+                                    () => _section = _Section.channel),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _SwitchButton(
-                              label: appState.tr('tabCommunity'),
-                              active: _section == _Section.community,
-                              onTap: () => setState(
-                                  () => _section = _Section.community),
-                            ),
-                          ),
-                          Expanded(
-                            child: _SwitchButton(
-                              label: appState.tr('myChannel'),
-                              active: _section == _Section.channel,
-                              onTap: () => setState(
-                                  () => _section = _Section.channel),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  const _MyProfileButton(),
-                ],
+                    const SizedBox(width: 8),
+                    const _MyProfileButton(),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: _section == _Section.community
-                    ? const _CommunitySection(key: ValueKey('community'))
-                    : const ChannelView(key: ValueKey('channel')),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: _section == _Section.community
+                      ? const _CommunitySection(key: ValueKey('community'))
+                      : const ChannelView(key: ValueKey('channel')),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -107,7 +110,6 @@ class _MyProfileButton extends StatelessWidget {
         final data = snapshot.data?.data() ?? {};
         final brief = UserBrief.fromMap(user.uid, data);
 
-        // ✅ نبحث عن الصورة بذكاء: custom > verification
         String? photoB64;
         if (brief.customPhotoBase64.isNotEmpty) {
           photoB64 = brief.customPhotoBase64;
@@ -115,12 +117,10 @@ class _MyProfileButton extends StatelessWidget {
           photoB64 = brief.photoBase64;
         }
 
-        // fallback: رمز حسب الجنس
         final fallbackPath = brief.avatar == 'woman'
             ? 'assets/images/hijab.png'
             : 'assets/images/arabian.png';
 
-        // initial fallback (لو كل شي فشل)
         final initial = brief.name.isNotEmpty
             ? brief.name.characters.first.toUpperCase()
             : '?';
@@ -265,10 +265,10 @@ class _CommunityAuthError extends StatelessWidget {
               size: 42,
             ),
             const SizedBox(height: 12),
-            const Text(
-              'يجب تسجيل الدخول لعرض المجتمع',
+            Text(
+              appState.tr('cLoginRequired'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.softGold,
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -300,10 +300,10 @@ class _CommunityError extends StatelessWidget {
               size: 42,
             ),
             const SizedBox(height: 12),
-            const Text(
-              'تعذّر تحميل بيانات المستخدم',
+            Text(
+              appState.tr('cUserDataError'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.softGold,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
