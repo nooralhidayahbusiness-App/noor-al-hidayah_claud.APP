@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../models/post.dart';
+import '../services/premium_service.dart';
 import 'animated_entry.dart';
 import 'verified_badge.dart';
 
@@ -275,20 +277,61 @@ class _PostCardState extends State<PostCard>
               Row(
                 children: [
                   Flexible(
-                    child: GestureDetector(
-                      onTap: widget.onAuthorTap,
-                      child: Text(
-                        post.userName.isEmpty
-                            ? appState.tr('cUserNotFound')
-                            : post.userName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: _cream,
-                          fontSize: R.f(context, 14),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    // ✅ جديد: StreamBuilder لفحص Premium الناشر
+                    child: StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(post.uid)
+                          .snapshots(),
+                      builder: (context, snap) {
+                        final profile = (snap.data?.data()?['profile']
+                                as Map?)
+                            ?.cast<String, dynamic>();
+                        final isPremium =
+                            PremiumService.isUserPremium(profile);
+
+                        return GestureDetector(
+                          onTap: widget.onAuthorTap,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // ✅ تاج صغير قبل الاسم لـ Premium
+                              if (isPremium) ...[
+                                Icon(
+                                  Icons.workspace_premium_rounded,
+                                  color: _gold,
+                                  size: R.s(context, 14),
+                                ),
+                                SizedBox(width: R.s(context, 3)),
+                              ],
+                              Flexible(
+                                child: Text(
+                                  post.userName.isEmpty
+                                      ? appState.tr('cUserNotFound')
+                                      : post.userName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    // ✅ لون ذهبي لـ Premium
+                                    color: isPremium ? _gold : _cream,
+                                    fontSize: R.f(context, 14),
+                                    fontWeight: FontWeight.bold,
+                                    shadows: isPremium
+                                        ? [
+                                            Shadow(
+                                              color: _gold.withValues(
+                                                  alpha: 0.6),
+                                              blurRadius: 8,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                   if (post.badges.isNotEmpty) ...[
