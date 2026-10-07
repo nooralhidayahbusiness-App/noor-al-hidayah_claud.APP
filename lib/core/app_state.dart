@@ -20,7 +20,6 @@ class AppState extends ChangeNotifier {
   bool get isIndonesian => _languageCode == 'id';
   bool get isMalay => _languageCode == 'ms';
 
-  /// اللغات التي تُكتب من اليمين لليسار.
   bool get isRtl => _languageCode == 'ar' || _languageCode == 'ur';
 
   TextDirection get direction =>
@@ -32,7 +31,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// تبديل قديم بين العربي والإنجليزي.
   void toggleLanguage() {
     setLanguage(isArabic ? 'en' : 'ar');
   }
@@ -40,7 +38,6 @@ class AppState extends ChangeNotifier {
   String tr(String key) {
     final code = _languageCode;
 
-    // 1) اللغات الجديدة (fr/ur/ne/id/ms)
     final extApp = _extAppTable(code);
     if (extApp != null) {
       final v = extApp[key];
@@ -52,21 +49,18 @@ class AppState extends ChangeNotifier {
       if (v != null) return v;
     }
 
-    // 2) مفاتيح المجتمع (كل اللغات)
     final community = _communityTable(code);
     if (community != null) {
       final v = community[key];
       if (v != null) return v;
     }
 
-    // 3) العربية أو الإنجليزية
     final main = (code == 'en') ? _en : _ar;
     final prayer = (code == 'en') ? prayerStringsEn : prayerStringsAr;
 
     return main[key] ?? prayer[key] ?? _ar[key] ?? key;
   }
 
-  /// ترجمة مع استبدال {n} برقم
   String trn(String key, int n) {
     return tr(key).replaceAll('{n}', n.toString());
   }
@@ -455,7 +449,14 @@ const Map<String, String> _ar = {
   'adminRequestFrom': 'طلب من',
   'adminVerifiedNow': 'موثّق',
   'adminSelectAction': 'اختر نوع التوثيق',
-  // ✅ Google Sign-In errors
+  // ✅ Auth errors
+  'authErrGeneric': 'حدث خطأ غير متوقع',
+  'authErrEmailInUse': 'هذا البريد مسجل بالفعل',
+  'authErrInvalidEmail': 'البريد الإلكتروني غير صالح',
+  'authErrWeakPassword': 'كلمة المرور ضعيفة جداً',
+  'authErrWrongCredentials': 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+  'authErrTooMany': 'محاولات كثيرة. حاول بعد قليل',
+  'authErrNetwork': 'تحقق من اتصالك بالإنترنت',
   'authErrGoogleCancelled': 'تم إلغاء تسجيل الدخول بـ Google',
   'authErrAccountExists':
       'هذا البريد مسجل بطريقة أخرى. استخدم تسجيل الدخول بالبريد',
@@ -789,10 +790,17 @@ const Map<String, String> _en = {
   'adminRequestFrom': 'Request from',
   'adminVerifiedNow': 'Verified',
   'adminSelectAction': 'Choose verification type',
-  // ✅ Google Sign-In errors
+  // ✅ Auth errors
+  'authErrGeneric': 'An unexpected error occurred',
+  'authErrEmailInUse': 'This email is already registered',
+  'authErrInvalidEmail': 'This email is not valid',
+  'authErrWeakPassword': 'Password is too weak',
+  'authErrWrongCredentials': 'Wrong email or password',
+  'authErrTooMany': 'Too many attempts. Try again later',
+  'authErrNetwork': 'Check your internet connection',
   'authErrGoogleCancelled': 'Google sign-in was cancelled',
   'authErrAccountExists':
-      'This email is already registered. Use email sign-in instead.',
+      'This email is registered another way. Use email sign-in instead.',
   'authErrGoogleNotEnabled':
       'Google Sign-In is not enabled currently',
 };
