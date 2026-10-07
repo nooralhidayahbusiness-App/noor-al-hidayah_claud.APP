@@ -5,6 +5,7 @@ import '../core/theme.dart';
 import '../core/theme_palette.dart';
 import '../core/theme_state.dart';
 import '../data/store_items.dart';
+import '../services/premium_service.dart';
 import '../services/user_service.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
@@ -25,6 +26,7 @@ class _StoreScreenState extends State<StoreScreen>
   late final TabController _tabs = TabController(length: 4, vsync: this);
 
   bool _loading = true;
+  bool _isPremium = false; // ✅ جديد
   int _points = 0;
   Map<String, dynamic> _inventory = {};
   String? _busyId;
@@ -47,10 +49,18 @@ class _StoreScreenState extends State<StoreScreen>
       await userService.migrateInventory();
       final stats = await userService.loadStats();
       final inv = await userService.loadInventory();
+
+      // ✅ جديد: فحص حالة Premium
+      final uid = userService.currentUid;
+      final isPremium = uid == null
+          ? false
+          : await PremiumService.fetchIsUserPremium(uid);
+
       if (mounted) {
         setState(() {
           _points = (stats['points'] as num?)?.toInt() ?? 0;
           _inventory = inv;
+          _isPremium = isPremium;
         });
       }
     } finally {
@@ -125,7 +135,8 @@ class _StoreScreenState extends State<StoreScreen>
       return;
     }
 
-    if (_points < item.price) {
+    // ✅ جديد: المستخدم Premium → لا يحتاج نقاط
+    if (!_isPremium && _points < item.price) {
       showAuthMessage(context, appState.tr('notEnoughPoints'), error: true);
       return;
     }
@@ -159,7 +170,9 @@ class _StoreScreenState extends State<StoreScreen>
             ),
             const SizedBox(height: 10),
             Text(
-              '${appState.tr('price')}: ${item.price} ${appState.tr('points')}',
+              _isPremium
+                  ? '${appState.tr('price')}: ${appState.tr('free')} 🎁'
+                  : '${appState.tr('price')}: ${item.price} ${appState.tr('points')}',
               style: const TextStyle(color: AppColors.cream),
             ),
             const SizedBox(height: 6),
@@ -191,7 +204,10 @@ class _StoreScreenState extends State<StoreScreen>
 
     setState(() => _busyId = item.id);
     try {
-      await userService.addPoints(-item.price);
+      // ✅ جديد: لا تخصم النقاط إذا Premium
+      if (!_isPremium) {
+        await userService.addPoints(-item.price);
+      }
       await userService.unlockItem(_listKey(item.type), item.id);
       await _activate(item);
       await _load();
@@ -214,6 +230,7 @@ class _StoreScreenState extends State<StoreScreen>
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const PremiumScreen()),
     );
+    await _load(); // ✅ جديد: أعد التحميل بعد العودة
   }
 
   @override
@@ -253,12 +270,13 @@ class _StoreScreenState extends State<StoreScreen>
               ),
               const SizedBox(height: 12),
 
-              // ===== بطاقة Premium =====
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _PremiumBanner(onTap: _openPremium),
-              ),
-              const SizedBox(height: 12),
+              // ===== بطاقة Premium (تختفي لـ Premium) =====
+              if (!_isPremium)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _PremiumBanner(onTap: _openPremium),
+                ),
+              if (!_isPremium) const SizedBox(height: 12),
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -349,6 +367,7 @@ class _StoreScreenState extends State<StoreScreen>
         active: _isActive(items[i]),
         busy: _busyId == items[i].id,
         nameAr: appState.isArabic,
+        isPremium: _isPremium, // ✅ جديد
         onTap: () => _onItemTap(items[i]),
       ),
     );
@@ -497,6 +516,7 @@ class _StoreTile extends StatelessWidget {
     required this.active,
     required this.busy,
     required this.nameAr,
+    required this.isPremium, // ✅ جديد
     required this.onTap,
   });
 
@@ -505,6 +525,7 @@ class _StoreTile extends StatelessWidget {
   final bool active;
   final bool busy;
   final bool nameAr;
+  final bool isPremium; // ✅ جديد
   final VoidCallback onTap;
 
   @override
@@ -695,6 +716,40 @@ class _StoreTile extends StatelessWidget {
             fontSize: 10,
             fontWeight: FontWeight.w600,
           ),
+        ),
+      );
+    }
+    // ✅ جديد: شارة "مجاني" للمستخدم Premium
+    if (isPremium) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+          ),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFFD700).withValues(alpha: 0.5),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.card_giftcard_rounded,
+                color: Color(0xFF2A1500), size: 12),
+            SizedBox(width: 3),
+            Text(
+              'FREE',
+              style: TextStyle(
+                color: Color(0xFF2A1500),
+                fontWeight: FontWeight.w900,
+                fontSize: 10,
+              ),
+            ),
+          ],
         ),
       );
     }
