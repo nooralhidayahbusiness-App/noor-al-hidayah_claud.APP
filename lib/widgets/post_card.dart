@@ -277,15 +277,17 @@ class _PostCardState extends State<PostCard>
               Row(
                 children: [
                   Flexible(
-                    // ✅ جديد: StreamBuilder لفحص Premium الناشر
+                    // ✅ StreamBuilder لفحص Premium الناشر
                     child: StreamBuilder<DocumentSnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('users')
                           .doc(post.uid)
                           .snapshots(),
                       builder: (context, snap) {
-                        final profile = (snap.data?.data()?['profile']
-                                as Map?)
+                        // ✅ إصلاح: cast أولاً إلى Map
+                        final docData =
+                            snap.data?.data() as Map<String, dynamic>?;
+                        final profile = (docData?['profile'] as Map?)
                             ?.cast<String, dynamic>();
                         final isPremium =
                             PremiumService.isUserPremium(profile);
@@ -295,7 +297,7 @@ class _PostCardState extends State<PostCard>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // ✅ تاج صغير قبل الاسم لـ Premium
+                              // تاج صغير قبل الاسم لـ Premium
                               if (isPremium) ...[
                                 Icon(
                                   Icons.workspace_premium_rounded,
@@ -312,7 +314,7 @@ class _PostCardState extends State<PostCard>
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    // ✅ لون ذهبي لـ Premium
+                                    // لون ذهبي لـ Premium
                                     color: isPremium ? _gold : _cream,
                                     fontSize: R.f(context, 14),
                                     fontWeight: FontWeight.bold,
