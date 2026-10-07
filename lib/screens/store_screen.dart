@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
@@ -51,7 +52,7 @@ class _StoreScreenState extends State<StoreScreen>
       final inv = await userService.loadInventory();
 
       // ✅ جديد: فحص حالة Premium
-      final uid = userService.currentUid;
+      final uid = FirebaseAuth.instance.currentUser?.uid;
       final isPremium = uid == null
           ? false
           : await PremiumService.fetchIsUserPremium(uid);
