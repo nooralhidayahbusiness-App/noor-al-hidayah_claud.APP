@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../services/ads_service.dart';
+import '../services/premium_service.dart';
 
 class RewardedAdCard extends StatefulWidget {
   final VoidCallback? onRewardEarned;
@@ -21,6 +22,7 @@ class _RewardedAdCardState extends State<RewardedAdCard>
   bool _premiumTrialUsed = false;
   bool _loading = true;
   bool _showing = false;
+  bool _isPremium = false; // ✅ جديد: إخفاء البطاقة لمن لديه Premium
 
   late final AnimationController _pulse;
 
@@ -133,6 +135,21 @@ class _RewardedAdCardState extends State<RewardedAdCard>
       if (mounted) setState(() => _loading = false);
       return;
     }
+
+    // ✅ جديد: افحص Premium أولاً
+    final isPremium = await PremiumService.fetchIsUserPremium(uid);
+
+    // إذا Premium → أخفِ البطاقة فوراً
+    if (isPremium) {
+      if (mounted) {
+        setState(() {
+          _isPremium = true;
+          _loading = false;
+        });
+      }
+      return;
+    }
+
     final stats = await adsService.loadStats(uid);
     if (mounted) {
       setState(() {
@@ -215,6 +232,7 @@ class _RewardedAdCardState extends State<RewardedAdCard>
   @override
   Widget build(BuildContext context) {
     if (_loading) return const SizedBox.shrink();
+    if (_isPremium) return const SizedBox.shrink(); // ✅ جديد: إخفاء لـ Premium
     if (!adsService.isSupported) return const SizedBox.shrink();
 
     return Container(
