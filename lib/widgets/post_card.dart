@@ -1,185 +1,662 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../core/app_state.dart';
 import '../core/responsive.dart';
-import '../core/theme.dart';
 import '../models/post.dart';
-import '../services/auth_service.dart';
-import '../services/premium_service.dart';
-import 'profile_avatar.dart';
+import 'animated_entry.dart';
 import 'verified_badge.dart';
-import 'user_badges.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends StatefulWidget {
   final Post post;
+  final String currentUid;
   final VoidCallback? onTap;
   final VoidCallback? onLike;
   final VoidCallback? onComment;
   final VoidCallback? onRepost;
+  final VoidCallback? onMore;
+  final VoidCallback? onAuthorTap;
+
+  /// لتأخير الظهور حسب ترتيب المنشور
+  final int animationIndex;
 
   const PostCard({
     super.key,
     required this.post,
+    required this.currentUid,
     this.onTap,
     this.onLike,
     this.onComment,
     this.onRepost,
+    this.onMore,
+    this.onAuthorTap,
+    this.animationIndex = 0,
   });
 
   @override
+  State<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard>
+    with TickerProviderStateMixin {
+  static const Color _gold = Color(0xFFD4AF37);
+  static const Color _softGold = Color(0xFFF1DC9A);
+  static const Color _deepGreen = Color(0xFF041F18);
+  static const Color _green = Color(0xFF0B3D2E);
+  static const Color _emerald = Color(0xFF14664C);
+  static const Color _cream = Color(0xFFFFF8E7);
+
+  // نبضة للقلب عند الإعجاب
+  late final AnimationController _likePulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 350),
+  );
+
+  late final Animation<double> _likeScale = Tween<double>(
+    begin: 1.0,
+    end: 1.4,
+  ).animate(CurvedAnimation(
+    parent: _likePulse,
+    curve: Curves.elasticOut,
+  ));
+
+  Post get post => widget.post;
+  String get currentUid => widget.currentUid;
+
+  bool get _isOwner => post.uid == currentUid;
+  bool get _isLiked => post.isLikedBy(currentUid);
+
+  @override
+  void dispose() {
+    _likePulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant PostCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // لو الإعجاب تغير → شغّل النبضة
+    final wasLiked = oldWidget.post.isLikedBy(currentUid);
+    if (!wasLiked && _isLiked) {
+      _likePulse.forward(from: 0);
+    }
+  }
+
+  void _handleLike() {
+    widget.onLike?.call();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final appState = AppState.of(context);
-    final uid = AuthService.currentUid;
-    final isOwn = uid == post.uid;
+    // تأخير بسيط حسب ترتيب المنشور (يظهر واحد تلو الآخر)
+    final delay = Duration(
+      milliseconds: (widget.animationIndex * 60).clamp(0, 400),
+    );
 
-    return StreamBuilder<DocumentSnapshot>(
-      stream: uid != null
-          ? FirebaseFirestore.instance.collection('users').doc(post.uid).snapshots()
-          : const Stream.empty(),
-      builder: (context, snap) {
-        final data = snap.data?.data() as Map<String, dynamic>?;
-        final premium = (data?['profile']?['premium'] ?? {}) as Map<String, dynamic>;
-        final isPremium = premium['active'] == true;
-
-        final nameColor = isPremium ? AppColors.gold : AppColors.cream;
-
-        return GestureDetector(
-          onTap: onTap,
-          child: Container(
-            margin: EdgeInsets.symmetric(
-              horizontal: R.s(context, 12),
-              vertical: R.s(context, 6),
-            ),
-            padding: EdgeInsets.all(R.s(context, 14)),
-            decoration: BoxDecoration(
-              color: AppColors.green.withOpacity(0.25),
+    return Directionality(
+      textDirection: appState.direction,
+      child: AnimatedEntry(
+        delay: delay,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: R.s(context, 12),
+            vertical: R.s(context, 6),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onTap,
               borderRadius: BorderRadius.circular(R.s(context, 16)),
-              border: Border.all(
-                color: isPremium ? AppColors.gold.withOpacity(0.4) : Colors.transparent,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    ProfileAvatar(
-                      avatar: post.userAvatar,
-                      photoBase64: post.userPhotoBase64,
-                      size: R.s(context, 44),
-                      showCrown: isPremium,
-                    ),
-                    SizedBox(width: R.s(context, 10)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  post.userName,
-                                  style: TextStyle(
-                                    color: nameColor,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: R.f(context, 14),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (post.userVerified) ...[
-                                SizedBox(width: R.s(context, 4)),
-                                VerifiedBadge(type: post.userVerifiedType, size: R.s(context, 16)),
-                              ],
-                            ],
-                          ),
-                          if (post.createdAt != null)
-                            Text(
-                              _timeAgo(post.createdAt!),
-                              style: TextStyle(color: AppColors.cream.withOpacity(0.5), fontSize: R.f(context, 11)),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (post.isPinned)
-                      Icon(Icons.push_pin, color: AppColors.gold, size: R.s(context, 16)),
-                    if (post.isGlobalPin)
-                      Icon(Icons.public, color: AppColors.gold, size: R.s(context, 16)),
-                  ],
-                ),
-                SizedBox(height: R.s(context, 10)),
-                Text(
-                  post.text,
-                  style: TextStyle(color: AppColors.cream, fontSize: R.f(context, 14), height: 1.4),
-                ),
-                if (post.userBadges.isNotEmpty) ...[
-                  SizedBox(height: R.s(context, 8)),
-                  UserBadges(badges: post.userBadges, size: R.s(context, 20)),
-                ],
-                SizedBox(height: R.s(context, 10)),
-                Row(
-                  children: [
-                    _actionIcon(
-                      context,
-                      Icons.favorite,
-                      post.likes.contains(uid) ? AppColors.gold : AppColors.cream.withOpacity(0.6),
-                      post.likesCount,
-                      onLike,
-                    ),
-                    SizedBox(width: R.s(context, 16)),
-                    _actionIcon(
-                      context,
-                      Icons.comment,
-                      AppColors.cream.withOpacity(0.6),
-                      post.commentsCount,
-                      onComment,
-                    ),
-                    SizedBox(width: R.s(context, 16)),
-                    _actionIcon(
-                      context,
-                      Icons.repeat,
-                      AppColors.cream.withOpacity(0.6),
-                      post.repostsCount,
-                      onRepost,
-                    ),
-                    const Spacer(),
-                    if (isOwn)
-                      IconButton(
-                        icon: Icon(Icons.delete_outline, color: Colors.red.withOpacity(0.6), size: R.s(context, 20)),
-                        onPressed: () {
-                          // حذف
-                        },
-                      ),
-                  ],
-                ),
-              ],
+              child: _buildCard(context),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _actionIcon(BuildContext context, IconData icon, Color color, int count, VoidCallback? onTap) {
-    return GestureDetector(
-      onTap: onTap,
+  Widget _buildCard(BuildContext context) {
+    return Stack(
+      children: [
+        // ===== البطاقة الرئيسية =====
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(R.s(context, 16)),
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                _green.withValues(alpha: 0.92),
+                _deepGreen.withValues(alpha: 0.98),
+              ],
+            ),
+            border: Border.all(
+              color: _gold.withValues(alpha: 0.4),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+              BoxShadow(
+                color: _gold.withValues(alpha: 0.08),
+                blurRadius: 8,
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(R.s(context, 12)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (post.isPinned) _buildPinnedBanner(context),
+                if (post.isRepost) _buildRepostBanner(context),
+                _buildHeader(context),
+                SizedBox(height: R.s(context, 10)),
+                _buildBody(context),
+                SizedBox(height: R.s(context, 10)),
+                _buildActions(context),
+              ],
+            ),
+          ),
+        ),
+
+        // ===== نجمة ثمانية - زاوية يمين أعلى =====
+        Positioned(
+          top: 0,
+          right: 0,
+          child: _OrnamentStar(
+            size: R.s(context, 30),
+            color: _gold,
+          ),
+        ),
+
+        // ===== نجمة ثمانية - زاوية يسار أسفل =====
+        Positioned(
+          bottom: 0,
+          left: 0,
+          child: _OrnamentStar(
+            size: R.s(context, 22),
+            color: _gold.withValues(alpha: 0.6),
+          ),
+        ),
+
+        // ===== المعين الذهبي المتوهج في الأسفل-الوسط =====
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: Transform.translate(
+              offset: Offset(0, R.s(context, 5)),
+              child: Container(
+                width: R.s(context, 10),
+                height: R.s(context, 10),
+                decoration: BoxDecoration(
+                  color: _gold,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _gold.withValues(alpha: 0.7),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                transform: Matrix4.rotationZ(0.785398),
+                transformAlignment: Alignment.center,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPinnedBanner(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: R.s(context, 6)),
       child: Row(
         children: [
-          Icon(icon, color: color, size: R.s(context, 18)),
-          if (count > 0) ...[
-            SizedBox(width: R.s(context, 4)),
-            Text('$count', style: TextStyle(color: color, fontSize: R.f(context, 12))),
-          ],
+          Icon(Icons.push_pin, size: R.s(context, 13), color: _gold),
+          SizedBox(width: R.s(context, 5)),
+          Text(
+            appState.tr('cPinnedPost'),
+            style: TextStyle(
+              color: _gold,
+              fontSize: R.f(context, 11),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  String _timeAgo(DateTime date) {
-    final diff = DateTime.now().difference(date);
-    if (diff.inMinutes < 1) return 'الآن';
-    if (diff.inHours < 1) return '${diff.inMinutes} د';
-    if (diff.inDays < 1) return '${diff.inHours} س';
-    return '${diff.inDays} ي';
+  Widget _buildRepostBanner(BuildContext context) {
+    final name = post.originalAuthorName ?? appState.tr('cUserNotFound');
+    return Padding(
+      padding: EdgeInsets.only(bottom: R.s(context, 6)),
+      child: Row(
+        children: [
+          Icon(Icons.repeat, size: R.s(context, 13), color: _softGold),
+          SizedBox(width: R.s(context, 5)),
+          Expanded(
+            child: Text(
+              '${appState.tr('cRepostFrom')} $name',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: _softGold.withValues(alpha: 0.85),
+                fontSize: R.f(context, 11),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildAvatar(context),
+        SizedBox(width: R.s(context, 10)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Flexible(
+                    child: GestureDetector(
+                      onTap: widget.onAuthorTap,
+                      child: Text(
+                        post.userName.isEmpty
+                            ? appState.tr('cUserNotFound')
+                            : post.userName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _cream,
+                          fontSize: R.f(context, 14),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (post.badges.isNotEmpty) ...[
+                    SizedBox(width: R.s(context, 5)),
+                    for (int i = 0; i < post.badges.length; i++) ...[
+                      if (i > 0) SizedBox(width: R.s(context, 2)),
+                      VerifiedBadge(
+                        type: post.badges[i],
+                        size: R.s(context, 16),
+                      ),
+                    ],
+                  ],
+                ],
+              ),
+              SizedBox(height: R.s(context, 2)),
+              Row(
+                children: [
+                  Text(
+                    _formatTime(context, post.createdAt),
+                    style: TextStyle(
+                      color: _cream.withValues(alpha: 0.55),
+                      fontSize: R.f(context, 11),
+                    ),
+                  ),
+                  if (post.isEdited) ...[
+                    Text(
+                      ' · ',
+                      style: TextStyle(
+                        color: _cream.withValues(alpha: 0.55),
+                        fontSize: R.f(context, 11),
+                      ),
+                    ),
+                    Text(
+                      appState.tr('cEdited'),
+                      style: TextStyle(
+                        color: _cream.withValues(alpha: 0.55),
+                        fontSize: R.f(context, 11),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (widget.onMore != null)
+          IconButton(
+            onPressed: widget.onMore,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: Icon(
+              Icons.more_horiz,
+              color: _cream.withValues(alpha: 0.7),
+              size: R.s(context, 22),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAvatar(BuildContext context) {
+    final size = R.s(context, 44);
+
+    Uint8List? bytes;
+    if (post.userPhotoBase64.isNotEmpty) {
+      try {
+        bytes = base64Decode(post.userPhotoBase64);
+      } catch (_) {}
+    }
+
+    Widget child;
+    if (bytes != null && bytes.isNotEmpty) {
+      child = Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) => _buildSymbolFallback(context),
+      );
+    } else {
+      child = _buildSymbolFallback(context);
+    }
+
+    return GestureDetector(
+      onTap: widget.onAuthorTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: _gold, width: 1.8),
+          boxShadow: [
+            BoxShadow(
+              color: _gold.withValues(alpha: 0.35),
+              blurRadius: 8,
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: ClipOval(child: child),
+      ),
+    );
+  }
+
+  Widget _buildSymbolFallback(BuildContext context) {
+    final path = post.userAvatar == 'woman'
+        ? 'assets/images/hijab.png'
+        : 'assets/images/arabian.png';
+    return Image.asset(
+      path,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => Container(
+        color: _emerald,
+        child: Center(
+          child: Text(
+            post.userName.isNotEmpty
+                ? post.userName.characters.first.toUpperCase()
+                : '?',
+            style: TextStyle(
+              color: _gold,
+              fontSize: R.f(context, 16),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    return Text(
+      post.text,
+      style: TextStyle(
+        color: _cream,
+        fontSize: R.f(context, 14),
+        height: 1.55,
+      ),
+    );
+  }
+
+  Widget _buildActions(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(top: R.s(context, 8)),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: _gold.withValues(alpha: 0.18),
+            width: 0.8,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          // ===== إعجاب مع نبضة =====
+          InkWell(
+            onTap: _handleLike,
+            borderRadius: BorderRadius.circular(R.s(context, 8)),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: R.s(context, 4),
+                vertical: R.s(context, 2),
+              ),
+              child: Row(
+                children: [
+                  ScaleTransition(
+                    scale: _likeScale,
+                    child: Icon(
+                      _isLiked
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      size: R.s(context, 18),
+                      color: _isLiked
+                          ? const Color(0xFFE84E6A)
+                          : _cream.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  if (_formatCount(post.likesCount).isNotEmpty) ...[
+                    SizedBox(width: R.s(context, 4)),
+                    Text(
+                      _formatCount(post.likesCount),
+                      style: TextStyle(
+                        color: _isLiked
+                            ? const Color(0xFFE84E6A)
+                            : _cream.withValues(alpha: 0.7),
+                        fontSize: R.f(context, 12),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          SizedBox(width: R.s(context, 18)),
+          _buildActionButton(
+            context,
+            icon: Icons.chat_bubble_outline,
+            color: _cream.withValues(alpha: 0.7),
+            label: _formatCount(post.commentsCount),
+            onTap: widget.onComment,
+          ),
+          SizedBox(width: R.s(context, 18)),
+          _buildActionButton(
+            context,
+            icon: Icons.repeat,
+            color: _cream.withValues(alpha: 0.7),
+            label: _formatCount(post.repostsCount),
+            onTap: widget.onRepost,
+          ),
+          const Spacer(),
+          if (_isOwner)
+            Padding(
+              padding: EdgeInsets.only(right: R.s(context, 4)),
+              child: Icon(
+                Icons.person_outline,
+                size: R.s(context, 14),
+                color: _gold.withValues(alpha: 0.6),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(R.s(context, 8)),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: R.s(context, 4),
+          vertical: R.s(context, 2),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: R.s(context, 17), color: color),
+            if (label.isNotEmpty) ...[
+              SizedBox(width: R.s(context, 4)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: R.f(context, 12),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _formatTime(BuildContext context, DateTime time) {
+    final now = DateTime.now();
+    final diff = now.difference(time);
+
+    if (diff.inSeconds < 60) return appState.tr('cTimeNow');
+    if (diff.inMinutes < 60) {
+      return appState.trn('cTimeMinutesAgo', diff.inMinutes);
+    }
+    if (diff.inHours < 24) {
+      return appState.trn('cTimeHoursAgo', diff.inHours);
+    }
+    if (diff.inDays < 7) {
+      return appState.trn('cTimeDaysAgo', diff.inDays);
+    }
+    if (diff.inDays < 30) {
+      return appState.trn('cTimeWeeksAgo', (diff.inDays / 7).floor());
+    }
+    if (diff.inDays < 365) {
+      return appState.trn('cTimeMonthsAgo', (diff.inDays / 30).floor());
+    }
+    return appState.trn('cTimeYearsAgo', (diff.inDays / 365).floor());
+  }
+
+  static String _formatCount(int count) {
+    if (count <= 0) return '';
+    if (count < 1000) return count.toString();
+    if (count < 1000000) {
+      final k = count / 1000;
+      return '${k.toStringAsFixed(k >= 10 ? 0 : 1)}K';
+    }
+    final m = count / 1000000;
+    return '${m.toStringAsFixed(m >= 10 ? 0 : 1)}M';
+  }
+}
+
+// ============================================================
+// _OrnamentStar — نجمة ثمانية إسلامية
+// ============================================================
+class _OrnamentStar extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _OrnamentStar({
+    required this.size,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: 0.4,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(
+          painter: _StarPainter(color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _StarPainter extends CustomPainter {
+  final Color color;
+
+  _StarPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final outerR = size.width / 2;
+    final innerR = outerR * 0.42;
+
+    final path = Path();
+    for (int i = 0; i < 16; i++) {
+      final angle = (i * 3.14159265) / 8 - 1.5708;
+      final r = i.isEven ? outerR : innerR;
+      final x = cx + r * _cos(angle);
+      final y = cy + r * _sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  double _cos(double x) => _sin(x + 1.57079632);
+
+  double _sin(double x) {
+    x = x % (2 * 3.14159265);
+    double term = x;
+    double sum = x;
+    for (int i = 1; i < 8; i++) {
+      term *= -x * x / ((2 * i) * (2 * i + 1));
+      sum += term;
+    }
+    return sum;
+  }
+
+  @override
+  bool shouldRepaint(covariant _StarPainter oldDelegate) => false;
 }
