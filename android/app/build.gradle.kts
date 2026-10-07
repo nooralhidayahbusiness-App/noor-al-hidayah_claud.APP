@@ -3,13 +3,11 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    // ✅ Google Services plugin
     id("com.google.gms.google-services")
 }
 
-// ✅ قراءة key.properties للتوقيع
+// قراءة key.properties للتوقيع
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -34,7 +32,6 @@ android {
         versionName = flutter.versionName
     }
 
-    // ✅ إعداد التوقيع Release
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String?
@@ -46,15 +43,8 @@ android {
 
     buildTypes {
         release {
-            // ✅ استخدام keystore الخاص بدل debug
             signingConfig = signingConfigs.getByName("release")
         }
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
