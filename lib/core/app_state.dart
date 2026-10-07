@@ -455,6 +455,12 @@ const Map<String, String> _ar = {
   'adminRequestFrom': 'طلب من',
   'adminVerifiedNow': 'موثّق',
   'adminSelectAction': 'اختر نوع التوثيق',
+  // ✅ Google Sign-In errors
+  'authErrGoogleCancelled': 'تم إلغاء تسجيل الدخول بـ Google',
+  'authErrAccountExists':
+      'هذا البريد مسجل بطريقة أخرى. استخدم تسجيل الدخول بالبريد',
+  'authErrGoogleNotEnabled':
+      'تسجيل الدخول بـ Google غير مفعّل حالياً',
 };
 
 // =====================================================================
@@ -783,4 +789,10 @@ const Map<String, String> _en = {
   'adminRequestFrom': 'Request from',
   'adminVerifiedNow': 'Verified',
   'adminSelectAction': 'Choose verification type',
+  // ✅ Google Sign-In errors
+  'authErrGoogleCancelled': 'Google sign-in was cancelled',
+  'authErrAccountExists':
+      'This email is already registered. Use email sign-in instead.',
+  'authErrGoogleNotEnabled':
+      'Google Sign-In is not enabled currently',
 };
