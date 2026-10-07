@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/profile_state.dart';
 import '../core/responsive.dart';
 import '../services/community_service.dart';
+import '../services/premium_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final String uid;
@@ -51,9 +53,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final CommunityService _service = CommunityService();
 
   bool _isPosting = false;
+  bool _isPremium = false; // ✅ جديد
   int _charCount = 0;
 
-  static const int _maxChars = 1000;
+  // ✅ جديد: الحد يتغير حسب Premium (1000 للمميز، 500 للعادي)
+  int get _maxChars => _isPremium ? 1000 : 500;
 
   bool get _isRepost => widget.repostOf != null;
   bool get _isValid =>
@@ -69,9 +73,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         TextPosition(offset: _controller.text.length),
       );
     }
+    _loadPremium(); // ✅ جديد
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focus.requestFocus();
     });
+  }
+
+  // ✅ جديد
+  Future<void> _loadPremium() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final isPremium = await PremiumService.fetchIsUserPremium(uid);
+    if (mounted) setState(() => _isPremium = isPremium);
   }
 
   @override
@@ -240,7 +253,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: _cream,
+                    // ✅ لون ذهبي إذا Premium
+                    color: _isPremium ? _gold : _cream,
                     fontSize: R.f(context, 14),
                     fontWeight: FontWeight.bold,
                   ),
@@ -249,6 +263,41 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               if (widget.userVerified) ...[
                 SizedBox(width: R.s(context, 4)),
                 Icon(Icons.verified, size: R.s(context, 15), color: _gold),
+              ],
+              // ✅ شارة Premium صغيرة
+              if (_isPremium) ...[
+                SizedBox(width: R.s(context, 6)),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: R.s(context, 6),
+                    vertical: R.s(context, 2),
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                    ),
+                    borderRadius: BorderRadius.circular(R.s(context, 8)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.workspace_premium_rounded,
+                        color: _deepGreen,
+                        size: R.s(context, 11),
+                      ),
+                      SizedBox(width: R.s(context, 3)),
+                      Text(
+                        '1000',
+                        style: TextStyle(
+                          color: _deepGreen,
+                          fontSize: R.f(context, 10),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ],
           ),
@@ -270,7 +319,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         focusNode: _focus,
         maxLines: null,
         minLines: 6,
-        maxLength: _maxChars,
+        maxLength: _maxChars, // ✅ يعتمد على Premium
         textInputAction: TextInputAction.newline,
         keyboardType: TextInputType.multiline,
         style: TextStyle(
@@ -338,10 +387,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       child: Row(
         children: [
           Icon(
-            Icons.text_fields,
+            _isPremium ? Icons.workspace_premium_rounded : Icons.text_fields,
             color: _charCount > _maxChars
                 ? Colors.redAccent
-                : _cream.withValues(alpha: 0.5),
+                : (_isPremium
+                    ? _gold
+                    : _cream.withValues(alpha: 0.5)),
             size: R.s(context, 18),
           ),
           SizedBox(width: R.s(context, 6)),
@@ -350,8 +401,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             style: TextStyle(
               color: _charCount > _maxChars
                   ? Colors.redAccent
-                  : _cream.withValues(alpha: 0.6),
+                  : (_isPremium
+                      ? _gold
+                      : _cream.withValues(alpha: 0.6)),
               fontSize: R.f(context, 12),
+              fontWeight: _isPremium ? FontWeight.bold : FontWeight.normal,
             ),
           ),
           const Spacer(),
