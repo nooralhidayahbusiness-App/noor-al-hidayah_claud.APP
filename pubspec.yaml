@@ -27,6 +27,7 @@ dependencies:
   firebase_core: ^4.15.0
   firebase_auth: ^6.7.0
   cloud_firestore: ^6.10.0
+  firebase_messaging: ^16.0.0
   google_sign_in: ^6.2.1
   wakelock_plus: ^1.2.8
   flutter_compass: ^0.8.1
