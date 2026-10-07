@@ -105,8 +105,10 @@ class _ProfileAvatarState extends State<ProfileAvatar>
   @override
   Widget build(BuildContext context) {
     final s = widget.size;
-    final crownSize = s * 0.42;
-    final topPad = widget.showCrown ? crownSize * 0.6 : 0.0;
+    // ✅ كبّرنا التاج من 0.42 إلى 0.55
+    final crownSize = s * 0.55;
+    // ✅ رفعناه فوق الصورة أكثر ليكون أوضح
+    final topPad = widget.showCrown ? crownSize * 0.75 : 0.0;
 
     return SizedBox(
       width: s + 24,
@@ -197,7 +199,7 @@ class _ProfileAvatarState extends State<ProfileAvatar>
 }
 
 // ============================================================
-// _CrownWidget — تاج متحرك للمميز
+// _CrownWidget — تاج متحرك للمميز (بدون دائرة)
 // ============================================================
 class _CrownWidget extends StatefulWidget {
   const _CrownWidget({required this.size});
@@ -227,8 +229,8 @@ class _CrownWidgetState extends State<_CrownWidget>
       animation: _float,
       builder: (context, child) {
         final t = _float.value;
-        final offset = -2.0 + 4.0 * t;
-        final angle = -0.05 + 0.1 * t;
+        final offset = -3.0 + 6.0 * t;
+        final angle = -0.06 + 0.12 * t;
 
         return Transform.translate(
           offset: Offset(0, offset),
@@ -238,31 +240,17 @@ class _CrownWidgetState extends State<_CrownWidget>
           ),
         );
       },
-      child: Container(
+      // ✅ فقط الصورة — بدون دائرة ولا حدود
+      child: SizedBox(
         width: widget.size,
         height: widget.size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0xFF041F18),
-          border: Border.all(color: AppColors.gold, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.gold.withValues(alpha: 0.55),
-              blurRadius: 10,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(widget.size * 0.18),
-          child: Image.asset(
-            'assets/icons/premium.png',
-            fit: BoxFit.contain,
-            errorBuilder: (_, _, _) => Icon(
-              Icons.workspace_premium_rounded,
-              color: AppColors.gold,
-              size: widget.size * 0.55,
-            ),
+        child: Image.asset(
+          'assets/icons/premium.png',
+          fit: BoxFit.contain,
+          errorBuilder: (_, _, _) => Icon(
+            Icons.workspace_premium_rounded,
+            color: AppColors.gold,
+            size: widget.size * 0.95,
           ),
         ),
       ),
