@@ -1,6 +1,6 @@
 # 🕌 نور الهداية — Noor Al-Hidayah
 
-> **آخر تحديث:** 2026-10-06 | **الإصدار:** Beta 2.2 | **الحالة:** Premium نظام مكتمل — قيد إضافة الميزات
+> **آخر تحديث:** 2026-10-07 | **الإصدار:** Beta 2.3 | **الحالة:** ✅ المرحلة 41 (ميزات Premium الفعلية) مكتملة
 
 ---
 
@@ -31,9 +31,10 @@
 - 💬 شبكة اجتماعية (Posts, Comments, Likes, Reposts, Follow)
 - 🎬 قناة YouTube (فيديوهات 16:9 + ريلز 9:16)
 - 💬 نظام محادثات (Chat) مع طلبات للمستخدمين Private
-- 💎 نظام Premium (اشتراك مدفوع)
+- 💎 نظام Premium (اشتراك مدفوع) + ميزات فعلية مكتملة
 - 📬 إشعارات اجتماعية + إدارية
 - 📺 إعلانات مكافئة (Rewarded Ads)
+- 🎁 تجربة Premium مجانية 3 أيام (مقابل 10 إعلانات)
 
 ### الجمهور المستهدف
 - عالمي (7 لغات)
@@ -141,7 +142,7 @@ cream     #FFF8E7  // الكريمي
 **ملفات ترجمة إضافية:**
 - `strings_prayer.dart` → ترجمات الصلاة
 - `i18n/community_strings.dart` → ترجمات المجتمع (كل اللغات)
-- **ترجمات محلية** في بعض الشاشات: `chat_screen`, `chats_list_screen`, `change_photo_screen`, `gender_select_screen`, `premium_screen`, `premium_checkout_screen`, `add_video_screen`, `photo_requests_screen`, `admin_panel_screen`, `notifications_screen`, `premium_promo_dialog`
+- **ترجمات محلية** في بعض الشاشات: `chat_screen`, `chats_list_screen`, `change_photo_screen`, `gender_select_screen`, `premium_screen`, `premium_checkout_screen`, `premium_stats_screen`, `add_video_screen`, `photo_requests_screen`, `admin_panel_screen`, `notifications_screen`, `premium_promo_dialog`, `rewarded_ad_card`
 
 **الاستخدام:**
 ```dart
@@ -202,7 +203,7 @@ lib/
 │   └── premium_request.dart       // ✅
 │
 ├── services/
-│   ├── auth_service.dart          // ✅ login/register/signOut + handlers
+│   ├── auth_service.dart          // ✅ login/register/signOut + currentUid + handlers
 │   ├── user_service.dart          // ✅ stats/profile/inventory/progress
 │   ├── storage_service.dart
 │   ├── location_service.dart
@@ -213,13 +214,13 @@ lib/
 │   ├── adhan_service.dart
 │   ├── gemini_service.dart, recitation_service.dart
 │   ├── verification_service.dart  // ✅ (توثيق + صور + جنس)
-│   ├── community_service.dart     // ✅ (posts/comments/likes)
+│   ├── community_service.dart     // ✅ (posts/comments/likes + Premium Feed + 3 pins)
 │   ├── community_notification_service.dart // ✅
 │   ├── follow_service.dart        // ✅
 │   ├── chat_service.dart          // ✅
 │   ├── youtube_service.dart       // ✅
 │   ├── link_service.dart
-│   ├── ads_service.dart           // ✅ AdMob
+│   ├── ads_service.dart           // ✅ AdMob + Trial
 │   └── premium_service.dart       // ✅
 │
 ├── screens/
@@ -232,10 +233,10 @@ lib/
 │   ├── account_screen.dart        // ✅ (Premium badge)
 │   ├── edit_profile_screen.dart
 │   ├── settings_screen.dart
-│   ├── challenge_screen.dart      // ✅ (RewardedAdCard)
+│   ├── challenge_screen.dart      // ✅ (RewardedAdCard + x2 نقاط Premium)
 │   ├── challenge_play_screen.dart
 │   ├── challenge_result_screen.dart
-│   ├── store_screen.dart          // ✅ (Premium banner)
+│   ├── store_screen.dart          // ✅ (VIP مجاني لـ Premium)
 │   ├── my_purchases_screen.dart
 │   ├── adhkar_screen.dart, adhkar_detail_screen.dart
 │   ├── duas_screen.dart, duas_detail_screen.dart
@@ -248,15 +249,16 @@ lib/
 │   ├── gender_select_screen.dart  // ✅ (تحذير إجباري)
 │   ├── change_photo_screen.dart   // ✅ (24h cooldown + owner bypass)
 │   ├── community_feed_screen.dart // ✅
-│   ├── create_post_screen.dart    // ✅
+│   ├── create_post_screen.dart    // ✅ (1000 لـ Premium)
 │   ├── post_detail_screen.dart    // ✅
-│   ├── user_profile_screen.dart   // ✅
+│   ├── user_profile_screen.dart   // ✅ (private gate + اسم ذهبي)
 │   ├── follow_list_screen.dart    // ✅
 │   ├── notifications_screen.dart  // ✅
 │   ├── chat_screen.dart           // ✅
 │   ├── chats_list_screen.dart     // ✅
-│   ├── premium_screen.dart        // ✅ (4 حالات)
+│   ├── premium_screen.dart        // ✅ (4 حالات + بانر Trial)
 │   ├── premium_checkout_screen.dart // ✅
+│   ├── premium_stats_screen.dart  // ✅ (جديد — المرحلة 41)
 │   ├── admin/
 │   │   ├── admin_panel_screen.dart          // ✅ (4 بطاقات)
 │   │   ├── verification_requests_screen.dart // ✅
@@ -273,12 +275,12 @@ lib/
     ├── app_branding.dart, animated_vip_background.dart
     ├── themed_background.dart
     ├── theme_preview.dart, asset_icon.dart
-    ├── profile_avatar.dart        // ✅ (3 أنواع + crown)
+    ├── profile_avatar.dart        // ✅ (3 أنواع + crown متحرك محسّن)
     ├── verified_badge.dart        // ✅ (owner/premium/me/user)
     ├── user_badges.dart           // ✅
     ├── animated_entry.dart        // ✅
     ├── islamic_empty_state.dart   // ✅
-    ├── rewarded_ad_card.dart      // ✅
+    ├── rewarded_ad_card.dart      // ✅ (يختفي لـ Premium)
     ├── premium_promo_dialog.dart  // ✅
     ├── glass_card.dart
     ├── star_badge.dart, ornament_medallion.dart
@@ -360,11 +362,11 @@ follows/{followerUid}_{followingUid}/
 posts/{postId}/
 ├── uid, userName, userAvatar, userPhotoBase64
 ├── userVerified, userVerifiedType, userBadges: []
-├── text (max 1000)
+├── text (max 1000 لـ Premium، 500 للعادي)
 ├── createdAt, editedAt
 ├── likes: [], likesCount, commentsCount, repostsCount
 ├── repostOf, originalAuthorUid/Name/Avatar
-├── isPinned, isGlobalPin, isDeleted
+├── isPinned, isGlobalPin, pinnedAt (جديد)، isDeleted
 ├── mentions: [], hashtags: []
 └── comments/{commentId}/
     ├── uid, userName, userAvatar, userPhotoBase64
@@ -551,7 +553,7 @@ service cloud.firestore {
         ||
         (
           request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['likes', 'likesCount', 'commentsCount', 'repostsCount'])
+            .hasOnly(['likes', 'likesCount', 'commentsCount', 'repostsCount', 'isPinned', 'pinnedAt'])
         )
       );
       allow delete: if request.auth != null
@@ -590,9 +592,11 @@ service cloud.firestore {
 }
 ```
 
+**⚠️ ملاحظة المرحلة 41:** أضفنا حقل `pinnedAt` إلى قواعد تحديث `posts`. تأكد من إعادة نشر القواعد على Firebase Console.
+
 ---
 
-## ✅ المراحل المكتملة (1-40)
+## ✅ المراحل المكتملة (1-41)
 
 ### المراحل الأساسية (1-24)
 1. ✅ الحسابات + Auto-login
@@ -622,348 +626,145 @@ service cloud.firestore {
 
 ### المراحل المتقدمة (25-40)
 
-**25) ✅ المجتمع (Community Feed)**
-- Posts نصية (حتى 1000 حرف)
-- Likes + Comments + Reposts
-- Pin شخصي
-- **منشور الترحيب العالمي** (isGlobalPin للمالك)
-- Soft delete
-- PostCard مع أنيميشن + نجوم زخرفية
+**25) ✅ المجتمع (Community Feed)** — Posts + Likes + Comments + Reposts + Pin + منشور ترحيب عالمي
 
-**26) ✅ نظام المتابعة (Follow)**
-- زر متابعة/متابَع
-- قوائم المتابعين/المتابَعين
-- User profile screen
+**26) ✅ نظام المتابعة (Follow)** — زر متابعة + قوائم المتابعين/المتابَعين
 
-**27) ✅ الإشعارات الاجتماعية + الإدارية**
-- 4 أنواع اجتماعية: follow, like, comment, repost
-- 7 أنواع إدارية: photo_approved, photo_rejected, verified_me, verified_user, verify_rejected, new_video, new_reel
-- 2 Premium: premium_approved, premium_rejected
-- درع "الإدارة" + شارات
+**27) ✅ الإشعارات الاجتماعية + الإدارية** — 13 نوع إشعار
 
-**28) ✅ VerifiedBadge موحّد**
-- owner.png + premium.png + true.me.png + true.users.png
-- كلها ذهبية عبر ColorFiltered
-- لمعان + نبض
+**28) ✅ VerifiedBadge موحّد** — owner.png + premium.png + true.me.png + true.users.png (ذهبية + لمعان + نبض)
 
-**29) ✅ إصلاح تسرب البيانات بين الحسابات**
-- reset عند signOut
-- Auto-login
+**29) ✅ إصلاح تسرب البيانات بين الحسابات** — reset عند signOut + Auto-login
 
-**30) ✅ نظام الصور المتقدم**
-- 3 خيارات: symbol ذكر/انثى + صورة مخصصة
-- الجنس ثابت (تحذير إجباري)
-- Cooldown 24 ساعة (غير موثق)
-- طلب إعادة توثيق (موثق)
-- Owner بلا قيود
-- الصورة في كل مكان
+**30) ✅ نظام الصور المتقدم** — 3 خيارات + جنس ثابت + cooldown 24h + owner bypass
 
 **31) ✅ تحذير الجنس + إشعارات الموافقة/الرفض**
 
-**32) ✅ قناة YouTube**
-- تابين: الفيديوهات (16:9) + الريلز (9:16)
-- Firestore-driven
-- NestedScrollView + Tabs تستقر عند السكرول
-- إشعار "فيديو جديد" لكل متابع
+**32) ✅ قناة YouTube** — فيديوهات 16:9 + ريلز 9:16 + NestedScrollView + إشعار "فيديو جديد"
 
-**33) ✅ الشات (Chat)**
-- زر 💬 في HomeShell (chat.png + badge)
-- زر 💬 في UserProfile (ذهبي/رمادي)
-- Private: طلب رسالة، Public: مباشر
-- chatId = sorted uids joined by _
-- قائمة محادثات + شاشة شات + date labels
+**33) ✅ الشات (Chat)** — زر 💬 في HomeShell + UserProfile + Private: طلب + Public: مباشر
 
-**34) ✅ الترجمات الشاملة**
-- كل الشاشات بالـ7 لغات
+**34) ✅ الترجمات الشاملة** — كل الشاشات بالـ7 لغات
 
-**35) ✅ التزيينات النهائية**
-- `AnimatedEntry` (fade+slide مع delay)
-- `IslamicEmptyState` (نجمة ثمانية دوّارة)
-- PostCard: نجمتان + معين متوهج + نبض قلب
-- VerifiedBadge: لمعان + نبض
-- Chat: فقاعات مع glow + tail
-- ChatsList: Avatar rings + Badge نابض
+**35) ✅ التزيينات النهائية** — AnimatedEntry + IslamicEmptyState + PostCard نجوم + VerifiedBadge لمعان + Chat glow
 
 **36) ✅ `tool/preview.sh` (Release + Static)**
-```bash
-#!/bin/bash
-pkill -f "http.server" 2>/dev/null
-pkill -f flutter 2>/dev/null
-pkill -f dart 2>/dev/null
-sleep 2
-flutter build web --release
-cd build/web
-python3 -m http.server 8095 --bind 0.0.0.0
-```
 
-**37) ✅ AdMob Rewarded Ads**
-- 20 إعلان/يوم
-- 50 نقطة لكل إعلان
-- 10 إعلانات → 3 أيام Premium Trial (مرة واحدة)
-- Firestore counters: adsWatchedToday, lastAdDate, totalAdsWatched, premiumTrialUsed
-- `AdsService` + `RewardedAdCard`
-- رسالة دعم أسفل البطاقة
+**37) ✅ AdMob Rewarded Ads** — 20 إعلان/يوم + 50 نقطة/إعلان + 10 إعلانات → 3 أيام Premium Trial
 
-**38) ✅ نظام Premium Backend**
-- `PremiumRequest` model + `PremiumService`
-- Firestore rules لـ `premium_subscriptions`
-- PayPal.me: paypal.me/AbdelRahmen2003/5, /13, /45
+**38) ✅ نظام Premium Backend** — PremiumRequest model + PremiumService + Firestore rules
 
-**39) ✅ شاشات Premium**
-- `PremiumScreen` (4 حالات: main, pending, approved, rejected)
-- `PremiumCheckoutScreen` (PayPal + Checkbox يدوي للتأكيد)
-- 15 ميزة مع عرض صور فعلية لـ premium.png + true.me.png
+**39) ✅ شاشات Premium** — PremiumScreen (4 حالات) + PremiumCheckoutScreen (PayPal + Checkbox)
 
-**40) ✅ التكامل + Promo**
-- `PremiumRequestsScreen` في admin
-- بطاقة "طلبات Premium" في `AdminPanelScreen`
-- `StoreScreen`: Premium banner نابض في الأعلى
-- `HomeShell`: زر Promo (يظهر في المرة 2 و 5)
-- `AccountScreen`: عرض Premium badge
-- `notifications_screen`: عرض premium_approved/rejected
+**40) ✅ التكامل + Promo** — PremiumRequestsScreen + بطاقة admin + Promo dialog (2/5 مرات) + AccountScreen badge
 
----
+**41) ✅ ميزات Premium الفعلية**
 
-## 🚧 ما ينتظرنا — المراحل التالية (بالترتيب المقترح)
+| # | الميزة | الحالة |
+|---|--------|--------|
+| 1 | 🚫 إخفاء الإعلانات | ✅ `RewardedAdCard` يفحص Premium |
+| 2 | 🎨 VIP مجاني في المتجر | ✅ `StoreScreen` — شارة FREE + لا خصم نقاط |
+| 3 | 📌 تثبيت 3 منشورات | ✅ `CommunityService.togglePin` + `pinnedAt` |
+| 4 | 🎯 ضعف نقاط التحديات | ✅ `ChallengeScreen` (40 بدل 20) |
+| 5 | 📝 منشور أطول | ✅ `CreatePostScreen` (1000 بدل 500) |
+| 6 | 👁️ رؤية Private | ✅ `UserProfileScreen` — بوابة قفل 🔒 |
+| 7 | 💰 10,000 نقطة شهرياً | ✅ `PremiumService.approveRequest` + إشعار |
+| 8 | 👑 تاج متحرك | ✅ `ProfileAvatar._CrownWidget` (بدون دائرة + أكبر) |
+| 9 | ✍️ اسم ذهبي | ✅ `PostCard` + `CreatePostScreen` |
+| 10 | 🚀 أولوية في Feed | ✅ `CommunityService.postsStream` (asyncMap) |
+| 11 | 📊 إحصاءات Premium | ✅ `PremiumStatsScreen` (جديد) |
+| 12 | 🎁 تجربة 3 أيام مقابل 10 إعلانات | ✅ بانر في `PremiumScreen` + منطق `AdsService` |
 
-### 🌱 المرحلة 41: إكمال ميزات Premium الفعلية
+**ملفات جديدة في المرحلة 41:**
+- `lib/screens/premium_stats_screen.dart`
 
-**الوضع الحالي:** بعد موافقة المالك، `profile.premium.active = true`، لكن **الميزات لم تُفعّل تلقائياً**.
-
-**الميزات التي يجب تفعيلها:**
-
-| # | الميزة | الطريقة |
-|---|--------|---------|
-| 1 | 🚫 إخفاء الإعلانات | `RewardedAdCard` يفحص `isPremium` |
-| 2 | 🎨 VIP مجاني في المتجر | `StoreScreen` يفحص `isPremium` → كل شي مجاني |
-| 3 | 📌 تثبيت 3 منشورات | `togglePin` يفحص `isPremium` |
-| 4 | 🎯 ضعف نقاط التحديات | `challenge_screen` → 40 بدل 20 |
-| 5 | 📝 منشور أطول | `create_post_screen` → 1000 بدل 500 (متوفر أصلاً) |
-| 6 | 👁️ رؤية Private | `UserProfileScreen` → فحص `isPremium` |
-| 7 | 💰 10,000 نقطة شهرياً | عند approve → add points فوراً + تتبع شهري |
-| 8 | 👑 تاج متحرك | `ProfileAvatar` يدعمه لكن يحتاج تفعيل |
-| 9 | ✍️ اسم ذهبي | في `PostCard` + `UserProfileScreen` |
-| 10 | 🚀 أولوية في Feed | `postsStream` ترتيب حسب `isPremium` |
-| 11 | 📊 إحصاءات | شاشة إحصائيات جديدة |
-| 12 | 🎁 هدية شهرية | يدوي |
-
-**الملفات المطلوبة:**
-- `lib/services/premium_service.dart` → دالة `isUserPremium(uid)` static
-- `lib/services/community_service.dart` → ترتيب Feed
-- `lib/screens/challenge_screen.dart` → ضعف النقاط
-- `lib/screens/store_screen.dart` → VIP مجاني
-- `lib/widgets/rewarded_ad_card.dart` → إخفاء لـ Premium
-- `lib/widgets/post_card.dart` → اسم ذهبي + ترتيب
-- `lib/screens/user_profile_screen.dart` → رؤية Private
+**ملفات معدّلة في المرحلة 41:**
+- `lib/services/premium_service.dart` (isUserPremium + fetchIsUserPremium + إشعارات + 10000 نقطة)
+- `lib/services/community_service.dart` (Premium أولاً في Feed + 3 pins)
+- `lib/screens/challenge_screen.dart` (x2 نقاط + شارة Premium)
+- `lib/screens/store_screen.dart` (VIP مجاني + إخفاء البانر)
+- `lib/screens/user_profile_screen.dart` (private gate + اسم ذهبي)
+- `lib/screens/create_post_screen.dart` (1000 حرف + تاج)
+- `lib/screens/premium_screen.dart` (بانر Trial + زر إحصاءات)
+- `lib/widgets/rewarded_ad_card.dart` (إخفاء لـ Premium)
+- `lib/widgets/post_card.dart` (اسم ذهبي + تاج)
+- `lib/widgets/profile_avatar.dart` (تحسين التاج)
 
 ---
+
+## 🚧 ما ينتظرنا — المراحل التالية
 
 ### 🌱 المرحلة 42: FCM + Push Notifications
 
-**⚠️ يتطلب:**
-- ترقية Firebase إلى **Blaze** (يتطلب بطاقة بنكية)
-- تفعيل `firebase_messaging`
-- Cloud Functions (Node.js)
-- SHA-1 في Firebase Console
+**⚠️ يتطلب:** ترقية Firebase إلى Blaze (بطاقة بنكية) + Cloud Functions + SHA-1
 
 **الفائدة:** إشعارات تصل حتى لو التطبيق مغلق.
 
-**الملفات المطلوبة:**
-- `functions/index.js` (Cloud Function)
-- `lib/services/push_service.dart` (Flutter)
-- تعديل `main.dart` أو `HomeShell` لتهيئة FCM
-- `android/app/build.gradle` → google-services.json
-- `ios/Runner/Info.plist` → Capabilities
-
-**⚠️ ملاحظة:** يحتاج إعادة توليد مجلد `ios/` (غير موجود حالياً).
-
----
-
 ### 🌱 المرحلة 43: إصلاح Google Sign-In
 
-**⚠️ مشكلة معروفة:** Google Sign-In جُرّب وفشل سابقاً (People API + origin_mismatch + minified errors). تم تأجيله.
-
-**المطلوب لتفعيله:**
-1. تفعيل People API في Google Cloud Console
-2. إضافة `github.dev` في Authorized Domains
-3. إضافة `humble-yodel-w5vqw65rrqhqp-8095.app.github.dev` في OAuth Origins
-4. إعادة تفعيل زر Google في `register_screen.dart`
-5. إضافة `google_sign_in: ^6.2.1` في pubspec
-
-**الملفات:**
-- `lib/services/auth_service.dart` → إضافة `signInWithGoogle()`
-- `lib/screens/register_screen.dart` → زر Google
-- `lib/screens/login_screen.dart` → زر Google
-- `pubspec.yaml` → google_sign_in
-
-**⚠️ ملاحظة:** على APK حقيقي، Google Sign-In أسهل بكثير (SHA-1 فقط، بدون origin mismatch).
-
----
+**⚠️ مشكلة معروفة:** فشل سابقاً (People API + origin_mismatch). على APK حقيقي يعمل بسهولة (SHA-1 فقط).
 
 ### 🌱 المرحلة 44: الفحص النهائي والتنظيف
 
-- مراجعة كل التحذيرات (`flutter analyze`)
-- توحيد الكود
-- إزالة الاستيرادات غير المستخدمة
-- توحيد الترجمات
-- حذف الملفات غير المستخدمة (`avatar_picker` مثلاً)
+### 🌱 المرحلة 45: بناء APK (keystore + signing)
 
----
+### 🌱 المرحلة 46: النشر (Samsung Store / Huawei AppGallery / APKPure)
 
-### 🌱 المرحلة 45: بناء APK
-
-```bash
-# 1. توليد keystore
-keytool -genkey -v -keystore ~/upload-keystore.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
-
-# 2. إنشاء android/key.properties
-storePassword=...
-keyPassword=...
-keyAlias=upload
-storeFile=...
-
-# 3. تحديث android/app/build.gradle
-
-# 4. البناء
-flutter build apk --release
-flutter build appbundle --release
-```
-
-**الملفات المطلوبة:**
-- `android/app/build.gradle` (تعديل signing)
-- `android/key.properties` (جديد، محمي)
-- `~/upload-keystore.jks` (خارج المشروع)
-
-**⚠️ SHA-1:** يُضاف في Firebase Console → Project Settings → SHA certificate fingerprints.
-
----
-
-### 🌱 المرحلة 46: النشر على المنصات
-
-**المنصات المجانية:**
-
-| المنصة | الرابط | ملاحظات |
-|--------|--------|---------|
-| موقعك الشخصي | — | APK مباشر |
-| Samsung Galaxy Store | seller.samsungapps.com | مجاني، يحتاج توقيع |
-| Huawei AppGallery | developer.huawei.com | مجاني، HMS Core |
-| APKPure | apkpure.com | مجاني |
-| Aptoide | aptoide.com | ⚠️ خطر نسخ معدّلة |
-
-**مؤجل (يحتاج رسوم):**
-- Google Play ($25 مرة واحدة)
-- Apple App Store ($99/سنة)
-
----
-
-### 🌱 المرحلة 47: ميزات إضافية
-
-- صور في المنشورات (Firebase Storage)
-- طلب تغيير الجنس (بطاقة في admin)
-- طلب إلغاء التوثيق
-- إحصائيات المعلم (نقاط لكل جلسة تلاوة)
-- تطبيق إدارة منفصل للمالك
-- Cloud Functions للتنبيهات
-- CORS proxy للمساجد على الويب
+### 🌱 المرحلة 47: ميزات إضافية (صور في المنشورات، إلخ)
 
 ---
 
 ## 🛠️ طريقة العمل مع AI (Workflow إجباري)
 
-> ⚠️ **قسم دائم** — لا يُحذف أبداً. يقرأه كل AI جديد.
+> ⚠️ **قسم دائم** — لا يُحذف أبداً.
 
 ### ⚠️ المالك يستخدم **الهاتف فقط**
-- ❌ **لا اختصارات كيبورد**: `Ctrl+C`, `Ctrl+V`, `Ctrl+X`, `Ctrl+O`, `Ctrl+A`
-- ✅ تعديل الملفات: على **GitHub.com مباشرة** (Add file أو قلم ✏️ → Select All → Delete → Paste → Commit)
-- ✅ تشغيل الأوامر: **Codespaces Terminal** على المتصفح
-- ✅ حفظ ملفات من Terminal: أمر واحد بـ heredoc:
-  ```bash
-  cat > path/to/file.dart << 'EOF'
-  // محتوى
-  EOF
-  ```
-- ✅ إيقاف التطبيق: `pkill -f flutter` (لا `Ctrl+C`)
+- ❌ لا اختصارات كيبورد (`Ctrl+C`, `Ctrl+V`, `Ctrl+A`)
+- ✅ تعديل الملفات: على GitHub.com مباشرة (قلم ✏️ → Select All → Delete → Paste → Commit)
+- ✅ تشغيل الأوامر: Codespaces Terminal على المتصفح
+- ✅ إيقاف التطبيق: `pkill -f flutter`
 
 ### 🚨 القواعد الإجبارية للـ AI
 
-1. **ملف كامل دائماً** — لا تعديلات جزئية
-   - عند تعديل أي ملف → **أرسل الملف كامل من جديد**
-   - المستخدم يحذف القديم ويلصق الجديد
-   - **لا تقل "ابحث عن السطر..."** أبداً
+1. **ملف كامل دائماً** — لا تعديلات جزئية. أرسل الملف كامل من جديد. المستخدم يحذف القديم ويلصق الجديد.
+2. **أوامر Terminal بكتلة واحدة** — بدون شرح بينها.
+3. **لا خطوات وسيطة** — لا تقل "بعدين نضيف".
+4. **بعد كل ملف:** اسم الملف + (ملف جديد) أو (تعديل/تغيير) + الملف كامل.
+5. **قبل أي تعديل:** `git pull` ثم `flutter analyze`. لا حفظ قبل No issues found.
+6. **بعد النجاح:** `git add . && git commit -m "..." && git push`
+7. **اختبار:** `bash tool/preview.sh` (Flutter Web لا يشغل AdMob)
+8. **تحديث PROJECT.md بعد كل مرحلة.**
 
-2. **أوامر Terminal بكتلة واحدة**
-   - أي أوامر متسلسلة → اكتبها في **كتلة واحدة** بدون شرح بينها
-   - مثال:
-     ```
-     git pull
-     flutter analyze
-     ```
-   - لا تكتب "ثم اكتب..." — فقط الكود
-
-3. **لا خطوات وسيطة** — لا تقل "بعدين نضيف"
-
-4. **بعد كل ملف:**
-   - ✅ اذكر اسم الملف بوضوح: `lib/path/file.dart`
-   - ✅ حدد: **(ملف جديد)** أو **(تعديل/تغيير)**
-   - ✅ اكتب الملف كامل
-
-5. **قبل أي تعديل جديد:**
-   - `git pull` أولاً
-   - `flutter analyze` بعده
-   - لا حفظ قبل `No issues found`
-
-6. **بعد ما ينجح:** احفظ بالأوامر:
-   ```
-   git add .
-   git commit -m "..."
-   git push
-   ```
-
-7. **اختبار (بعد التحليل النظيف):**
-   ```
-   bash tool/preview.sh
-   ```
-   ⚠️ **ملاحظة:** Flutter Web **لا يشغل إعلانات AdMob** — تحتاج APK حقيقي.
-
-8. **تحديث `PROJECT.md`** — بعد كل مرحلة رئيسية.
-
-### 📋 خطوات دورة العمل (لا تتغير)
+### 📋 خطوات دورة العمل
 
 ```
 1. AI يشرح + يعطي الملفات كاملة.
 2. المالك ينسخها في GitHub → Commit لكل ملف.
-3. Terminal:
-   git pull
-   flutter analyze
-4. لو "No issues found" → اختبار:
-   bash tool/preview.sh
-5. لو التطبيق شغال → حفظ:
-   git add .
-   git commit -m "..."
-   git push
-6. تحديث PROJECT.md → Commit → git pull
+3. Terminal: git pull && flutter analyze
+4. لو "No issues found" → bash tool/preview.sh
+5. لو التطبيق شغال → git add . && git commit && git push
+6. تحديث PROJECT.md
 7. المرحلة التالية.
 ```
 
 ### 🎨 قواعد الكود
 
-1. **الألوان:** `AppColors` أو `ThemedColors` (theme-aware)
-2. **الأحجام:** `R.s()` و `R.f()`
-3. **الترجمات:** `appState.tr('key')` و `appState.trn('key{n}', n)`
-4. **Firestore:** تحت `users/{uid}`
-5. **الصور:** `assets/` (icons, images, backgrounds, adhan_backgrounds)
-6. **الأنيميشن:** `AnimatedEntry` للظهور، نبض للقلب، shimmer للشارات
-7. **الأيقونات الجديدة:** تُلوَّن ذهبي عبر `ColorFiltered`
-8. **لا تحذف imports بدون فحص** — تأكد إنها غير مستخدمة
-9. **الملفات الكبيرة:** `>500` سطر، استبدال كامل إجباري
+1. الألوان: `AppColors` أو `ThemedColors`
+2. الأحجام: `R.s()` و `R.f()`
+3. الترجمات: `appState.tr('key')` و `appState.trn('key{n}', n)`
+4. Firestore: تحت `users/{uid}`
+5. الصور: `assets/` (icons, images, backgrounds, adhan_backgrounds)
+6. الأنيميشن: `AnimatedEntry` للظهور، نبض للقلب، shimmer للشارات
+7. الأيقونات الجديدة: تُلوَّن ذهبي عبر `ColorFiltered`
+8. لا تحذف imports بدون فحص
+9. الملفات الكبيرة (>500 سطر): استبدال كامل إجباري
 
 ### ⚠️ قواعد التحذير
 
-1. **`lib/core/secrets.dart` محمي** — لا يُرفع على GitHub (.gitignore)
-2. **لا تعديل على Firestore Rules من Terminal** — فقط من Firebase Console
-3. **AdMob App ID في `AndroidManifest.xml`** — حساس، لا تغييره
-4. **PayPal.me ID في `premium_service.dart`** — `AbdelRahmen2003`
+1. `lib/core/secrets.dart` محمي — لا يُرفع على GitHub (.gitignore)
+2. لا تعديل على Firestore Rules من Terminal — فقط من Firebase Console
+3. AdMob App ID في `AndroidManifest.xml` — حساس، لا تغييره
+4. PayPal.me ID في `premium_service.dart` — `AbdelRahmen2003`
 
 ---
 
@@ -1003,9 +804,7 @@ image: ^4.2.0
 google_mobile_ads: ^5.2.0
 ```
 
-**قادم:**
-- `firebase_messaging` (FCM)
-- `google_sign_in` (لما نصلحه)
+**قادم:** `firebase_messaging` (FCM) + `google_sign_in`
 
 ### Assets
 ```
@@ -1029,8 +828,8 @@ assets/images/adhan_backgrounds/: adhan_bg_1..5, adhan_bg_vip_1..3
 > اقرأ ملف PROJECT.md كامل من:
 > `https://raw.githubusercontent.com/nooralhidayahbusiness-App/noor-al-hidayah_claud.APP/main/PROJECT.md`
 >
-> هذا التوثيق الكامل لتطبيقي. آخر ما أنجزناه: **[اذكر آخر شي]**.
-> التالي: **[اذكر المهمة الجاية من قسم "ما ينتظرنا"]**.
+> هذا التوثيق الكامل لتطبيقي. آخر ما أنجزناه: **المرحلة 41 (ميزات Premium الفعلية)**.
+> التالي: **المرحلة 42 (FCM) أو 43 (Google Sign-In)**.
 > اتبع نفس الأسلوب الموثق في قسم "طريقة العمل" بالحرف.
 
 **AI الجديد يجب أن:**
@@ -1079,19 +878,17 @@ github.com/nooralhidayahbusiness-App/noor-al-hidayah_claud.APP
 
 **حالياً:**
 - ✅ Community + Chat + Channel مكتملة
-- ✅ Notifications (10 أنواع) مكتملة
+- ✅ Notifications (13 نوع) مكتملة
 - ✅ Premium Backend + UI + Payment مكتملة
 - ✅ AdMob Rewarded مكتمل
-- ⏳ Premium Features الفعلية (إخفاء إعلانات، VIP مجاني، إلخ)
+- ✅ **ميزات Premium الفعلية مكتملة (المرحلة 41)**
 - ⏳ FCM (يحتاج Blaze)
 - ⏳ Google Sign-In Fix
 - ⏳ APK + النشر
 
 **الخطوة الفورية المقترحة:**
-**المرحلة 41** — إكمال ميزات Premium الفعلية.
-
-**الملف الأول:**
-`lib/services/premium_service.dart` — إضافة دالة `static bool isUserPremium(Map profile)` لاستخدامها في كل الشاشات.
+- **المرحلة 42** (FCM) — إن توفرت بطاقة بنكية.
+- **المرحلة 43** (Google Sign-In) — بدون بطاقة.
 
 ---
 
