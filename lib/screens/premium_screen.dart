@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'premium_stats_screen.dart';
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
@@ -1050,18 +1050,48 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   ),
                 ],
                 SizedBox(height: R.s(context, 20)),
-                GlassCard(
-                  ornament: false,
-                  child: Column(
-                    children: [
-                      _rowInfo(context, _pr('plan'),
-                          appState.isArabic ? req.planLabel : req.plan),
-                      SizedBox(height: R.s(context, 6)),
-                      _rowInfo(context, _pr('amount'),
-                          '\$${req.amount.toInt()}'),
-                    ],
-                  ),
-                ),
+GlassCard(
+  ornament: false,
+  child: Column(
+    children: [
+      _rowInfo(context, _pr('plan'),
+          appState.isArabic ? req.planLabel : req.plan),
+      SizedBox(height: R.s(context, 6)),
+      _rowInfo(context, _pr('amount'),
+          '\$${req.amount.toInt()}'),
+    ],
+  ),
+),
+SizedBox(height: R.s(context, 16)),
+// ✅ جديد: زر عرض الإحصائيات
+SizedBox(
+  width: double.infinity,
+  height: R.s(context, 50),
+  child: OutlinedButton.icon(
+    onPressed: () {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const PremiumStatsScreen(),
+        ),
+      );
+    },
+    style: OutlinedButton.styleFrom(
+      foregroundColor: AppColors.gold,
+      side: const BorderSide(color: AppColors.gold, width: 1.5),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(R.s(context, 18)),
+      ),
+    ),
+    icon: Icon(Icons.insights_rounded, size: R.s(context, 20)),
+    label: Text(
+      appState.isArabic ? 'عرض الإحصائيات' : 'View Stats',
+      style: TextStyle(
+        fontSize: R.f(context, 14),
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+),
               ],
             ),
           ),
