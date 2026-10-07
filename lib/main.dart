@@ -6,7 +6,9 @@ import 'core/firebase_options.dart';
 import 'core/theme.dart';
 import 'screens/adhan_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/auth_service.dart';
 import 'services/notification_service.dart';
+import 'services/push_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -31,6 +33,19 @@ void main() async {
       );
     };
   } catch (_) {}
+
+  // ✅ جديد: تهيئة FCM
+  try {
+    await pushService.init();
+  } catch (_) {}
+
+  // ✅ جديد: راقب حالة تسجيل الدخول لحفظ FCM token
+  authService.authChanges.listen((user) {
+    if (user != null) {
+      pushService.saveTokenForCurrentUser();
+    }
+  });
+
   runApp(const NoorApp());
 }
 
