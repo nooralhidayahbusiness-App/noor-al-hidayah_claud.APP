@@ -9,6 +9,7 @@ import '../models/user_brief.dart';
 import '../services/chat_service.dart';
 import '../services/community_service.dart';
 import '../services/follow_service.dart';
+import '../services/premium_service.dart';
 import '../widgets/animated_entry.dart';
 import '../widgets/post_card.dart';
 import '../widgets/profile_avatar.dart';
@@ -18,6 +19,7 @@ import 'chat_screen.dart';
 import 'create_post_screen.dart';
 import 'follow_list_screen.dart';
 import 'post_detail_screen.dart';
+import 'premium_screen.dart';
 import 'verification_request_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -35,6 +37,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   String? _currentUid;
   UserBrief? _currentUser;
+  bool _viewerIsPremium = false; // ✅ جديد
 
   bool get _isOwnProfile => _currentUid == widget.profileUid;
 
@@ -48,7 +51,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _loadCurrentUser() async {
     if (_currentUid == null) return;
     final data = await _followService.getUserBrief(_currentUid!);
-    if (mounted) setState(() => _currentUser = data);
+
+    // ✅ جديد: فحص حالة Premium للزائر
+    final isPremium = await PremiumService.fetchIsUserPremium(_currentUid!);
+
+    if (mounted) {
+      setState(() {
+        _currentUser = data;
+        _viewerIsPremium = isPremium;
+      });
+    }
   }
 
   @override
@@ -116,6 +128,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // Content — مع AnimatedEntry متدرّج
   // ============================================================
   Widget _buildContent(BuildContext context, UserBrief user) {
+    // ✅ جديد: بوابة الخصوصية — Premium فقط يرى الملفات الخاصة
+    if (!_isOwnProfile && !user.isPublic && !_viewerIsPremium) {
+      return _buildPrivateGate(context, user);
+    }
+
     return ListView(
       padding: EdgeInsets.only(bottom: R.s(context, 24)),
       children: [
@@ -164,6 +181,122 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
         _buildPostsList(context, user),
       ],
+    );
+  }
+
+  // ============================================================
+  // ✅ جديد: شاشة القفل للبروفايلات الخاصة
+  // ============================================================
+  Widget _buildPrivateGate(BuildContext context, UserBrief user) {
+    final ar = appState.isArabic;
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(R.s(context, 32)),
+        child: AnimatedEntry(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // الأيقونة الذهبية
+              Container(
+                width: R.s(context, 100),
+                height: R.s(context, 100),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  border: Border.all(color: AppColors.gold, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.gold.withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.lock_rounded,
+                  color: AppColors.gold,
+                  size: R.s(context, 48),
+                ),
+              ),
+              SizedBox(height: R.s(context, 24)),
+
+              // الاسم
+              Text(
+                user.name,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.softGold,
+                  fontSize: R.f(context, 20),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: R.s(context, 8)),
+
+              // العنوان
+              Text(
+                ar ? 'هذا الحساب خاص' : 'This account is private',
+                style: TextStyle(
+                  color: AppColors.gold,
+                  fontSize: R.f(context, 15),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: R.s(context, 6)),
+
+              // الوصف
+              Text(
+                ar
+                    ? 'اشترك في Premium لعرض الملفات الخاصة'
+                    : 'Subscribe to Premium to view private profiles',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.cream.withValues(alpha: 0.7),
+                  fontSize: R.f(context, 13),
+                  height: 1.5,
+                ),
+              ),
+              SizedBox(height: R.s(context, 24)),
+
+              // زر Premium
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const PremiumScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(
+                  Icons.workspace_premium_rounded,
+                  color: AppColors.deepGreen,
+                  size: 20,
+                ),
+                label: Text(
+                  ar ? 'اشترك في Premium' : 'Subscribe to Premium',
+                  style: TextStyle(
+                    color: AppColors.deepGreen,
+                    fontSize: R.f(context, 14),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.deepGreen,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: R.s(context, 24),
+                    vertical: R.s(context, 12),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(R.s(context, 24)),
+                  ),
+                  elevation: 6,
+                  shadowColor: AppColors.gold.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -218,9 +351,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: AppColors.cream,
+                // ✅ لون ذهبي إذا Premium
+                color: user.isPremium ? AppColors.gold : AppColors.cream,
                 fontSize: R.f(context, 19),
                 fontWeight: FontWeight.bold,
+                shadows: user.isPremium
+                    ? [
+                        Shadow(
+                          color: AppColors.gold.withValues(alpha: 0.5),
+                          blurRadius: 8,
+                        ),
+                      ]
+                    : null,
               ),
             ),
           ),
