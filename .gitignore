@@ -77,3 +77,4 @@ lib/core/secrets.dart
 .env.local
 *.key
 
+lib/core/secrets.dart.save
