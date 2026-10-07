@@ -1,14 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../models/premium_request.dart';
+import '../services/ads_service.dart';
 import '../services/premium_service.dart';
 import '../widgets/animated_entry.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
+import 'challenge_screen.dart';
 import 'premium_checkout_screen.dart';
 
 // ============ ترجمات ============
@@ -42,6 +45,13 @@ const Map<String, Map<String, String>> _premTr = {
     'paymentMethod': 'طريقة الدفع',
     'paymentMethodDesc':
         '💳 يتم الدفع عبر PayPal (سهل وآمن). بعد الدفع، أكّد طلبك في التطبيق وسيتم التفعيل خلال 24 ساعة.',
+    // ✅ Trial
+    'trialTitle': 'جرّب Premium مجاناً',
+    'trialDesc': 'شاهد 10 إعلانات واحصل على 3 أيام Premium مجاناً',
+    'trialButton': 'ابدأ التجربة',
+    'trialUsed': 'استخدمت التجربة المجانية',
+    'trialUsedDesc': 'يمكنك الاشتراك المدفوع في أي وقت',
+    'trialProgress': 'باقي {n} إعلانات',
   },
   'en': {
     'title': 'Premium',
@@ -72,6 +82,13 @@ const Map<String, Map<String, String>> _premTr = {
     'paymentMethod': 'Payment Method',
     'paymentMethodDesc':
         '💳 Payment via PayPal (easy & secure). After paying, confirm your request in the app — activated within 24h.',
+    // ✅ Trial
+    'trialTitle': 'Try Premium Free',
+    'trialDesc': 'Watch 10 ads and get 3 days of Premium for free',
+    'trialButton': 'Start Trial',
+    'trialUsed': 'Trial already used',
+    'trialUsedDesc': 'You can subscribe anytime',
+    'trialProgress': '{n} ads left',
   },
   'fr': {
     'title': 'Premium',
@@ -102,6 +119,12 @@ const Map<String, Map<String, String>> _premTr = {
     'paymentMethod': 'Mode de paiement',
     'paymentMethodDesc':
         '💳 Paiement via PayPal. Après paiement, confirmez — activation sous 24h.',
+    'trialTitle': 'Essayez Premium Gratuit',
+    'trialDesc': 'Regardez 10 pubs et obtenez 3 jours Premium',
+    'trialButton': 'Commencer',
+    'trialUsed': 'Essai déjà utilisé',
+    'trialUsedDesc': "Vous pouvez vous abonner à tout moment",
+    'trialProgress': '{n} pubs restantes',
   },
   'ur': {
     'title': 'پریمیم',
@@ -131,6 +154,12 @@ const Map<String, Map<String, String>> _premTr = {
     'paypal': 'PayPal',
     'paymentMethod': 'ادائیگی کا طریقہ',
     'paymentMethodDesc': '💳 PayPal کے ذریعے ادائیگی۔',
+    'trialTitle': 'مفت Premium آزمائیں',
+    'trialDesc': '10 اشتہار دیکھیں اور 3 دن مفت Premium پائیں',
+    'trialButton': 'شروع کریں',
+    'trialUsed': 'آزمائش استعمال ہو چکی',
+    'trialUsedDesc': 'آپ کسی بھی وقت سبسکرائب کر سکتے ہیں',
+    'trialProgress': '{n} اشتہار باقی',
   },
   'ne': {
     'title': 'प्रिमियम',
@@ -160,6 +189,12 @@ const Map<String, Map<String, String>> _premTr = {
     'paypal': 'PayPal',
     'paymentMethod': 'भुक्तानी विधि',
     'paymentMethodDesc': '💳 PayPal मार्फत।',
+    'trialTitle': 'नि:शुल्क Premium प्रयास गर्नुहोस्',
+    'trialDesc': '10 विज्ञापन हेर्नुहोस् र 3 दिन नि:शुल्क Premium',
+    'trialButton': 'सुरु गर्नुहोस्',
+    'trialUsed': 'परीक्षण प्रयोग भयो',
+    'trialUsedDesc': 'तपाईं कहिल्यै सदस्यता लिन सक्नुहुन्छ',
+    'trialProgress': '{n} विज्ञापन बाँकी',
   },
   'id': {
     'title': 'Premium',
@@ -189,6 +224,12 @@ const Map<String, Map<String, String>> _premTr = {
     'paypal': 'PayPal',
     'paymentMethod': 'Metode Pembayaran',
     'paymentMethodDesc': '💳 Pembayaran via PayPal.',
+    'trialTitle': 'Coba Premium Gratis',
+    'trialDesc': 'Tonton 10 iklan & dapatkan 3 hari Premium',
+    'trialButton': 'Mulai',
+    'trialUsed': 'Uji coba sudah digunakan',
+    'trialUsedDesc': 'Anda bisa berlangganan kapan saja',
+    'trialProgress': '{n} iklan lagi',
   },
   'ms': {
     'title': 'Premium',
@@ -218,6 +259,12 @@ const Map<String, Map<String, String>> _premTr = {
     'paypal': 'PayPal',
     'paymentMethod': 'Kaedah Pembayaran',
     'paymentMethodDesc': '💳 Pembayaran melalui PayPal.',
+    'trialTitle': 'Cuba Premium Percuma',
+    'trialDesc': 'Tonton 10 iklan & dapatkan 3 hari Premium',
+    'trialButton': 'Mula',
+    'trialUsed': 'Percubaan sudah digunakan',
+    'trialUsedDesc': 'Anda boleh melanggan bila-bila masa',
+    'trialProgress': '{n} iklan lagi',
   },
 };
 
@@ -306,7 +353,15 @@ class _PremiumScreenState extends State<PremiumScreen> {
       padding: EdgeInsets.all(R.s(context, 16)),
       children: [
         AnimatedEntry(child: _buildHero(context)),
+        SizedBox(height: R.s(context, 16)),
+
+        // ✅ جديد: بانر التجربة المجانية
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 80),
+          child: _buildTrialOffer(context),
+        ),
         SizedBox(height: R.s(context, 20)),
+
         AnimatedEntry(
           delay: const Duration(milliseconds: 100),
           child: Text(
@@ -388,6 +443,239 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
+  // ============================================================
+  // ✅ جديد: بانر التجربة المجانية
+  // ============================================================
+  Widget _buildTrialOffer(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const SizedBox.shrink();
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots(),
+      builder: (context, snap) {
+        final data = snap.data?.data();
+        if (data == null) return const SizedBox.shrink();
+
+        final stats = (data['stats'] as Map?) ?? {};
+        final trialUsed = (stats['premiumTrialUsed'] as bool?) ?? false;
+        final totalWatched =
+            (stats['totalAdsWatched'] as num?)?.toInt() ?? 0;
+
+        final ar = appState.isArabic;
+        final remaining =
+            (AdsService.adsForPremiumTrial - totalWatched).clamp(0, 10);
+
+        // إذا استُخدمت التجربة → عرض شارة "استُخدمت"
+        if (trialUsed) {
+          return GlassCard(
+            ornament: false,
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(R.s(context, 10)),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.cream.withValues(alpha: 0.1),
+                    border: Border.all(
+                      color: AppColors.cream.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: AppColors.cream.withValues(alpha: 0.7),
+                    size: R.s(context, 24),
+                  ),
+                ),
+                SizedBox(width: R.s(context, 12)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _pr('trialUsed'),
+                        style: TextStyle(
+                          color: AppColors.cream.withValues(alpha: 0.8),
+                          fontSize: R.f(context, 13),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: R.s(context, 3)),
+                      Text(
+                        _pr('trialUsedDesc'),
+                        style: TextStyle(
+                          color: AppColors.cream.withValues(alpha: 0.55),
+                          fontSize: R.f(context, 11),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // عرض بانر Trial
+        return Container(
+          padding: EdgeInsets.all(R.s(context, 16)),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(R.s(context, 20)),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFFFFD700).withValues(alpha: 0.2),
+                AppColors.deepGreen.withValues(alpha: 0.9),
+              ],
+            ),
+            border: Border.all(
+              color: const Color(0xFFFFD700).withValues(alpha: 0.6),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFFD700).withValues(alpha: 0.2),
+                blurRadius: 14,
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(R.s(context, 8)),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFFFD700).withValues(alpha: 0.2),
+                      border: Border.all(
+                        color: const Color(0xFFFFD700),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.card_giftcard_rounded,
+                      color: const Color(0xFFFFD700),
+                      size: R.s(context, 22),
+                    ),
+                  ),
+                  SizedBox(width: R.s(context, 12)),
+                  Expanded(
+                    child: Text(
+                      _pr('trialTitle'),
+                      style: TextStyle(
+                        color: AppColors.softGold,
+                        fontSize: R.f(context, 15),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: R.s(context, 8)),
+              Text(
+                _pr('trialDesc'),
+                style: TextStyle(
+                  color: AppColors.cream.withValues(alpha: 0.85),
+                  fontSize: R.f(context, 12.5),
+                  height: 1.5,
+                ),
+              ),
+              SizedBox(height: R.s(context, 12)),
+
+              // شريط التقدم
+              Row(
+                children: [
+                  Text(
+                    '$totalWatched / ${AdsService.adsForPremiumTrial}',
+                    style: const TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    _pr('trialProgress').replaceAll('{n}', '$remaining'),
+                    style: TextStyle(
+                      color: AppColors.cream.withValues(alpha: 0.7),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: R.s(context, 6)),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: (totalWatched /
+                          AdsService.adsForPremiumTrial)
+                      .clamp(0.0, 1.0),
+                  minHeight: 6,
+                  backgroundColor: Colors.black.withValues(alpha: 0.3),
+                  valueColor: const AlwaysStoppedAnimation(
+                    Color(0xFFFFD700),
+                  ),
+                ),
+              ),
+              SizedBox(height: R.s(context, 14)),
+
+              // الزر
+              SizedBox(
+                width: double.infinity,
+                height: R.s(context, 46),
+                child: ElevatedButton.icon(
+                  onPressed: () => _openChallenges(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFD700),
+                    foregroundColor: AppColors.deepGreen,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(R.s(context, 14)),
+                    ),
+                    elevation: 4,
+                  ),
+                  icon: Icon(
+                    Icons.play_circle_fill_rounded,
+                    size: R.s(context, 20),
+                  ),
+                  label: Text(
+                    _pr('trialButton'),
+                    style: TextStyle(
+                      fontSize: R.f(context, 14),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: R.s(context, 4)),
+              Text(
+                ar
+                    ? 'اذهب لشاشة التحديات لمشاهدة الإعلانات'
+                    : 'Go to Challenges screen to watch ads',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.cream.withValues(alpha: 0.5),
+                  fontSize: R.f(context, 10),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openChallenges(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ChallengeScreen()),
+    );
+  }
+
   Widget _buildHero(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(R.s(context, 20)),
@@ -448,9 +736,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
-  // ============================================================
-  // ✅ الميزات مع الصور الفعلية
-  // ============================================================
   Widget _buildFeaturesList(BuildContext context) {
     return GlassCard(
       ornament: false,
@@ -477,7 +762,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
           width: R.s(context, 26),
           height: R.s(context, 22),
           child: feature.assetIcons != null
-              // ✅ عرض الصور
               ? Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -502,7 +786,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     ],
                   ],
                 )
-              // ✅ عرض الأيقونة
               : Icon(
                   feature.icon,
                   color: AppColors.gold,
@@ -559,9 +842,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
-  // ============================================================
-  // الحالة 2: pending
-  // ============================================================
   Widget _buildPending(BuildContext context, PremiumRequest req) {
     return Center(
       child: SingleChildScrollView(
@@ -619,9 +899,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
-  // ============================================================
-  // الحالة 3: rejected
-  // ============================================================
   Widget _buildRejected(BuildContext context, PremiumRequest req) {
     return Center(
       child: Padding(
@@ -688,9 +965,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
-  // ============================================================
-  // الحالة 4: approved
-  // ============================================================
   Widget _buildApproved(BuildContext context, PremiumRequest req) {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
