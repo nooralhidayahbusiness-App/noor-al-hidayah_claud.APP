@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'store_screen.dart';
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../data/questions.dart';
+import '../services/premium_service.dart';
 import '../services/user_service.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/auth_widgets.dart';
@@ -22,6 +24,7 @@ class ChallengeScreen extends StatefulWidget {
 class _ChallengeScreenState extends State<ChallengeScreen> {
   bool _loading = true;
   bool _alreadyPlayedToday = false;
+  bool _isPremium = false; // ✅ جديد
   int _todayPoints = 0;
   int _totalPoints = 0;
 
@@ -51,11 +54,18 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
           ? ((progress['todayPoints'] as num?)?.toInt() ?? 0)
           : 0;
 
+      // ✅ جديد: فحص حالة Premium
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final isPremium = uid == null
+          ? false
+          : await PremiumService.fetchIsUserPremium(uid);
+
       if (mounted) {
         setState(() {
           _totalPoints = (stats['points'] as num?)?.toInt() ?? 0;
           _alreadyPlayedToday = lastPlayed == _todayKey();
           _todayPoints = todayPoints;
+          _isPremium = isPremium;
         });
       }
     } finally {
@@ -82,7 +92,10 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
     if (result == null || !mounted) return;
 
     final correct = result;
-    final gained = correct * 20;
+
+    // ✅ جديد: نقاط مضاعفة لمستخدمي Premium (40 بدل 20)
+    final pointsPerCorrect = _isPremium ? 40 : 20;
+    final gained = correct * pointsPerCorrect;
 
     final oldProgress = await userService.loadProgress('challenges');
     final lastPlayed = oldProgress['lastPlayedDate'] as String?;
@@ -308,13 +321,43 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '$_todayPoints / 100',
+                      '$_todayPoints / ${_isPremium ? 200 : 100}',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: AppColors.gold,
                       ),
                     ),
+                    // ✅ جديد: شارة Premium
+                    if (_isPremium) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.auto_awesome_rounded,
+                                color: Color(0xFF2A1500), size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              'x2 POINTS',
+                              style: TextStyle(
+                                color: Color(0xFF2A1500),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     GoldButton(
                       label: _alreadyPlayedToday
