@@ -118,11 +118,13 @@ class PremiumService {
   // للمالك: الموافقة
   // ============================================================
   Future<void> approveRequest(PremiumRequest req) async {
-    final myEmail = FirebaseAuth.instance.currentUser?.email ?? '';
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final myEmail = currentUser?.email ?? '';
+    final myUid = currentUser?.uid ?? '';
     final now = DateTime.now();
     final expiresAt = now.add(Duration(days: req.daysForPlan));
 
-    // 1) فعّل Premium في users/{uid}
+    // 1) فعّل Premium في users/{uid} + أضف 10,000 نقطة
     await _db.collection('users').doc(req.uid).set({
       'profile': {
         'premium': {
@@ -133,7 +135,10 @@ class PremiumService {
           'expiresAt': Timestamp.fromDate(expiresAt),
           'approvedBy': myEmail,
         }
-      }
+      },
+      'stats': {
+        'points': FieldValue.increment(10000),
+      },
     }, SetOptions(merge: true));
 
     // 2) حدّث الطلب
@@ -142,17 +147,54 @@ class PremiumService {
       'reviewedAt': FieldValue.serverTimestamp(),
       'reviewedBy': myEmail,
     });
+
+    // 3) إرسال إشعار premium_approved
+    await _db
+        .collection('notifications')
+        .doc(req.uid)
+        .collection('items')
+        .add({
+      'type': 'premium_approved',
+      'fromUid': myUid,
+      'fromName': 'الإدارة',
+      'fromAvatar': 'owner',
+      'fromVerified': true,
+      'fromVerifiedType': 'owner',
+      'targetId': req.plan,
+      'createdAt': FieldValue.serverTimestamp(),
+      'isRead': false,
+    });
   }
 
   // ============================================================
   // للمالك: الرفض
   // ============================================================
   Future<void> rejectRequest(PremiumRequest req) async {
-    final myEmail = FirebaseAuth.instance.currentUser?.email ?? '';
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final myEmail = currentUser?.email ?? '';
+    final myUid = currentUser?.uid ?? '';
+
     await _requests.doc(req.uid).update({
       'status': 'rejected',
       'reviewedAt': FieldValue.serverTimestamp(),
       'reviewedBy': myEmail,
+    });
+
+    // إرسال إشعار premium_rejected
+    await _db
+        .collection('notifications')
+        .doc(req.uid)
+        .collection('items')
+        .add({
+      'type': 'premium_rejected',
+      'fromUid': myUid,
+      'fromName': 'الإدارة',
+      'fromAvatar': 'owner',
+      'fromVerified': true,
+      'fromVerifiedType': 'owner',
+      'targetId': req.plan,
+      'createdAt': FieldValue.serverTimestamp(),
+      'isRead': false,
     });
   }
 
@@ -173,6 +215,40 @@ class PremiumService {
     if (expiresAt == null) return 0;
     final diff = expiresAt.difference(DateTime.now()).inDays;
     return diff > 0 ? diff : 0;
+  }
+
+  // ============================================================
+  // ✅ جديد: فحص سريع من profile map جاهز (للـ StreamBuilder)
+  // ============================================================
+  /// يستقبل `profile` map ويُرجع true إذا Premium نشط
+  /// يُستخدم في PostCard / UserProfileScreen حيث profile متوفر أصلاً
+  static bool isUserPremium(Map<String, dynamic>? profile) {
+    if (profile == null) return false;
+    final premium = (profile['premium'] as Map?) ?? {};
+    final active = premium['active'] == true;
+    if (!active) return false;
+    final expiresAt = (premium['expiresAt'] as Timestamp?)?.toDate();
+    // إذا لم توجد expiresAt → نعتبره نشطاً (توافق مع البيانات القديمة)
+    return expiresAt == null ? true : expiresAt.isAfter(DateTime.now());
+  }
+
+  // ============================================================
+  // ✅ جديد: فحص async من uid (يجلب profile ثم يفحص)
+  // ============================================================
+  /// يجلب profile من Firestore ثم يفحص Premium
+  /// يُستخدم في StoreScreen / ChallengeScreen / RewardedAdCard
+  static Future<bool> fetchIsUserPremium(String uid) async {
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+      final profile =
+          (snap.data()?['profile'] as Map?)?.cast<String, dynamic>();
+      return isUserPremium(profile);
+    } catch (_) {
+      return false;
+    }
   }
 
   // ============================================================
