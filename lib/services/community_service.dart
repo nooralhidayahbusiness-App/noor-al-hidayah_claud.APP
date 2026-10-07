@@ -5,6 +5,7 @@ import '../models/comment.dart';
 import '../models/post.dart';
 import '../models/user_brief.dart';
 import 'community_notification_service.dart';
+import 'premium_service.dart';
 
 class CommunityService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -16,13 +17,36 @@ class CommunityService {
   // ============================================================
   // POSTS
   // ============================================================
+  // ✅ تعديل: Premium أولاً في الـ Feed
   Stream<List<Post>> postsStream({int limit = 100}) {
-    return _posts.snapshots().map((snap) {
+    return _posts.snapshots().asyncMap((snap) async {
       final list = snap.docs
           .map((d) => Post.fromMap(d.id, d.data()))
           .where((p) => !p.isDeleted && !p.isGlobalPin)
           .toList();
-      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      // ✅ جلب حالة Premium لكل ناشر (مرة واحدة لكل uid)
+      final uids = list.map((p) => p.uid).toSet().toList();
+      final premiumMap = <String, bool>{};
+      for (final uid in uids) {
+        try {
+          final userDoc = await _db.collection('users').doc(uid).get();
+          final profile =
+              (userDoc.data()?['profile'] as Map?)?.cast<String, dynamic>();
+          premiumMap[uid] = PremiumService.isUserPremium(profile);
+        } catch (_) {
+          premiumMap[uid] = false;
+        }
+      }
+
+      // ✅ ترتيب: Premium أولاً ثم الأحدث
+      list.sort((a, b) {
+        final aPremium = premiumMap[a.uid] == true;
+        final bPremium = premiumMap[b.uid] == true;
+        if (aPremium != bPremium) return bPremium ? 1 : -1;
+        return b.createdAt.compareTo(a.createdAt);
+      });
+
       if (list.length > limit) return list.sublist(0, limit);
       return list;
     });
@@ -246,6 +270,7 @@ class CommunityService {
     }
   }
 
+  // ✅ تعديل: 3 منشورات مثبتة لـ Premium (1 فقط للعادي)
   Future<void> togglePin({
     required String postId,
     required String uid,
@@ -260,22 +285,55 @@ class CommunityService {
 
     final currentlyPinned = data['isPinned'] == true;
 
+    // إلغاء التثبيت
     if (currentlyPinned) {
-      await ref.update({'isPinned': false});
+      await ref.update({'isPinned': false, 'pinnedAt': null});
       return;
     }
 
+    // ✅ فحص حالة Premium
+    final userDoc = await _db.collection('users').doc(uid).get();
+    final profile =
+        (userDoc.data()?['profile'] as Map?)?.cast<String, dynamic>();
+    final isPremium = PremiumService.isUserPremium(profile);
+    final maxPins = isPremium ? 3 : 1;
+
+    // جلب المنشورات المثبتة الحالية (باستثناء المنشور الحالي)
     final userPosts = await _posts.where('uid', isEqualTo: uid).get();
+    final currentlyPinnedDocs = userPosts.docs
+        .where((doc) =>
+            doc.id != postId && doc.data()['isPinned'] == true)
+        .toList();
 
     final batch = _db.batch();
-    for (final doc in userPosts.docs) {
-      if (doc.id == postId) continue;
-      final isPinned = doc.data()['isPinned'] == true;
-      if (isPinned) {
-        batch.update(doc.reference, {'isPinned': false});
+
+    // لو وصلنا الحد الأقصى → إلغاء تثبيت الأقدم
+    if (currentlyPinnedDocs.length >= maxPins) {
+      // ترتيب حسب pinnedAt (الأقدم أولاً)، الافتراضي سنة 2000
+      currentlyPinnedDocs.sort((a, b) {
+        final aAt = (a.data()['pinnedAt'] as Timestamp?)?.toDate() ??
+            DateTime(2000);
+        final bAt = (b.data()['pinnedAt'] as Timestamp?)?.toDate() ??
+            DateTime(2000);
+        return aAt.compareTo(bAt);
+      });
+
+      // إلغاء تثبيت الأقدم (عدد كافٍ)
+      final toUnpinCount =
+          currentlyPinnedDocs.length - maxPins + 1;
+      for (int i = 0; i < toUnpinCount; i++) {
+        batch.update(currentlyPinnedDocs[i].reference, {
+          'isPinned': false,
+          'pinnedAt': null,
+        });
       }
     }
-    batch.update(ref, {'isPinned': true});
+
+    // تثبيت المنشور الحالي + تسجيل الوقت
+    batch.update(ref, {
+      'isPinned': true,
+      'pinnedAt': FieldValue.serverTimestamp(),
+    });
     await batch.commit();
   }
 
