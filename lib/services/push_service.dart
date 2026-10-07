@@ -1,87 +1,112 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('FCM background: ${message.messageId}');
-}
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class PushService {
   PushService._();
   static final PushService instance = PushService._();
 
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  // ============================================================
+  // OneSignal App ID (public — safe to hardcode)
+  // ============================================================
+  static const String _oneSignalAppId = '4e7862a1-4191-4788-a703-72a3fea3d12d';
+
   bool _initialized = false;
 
+  // ============================================================
+  // التهيئة (تُستدعى مرة واحدة من main.dart)
+  // ============================================================
   Future<void> init() async {
     if (_initialized) return;
-    if (kIsWeb) return;
+    if (kIsWeb) return; // OneSignal على الويب يحتاج VAPID — مؤجل
     _initialized = true;
 
     try {
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      // 1) إعداد مستوى تسجيل الأخطاء
+      OneSignal.Debug.setLogLevel(OSLogLevel.warn);
 
-      final settings = await _fcm.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      if (settings.authorizationStatus == AuthorizationStatus.denied) return;
+      // 2) تهيئة OneSignal
+      OneSignal.initialize(_oneSignalAppId);
 
-      _fcm.onTokenRefresh.listen(_saveToken);
-      FirebaseMessaging.onMessage.listen((message) {
-        debugPrint('FCM foreground: ${message.notification?.title}');
+      // 3) طلب إذن الإشعارات
+      await OneSignal.Notifications.requestPermission(true);
+
+      // 4) عند تسجيل الدخول، اربط المستخدم بـ OneSignal
+      OneSignal.login(FirebaseAuth.instance.currentUser?.uid ?? 'guest');
+
+      // 5) راقب تغيّر subscription ID (يُستخدم لحفظ التوكن في Firestore)
+      OneSignal.User.pushSubscription.addObserver((state) {
+        final subId = OneSignal.User.pushSubscription.id;
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (subId != null && uid != null) {
+          _saveSubscription(uid, subId);
+        }
       });
-      FirebaseMessaging.onMessageOpenedApp.listen((message) {
-        debugPrint('FCM opened: ${message.data}');
+
+      // 6) راقب الإشعارات المستلمة أثناء فتح التطبيق
+      OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+        debugPrint('OneSignal foreground: ${event.notification.title}');
+      });
+
+      // 7) عند الضغط على إشعار فتح التطبيق
+      OneSignal.Notifications.addClickListener((event) {
+        debugPrint('OneSignal clicked: ${event.notification.additionalData}');
       });
     } catch (e) {
       debugPrint('pushService.init error: $e');
     }
   }
 
+  // ============================================================
+  // ربط المستخدم الحالي بـ OneSignal (يُستدعى بعد تسجيل الدخول)
+  // ============================================================
   Future<void> saveTokenForCurrentUser() async {
     if (kIsWeb) return;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     try {
-      final token = await _fcm.getToken();
-      if (token == null) return;
-      await _saveTokenToUid(uid, token);
+      // ربط المستخدم في OneSignal
+      OneSignal.login(uid);
+
+      // حفظ subscription ID في Firestore
+      final subId = OneSignal.User.pushSubscription.id;
+      if (subId != null) {
+        await _saveSubscription(uid, subId);
+      }
     } catch (e) {
       debugPrint('saveTokenForCurrentUser error: $e');
     }
   }
 
-  Future<void> _saveToken(String token) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    await _saveTokenToUid(uid, token);
-  }
-
-  Future<void> _saveTokenToUid(String uid, String token) async {
+  Future<void> _saveSubscription(String uid, String subId) async {
     try {
-      await _db.collection('users').doc(uid).collection('fcmTokens').doc(token).set({
-        'token': token,
+      await _db
+          .collection('users')
+          .doc(uid)
+          .collection('onesignalSubs')
+          .doc(subId)
+          .set({
+        'subId': subId,
         'platform': defaultTargetPlatform.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      debugPrint('saveToken error: $e');
+      debugPrint('saveSubscription error: $e');
     }
   }
 
+  // ============================================================
+  // فصل المستخدم (يُستدعى قبل signOut)
+  // ============================================================
   Future<void> removeCurrentToken() async {
     if (kIsWeb) return;
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
     try {
-      final token = await _fcm.getToken();
-      if (token == null) return;
-      await _db.collection('users').doc(uid).collection('fcmTokens').doc(token).delete();
+      OneSignal.logout();
     } catch (e) {
       debugPrint('removeToken error: $e');
     }
