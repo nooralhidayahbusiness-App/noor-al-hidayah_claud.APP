@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 /// Readable error keys
 class AuthException implements Exception {
@@ -40,6 +41,9 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   bool get isSignedIn => _auth.currentUser != null;
   Stream<User?> get authChanges => _auth.authStateChanges();
+
+  /// ✅ getter سريع للـ uid الحالي
+  String? get currentUid => _auth.currentUser?.uid;
 
   DocumentReference<Map<String, dynamic>> _userDoc(String uid) =>
       _db.collection('users').doc(uid);
@@ -160,9 +164,60 @@ class AuthService {
   }
 
   // ============================================================
+  // ✅ Sign in with Google
+  // ============================================================
+  Future<void> signInWithGoogle() async {
+    try {
+      // 1) ابدأ عملية تسجيل الدخول عبر Google
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      // إذا أغلق المستخدم النافذة أو لم يختر حساباً
+      if (googleUser == null) {
+        throw const AuthException('authErrGoogleCancelled');
+      }
+
+      // 2) احصل على الـ tokens
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // 3) أنشئ credential لـ Firebase
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 4) سجّل الدخول في Firebase
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+
+      final uid = userCredential.user?.uid;
+      final email = userCredential.user?.email;
+
+      // 5) إذا كان مستخدماً جديداً → أنشئ وثيقة
+      if (uid != null && email != null) {
+        final docSnap = await _userDoc(uid).get();
+        if (!docSnap.exists) {
+          await _createInitialUserDoc(uid: uid, email: email);
+        }
+      }
+    } on AuthException {
+      rethrow;
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_mapError(e.code));
+    } catch (e) {
+      debugPrint('signInWithGoogle error: $e');
+      throw const AuthException('authErrGeneric');
+    }
+  }
+
+  // ============================================================
   // SignOut
   // ============================================================
   Future<void> signOut() async {
+    try {
+      // أخرج من Google أيضاً
+      await GoogleSignIn().signOut();
+    } catch (_) {}
     await _auth.signOut();
     for (final handler in _signOutHandlers) {
       try {
@@ -208,6 +263,14 @@ class AuthService {
         return 'authErrTooMany';
       case 'network-request-failed':
         return 'authErrNetwork';
+      // ✅ أخطاء Google
+      case 'account-exists-with-different-credential':
+        return 'authErrAccountExists';
+      case 'operation-not-allowed':
+        return 'authErrGoogleNotEnabled';
+      case 'popup-closed-by-user':
+      case 'cancelled':
+        return 'authErrGoogleCancelled';
       default:
         return 'authErrGeneric';
     }
