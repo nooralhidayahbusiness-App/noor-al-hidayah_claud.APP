@@ -467,6 +467,8 @@ const Map<String, String> _ar = {
 'nextPrayer': 'الصلاة القادمة',
 'hourShort': 'س',
 'minuteShort': 'د',
+'adhkarAfterPrayer': 'أذكار بعد الصلاة',
+'adhanPrayedDone': 'أكملت الصلاة ✓',
 };
 
 // =====================================================================
@@ -813,4 +815,6 @@ const Map<String, String> _en = {
 'nextPrayer': 'Next prayer',
 'hourShort': 'h',
 'minuteShort': 'm',
+'adhkarAfterPrayer': 'Adhkar after prayer',
+'adhanPrayedDone': 'Prayer completed ✓',
 };
