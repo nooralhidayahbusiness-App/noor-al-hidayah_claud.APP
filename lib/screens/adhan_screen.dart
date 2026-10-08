@@ -8,7 +8,6 @@ import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
-import '../data/adhan_reciters.dart';
 import '../data/adhan_timings.dart';
 import '../data/adhkar.dart';
 import '../services/adhan_service.dart';
@@ -68,7 +67,6 @@ class _AdhanScreenState extends State<AdhanScreen>
       if (!mounted) return;
       if (_currentPhraseIndex >= _phrases.length - 1) return;
       final current = _phrases[_currentPhraseIndex];
-      // ✅ أبطأ 1.4x لمطابقة الصوت
       final slowDuration = Duration(
         milliseconds: (current.duration.inMilliseconds * 1.4).toInt(),
       );
@@ -195,7 +193,6 @@ class _AdhanScreenState extends State<AdhanScreen>
                 SafeArea(
                   child: Column(
                     children: [
-                      // ===== الهيدر =====
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                           R.s(context, 6),
@@ -240,7 +237,6 @@ class _AdhanScreenState extends State<AdhanScreen>
 
                       SizedBox(height: R.s(context, 12)),
 
-                      // ===== اسم الصلاة + الوقت (مع دوائر توهج) =====
                       _GlowWrapper(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -295,7 +291,6 @@ class _AdhanScreenState extends State<AdhanScreen>
 
                       SizedBox(height: R.s(context, 14)),
 
-                      // ===== النص المتحرك =====
                       _AnimatedAdhanText(
                         phrases: _phrases,
                         currentIndex: _currentPhraseIndex,
@@ -303,7 +298,6 @@ class _AdhanScreenState extends State<AdhanScreen>
 
                       const Spacer(),
 
-                      // ===== زر "صليت الآن" في الوسط =====
                       _RippleButton(
                         prayed: _prayed,
                         onTap: _onPrayedPressed,
@@ -317,7 +311,6 @@ class _AdhanScreenState extends State<AdhanScreen>
 
                       const Spacer(),
 
-                      // ===== أزرار القبلة والأذكار (دوائر) =====
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -378,9 +371,6 @@ class _AdhanScreenState extends State<AdhanScreen>
   }
 }
 
-// ============================================================
-// _GlowWrapper — 4 حلقات توهج ماء سلسة خلف المحتوى
-// ============================================================
 class _GlowWrapper extends StatefulWidget {
   const _GlowWrapper({required this.child});
 
@@ -411,7 +401,6 @@ class _GlowWrapperState extends State<_GlowWrapper>
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // 4 حلقات توهج
           AnimatedBuilder(
             animation: _glow,
             builder: (context, _) {
@@ -447,7 +436,6 @@ class _GlowWrapperState extends State<_GlowWrapper>
               );
             },
           ),
-          // المحتوى
           widget.child,
         ],
       ),
@@ -455,9 +443,6 @@ class _GlowWrapperState extends State<_GlowWrapper>
   }
 }
 
-// ============================================================
-// النص المتحرك
-// ============================================================
 class _AnimatedAdhanText extends StatelessWidget {
   const _AnimatedAdhanText({
     required this.phrases,
@@ -566,9 +551,6 @@ class _AnimatedAdhanText extends StatelessWidget {
   }
 }
 
-// ============================================================
-// زر دائري كبير
-// ============================================================
 class _CircleActionButton extends StatelessWidget {
   const _CircleActionButton({
     required this.icon,
@@ -637,9 +619,6 @@ class _CircleActionButton extends StatelessWidget {
   }
 }
 
-// ============================================================
-// زر "صليت الآن" مع تموّج
-// ============================================================
 class _RippleButton extends StatefulWidget {
   const _RippleButton({
     required this.prayed,
