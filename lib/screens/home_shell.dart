@@ -74,8 +74,26 @@ class _HomeShellState extends State<HomeShell> {
 
     _checkPromo();
 
+    // ✅ إشعار الإشعارات المُعلّقة بعد استقرار الشاشة
     Future.delayed(const Duration(seconds: 1), () {
       notificationService.consumePendingLaunch();
+    });
+
+    // ✅ طلب الصلاحيات + تحديث الإشعار بعد 3 ثوانٍ
+    Future.delayed(const Duration(seconds: 3), () async {
+      if (!mounted) return;
+      await notificationService.requestPermissions();
+      await _updateOngoing();
+    });
+
+    // ✅ عند تسجيل الدخول → حدّث الإشعار الدائم
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null && mounted) {
+        debugPrint('[PRAYER] User logged in → updating ongoing');
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) _updateOngoing();
+        });
+      }
     });
   }
 
@@ -88,6 +106,9 @@ class _HomeShellState extends State<HomeShell> {
     super.dispose();
   }
 
+  // ============================================================
+  // فحص وقت الصلاة + فتح شاشة الأذان
+  // ============================================================
   void _startPrayerCheck() {
     _prayerCheckTimer =
         Timer.periodic(const Duration(seconds: 30), (_) {
@@ -175,9 +196,12 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
-  void _updateOngoing() {
+  Future<void> _updateOngoing() async {
     final next = prayerState.nextPrayer();
-    if (next == null) return;
+    if (next == null) {
+      debugPrint('[NOTIFICATION] No next prayer yet');
+      return;
+    }
 
     final now = DateTime.now();
     final diff = next.at.difference(now);
@@ -186,6 +210,9 @@ class _HomeShellState extends State<HomeShell> {
 
     final isUrgent = diff.inMinutes < 10;
 
+    debugPrint('[NOTIFICATION] Next: ${next.key} · ${next.at} · urgent=$isUrgent');
+
+    // ✅ حدّث فقط عند الحاجة (لكن مرة أولى عند التحميل)
     if (_lastOngoingPrayerAt == next.at &&
         _lastUrgentState == isUrgent) {
       return;
@@ -198,7 +225,7 @@ class _HomeShellState extends State<HomeShell> {
     final hijri =
         appState.isArabic ? data?.hijriAr : data?.hijriEn;
 
-    notificationService.showOngoingPrayer(
+    await notificationService.showOngoingPrayer(
       prayerName: appState.tr(next.key),
       targetTime: next.at,
       urgent: isUrgent,
@@ -207,7 +234,7 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   // ============================================================
-  // 🐛 اختبار الأذان — 10 ثوانٍ
+  // 🐛 اختبار الأذان
   // ============================================================
   Future<void> _scheduleTestAdhan() async {
     final ok = await notificationService.scheduleTestAdhan();
@@ -218,22 +245,18 @@ class _HomeShellState extends State<HomeShell> {
         content: Text(
           ok
               ? (appState.isArabic
-                  ? '✅ تم الجدولة — أغلق التطبيق وانتظر 10 ثوانٍ'
-                  : '✅ Scheduled — close the app and wait 10s')
+                  ? '✅ تم الجدولة — أغلق التطبيق وانتظر 30 ثانية'
+                  : '✅ Scheduled — close app and wait 30s')
               : (appState.isArabic
-                  ? '❌ فشلت الجدولة — تحقق من صلاحية المنبهات'
-                  : '❌ Scheduling failed — check alarm permission'),
+                  ? '❌ فشلت الجدولة'
+                  : '❌ Scheduling failed'),
         ),
-        backgroundColor:
-            ok ? AppColors.emerald : Colors.redAccent,
+        backgroundColor: ok ? AppColors.emerald : Colors.redAccent,
         duration: const Duration(seconds: 5),
       ),
     );
   }
 
-  // ============================================================
-  // 🔔 عرض إشعار فوري (بدون جدولة)
-  // ============================================================
   Future<void> _showImmediate() async {
     await notificationService.showImmediateNotification();
     if (!mounted) return;
@@ -242,8 +265,8 @@ class _HomeShellState extends State<HomeShell> {
       SnackBar(
         content: Text(
           appState.isArabic
-              ? '🔔 يجب أن يظهر الإشعار الآن — اسحب شريط الإشعارات'
-              : '🔔 Notification should appear now — swipe down',
+              ? '🔔 يجب أن يظهر الإشعار الآن'
+              : '🔔 Notification should appear now',
         ),
         backgroundColor: AppColors.emerald,
         duration: const Duration(seconds: 5),
@@ -330,8 +353,8 @@ class _HomeShellState extends State<HomeShell> {
                           IconButton(
                             onPressed: _scheduleTestAdhan,
                             tooltip: appState.isArabic
-                                ? 'اختبار الأذان (10 ثوان)'
-                                : 'Test Adhan (10s)',
+                                ? 'اختبار الأذان (30 ثوان)'
+                                : 'Test Adhan (30s)',
                             color: const Color(0xFFFFA000),
                             iconSize: R.s(context, 24),
                             icon: const Icon(Icons.bug_report_rounded),
@@ -343,7 +366,8 @@ class _HomeShellState extends State<HomeShell> {
                                 : 'Show immediate',
                             color: const Color(0xFF4CAF50),
                             iconSize: R.s(context, 24),
-                            icon: const Icon(Icons.notifications_active_rounded),
+                            icon: const Icon(
+                                Icons.notifications_active_rounded),
                           ),
                         ],
                         IconButton(
