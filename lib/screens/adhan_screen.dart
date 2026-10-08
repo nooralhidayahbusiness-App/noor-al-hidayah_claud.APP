@@ -8,6 +8,7 @@ import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
+import '../data/adhan_reciters.dart';
 import '../data/adhan_timings.dart';
 import '../services/adhan_service.dart';
 import '../widgets/glass_card.dart';
@@ -154,7 +155,7 @@ class _AdhanScreenState extends State<AdhanScreen>
               else
                 _fallbackBg(currentBg),
 
-              // طبقة تعتيم للتأكد من وضوح النص
+              // طبقة تعتيم
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -248,32 +249,64 @@ class _AdhanScreenState extends State<AdhanScreen>
 
                     const Spacer(),
 
-                    // ===== المؤذن =====
-                    GlassCard(
-                      ornament: false,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.record_voice_over_rounded,
-                            color: AppColors.gold,
-                            size: R.s(context, 20),
-                          ),
-                          SizedBox(width: R.s(context, 8)),
-                          Expanded(
-                            child: Text(
-                              appState.isArabic
-                                  ? _currentReciterNameAr()
-                                  : _currentReciterNameEn(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: R.f(context, 12),
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.cream,
+                    // ===== المؤذن (مُحدَّث) =====
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: R.s(context, 16)),
+                      child: GlassCard(
+                        ornament: false,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: R.s(context, 36),
+                              height: R.s(context, 36),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.gold.withValues(alpha: 0.15),
+                                border: Border.all(
+                                  color:
+                                      AppColors.gold.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.record_voice_over_rounded,
+                                color: AppColors.gold,
+                                size: R.s(context, 18),
                               ),
                             ),
-                          ),
-                        ],
+                            SizedBox(width: R.s(context, 10)),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    appState.isArabic
+                                        ? _currentReciterNameAr()
+                                        : _currentReciterNameEn(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: R.f(context, 13),
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.softGold,
+                                    ),
+                                  ),
+                                  if (_currentReciterCountry().isNotEmpty) ...[
+                                    SizedBox(height: R.s(context, 2)),
+                                    Text(
+                                      _currentReciterCountry(),
+                                      style: TextStyle(
+                                        fontSize: R.f(context, 10.5),
+                                        color: AppColors.cream
+                                            .withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
 
@@ -384,13 +417,21 @@ class _AdhanScreenState extends State<AdhanScreen>
     return 'assets/images/adhan_backgrounds/$id.png';
   }
 
+  // ===== اسم المؤذن (مُحدَّث) =====
   String _currentReciterNameAr() {
-    // من adhan_reciters
-    return appState.tr('adhanReciter');
+    final r = adhanReciterById(adhanService.currentReciterId);
+    return r?.nameAr ?? 'الأذان الأساسي';
   }
 
   String _currentReciterNameEn() {
-    return appState.tr('adhanReciter');
+    final r = adhanReciterById(adhanService.currentReciterId);
+    return r?.nameEn ?? 'Default Adhan';
+  }
+
+  String _currentReciterCountry() {
+    final r = adhanReciterById(adhanService.currentReciterId);
+    if (r == null) return '';
+    return appState.isArabic ? r.countryAr : r.countryEn;
   }
 
   String _formatTime(DateTime dt) {
