@@ -9,6 +9,7 @@ import '../core/reciter_prefs.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/app_branding.dart';
 import 'gender_select_screen.dart';
@@ -99,6 +100,13 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     if (!mounted) return;
+
+    // ✅ جديد: بعد ما يصير Navigator جاهز → افتح الإشعار المُعلَّق (إن وُجد)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        notificationService.consumePendingLaunch();
+      });
+    });
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
