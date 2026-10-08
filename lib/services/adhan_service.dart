@@ -13,13 +13,14 @@ class AdhanService {
   final AudioPlayer _player = AudioPlayer();
   String _currentReciterId = 'default';
   bool _isPlaying = false;
+  bool _isMuted = false;
   Timer? _autoStopTimer;
   bool _contextSet = false;
 
-  // ✅ نفس المفتاح المستخدم في themeState
   static const String _prefsKey = 'active_adhan';
 
   bool get isPlaying => _isPlaying;
+  bool get isMuted => _isMuted;
   String get currentReciterId => _currentReciterId;
 
   Stream<PlayerState> get stateStream => _player.onPlayerStateChanged;
@@ -58,7 +59,6 @@ class AdhanService {
     }
   }
 
-  /// يضبط المؤذن النشط + يحفظه
   Future<void> setReciter(String id) async {
     _currentReciterId = id;
     try {
@@ -71,7 +71,6 @@ class AdhanService {
     try {
       await _setupAudioContext();
 
-      // ✅ اقرأ من prefs كل مرة لتفادي stale data
       String id = reciterId ?? _currentReciterId;
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -82,7 +81,7 @@ class AdhanService {
 
       await _player.stop();
       await _player.setReleaseMode(ReleaseMode.stop);
-      await _player.setVolume(1.0);
+      await _player.setVolume(_isMuted ? 0.0 : 1.0);
 
       await _player.play(UrlSource(reciter.mp3Url));
 
@@ -95,6 +94,26 @@ class AdhanService {
       debugPrint('Adhan play error: $e');
       _isPlaying = false;
       return false;
+    }
+  }
+
+  // ✅ كتم الصوت (بدون إيقاف التشغيل)
+  Future<void> mute() async {
+    try {
+      _isMuted = true;
+      await _player.setVolume(0.0);
+    } catch (e) {
+      debugPrint('Adhan mute error: $e');
+    }
+  }
+
+  // ✅ إلغاء الكتم
+  Future<void> unmute() async {
+    try {
+      _isMuted = false;
+      await _player.setVolume(1.0);
+    } catch (e) {
+      debugPrint('Adhan unmute error: $e');
     }
   }
 
@@ -115,6 +134,7 @@ class AdhanService {
       _autoStopTimer?.cancel();
       await _player.stop();
       _isPlaying = false;
+      _isMuted = false;
     } catch (_) {}
   }
 
