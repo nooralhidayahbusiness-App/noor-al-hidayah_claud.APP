@@ -71,19 +71,14 @@ class AdhanService {
       final id = reciterId ?? _currentReciterId;
       final reciter = adhanReciterById(id) ?? kAdhanReciters.first;
 
-      // أوقف أي تشغيل سابق
       await _player.stop();
-
-      // اضبط النمط
       await _player.setReleaseMode(ReleaseMode.stop);
       await _player.setVolume(1.0);
 
-      // شغّل الرابط
       await _player.play(UrlSource(reciter.mp3Url));
 
       _isPlaying = true;
 
-      // إيقاف تلقائي بعد 3 دقائق (احتياط)
       _autoStopTimer?.cancel();
       _autoStopTimer = Timer(const Duration(minutes: 3), () {
         stop();
