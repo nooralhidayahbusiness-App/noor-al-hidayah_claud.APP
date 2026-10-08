@@ -29,7 +29,6 @@ class NotificationService {
 
   OnPrayerTap? onPrayerTap;
 
-  /// ✅ إشعار مُعلَّق من cold start
   NotificationResponse? _pendingLaunchResponse;
 
   static const _prayerIds = {
@@ -43,6 +42,9 @@ class NotificationService {
   static const _dailyChallengeId = 300;
   static const _quranReminderId = 301;
   static const _dailyVerseId = 302;
+
+  // ✅ ID للإشعار الدائم
+  static const int _ongoingId = 400;
 
   bool get isSupported => _supported;
 
@@ -76,24 +78,18 @@ class NotificationService {
 
       _supported = Platform.isAndroid || Platform.isIOS;
 
-      // ✅ التقاط الإشعار الذي فتح التطبيق (cold start)
       try {
         final details = await _plugin.getNotificationAppLaunchDetails();
         if (details?.didNotificationLaunchApp == true) {
           _pendingLaunchResponse = details?.notificationResponse;
-          debugPrint('Pending launch notification: '
-              '${_pendingLaunchResponse?.payload}');
         }
-      } catch (e) {
-        debugPrint('getLaunchDetails error: $e');
-      }
+      } catch (_) {}
     } catch (e) {
       debugPrint('Notification init error: $e');
       _supported = false;
     }
   }
 
-  /// ✅ يُستدعى بعد أن يصبح Navigator جاهزاً (في SplashScreen مثلاً)
   void consumePendingLaunch() {
     final resp = _pendingLaunchResponse;
     if (resp == null) return;
@@ -109,6 +105,10 @@ class NotificationService {
     if (parts.isEmpty) return;
 
     final prayerKey = parts[0];
+
+    // تجاهل الإشعار الدائم (لا payload)
+    if (prayerKey.isEmpty) return;
+
     DateTime when;
     if (parts.length > 1) {
       final ms = int.tryParse(parts[1]);
@@ -119,7 +119,6 @@ class NotificationService {
       when = DateTime.now();
     }
 
-    // ✅ إذا لم يكن onPrayerTap جاهزاً بعد، احتفظ بالطلب
     if (onPrayerTap == null) {
       _pendingLaunchResponse = response;
       return;
@@ -143,11 +142,13 @@ class NotificationService {
         granted = res ?? false;
 
         try {
-          final alarmGranted = await android.requestExactAlarmsPermission();
-          debugPrint('Exact alarm permission: $alarmGranted');
-        } catch (e) {
-          debugPrint('Alarm permission error: $e');
-        }
+          await android.requestExactAlarmsPermission();
+        } catch (_) {}
+
+        // ✅ صلاحية الشاشة الكاملة (Android 14+)
+        try {
+          await android.requestFullScreenIntentPermission();
+        } catch (_) {}
       }
       if (ios != null) {
         final res = await ios.requestPermissions(
@@ -158,8 +159,7 @@ class NotificationService {
         granted = res ?? false;
       }
       return granted;
-    } catch (e) {
-      debugPrint('requestPermissions error: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -168,9 +168,7 @@ class NotificationService {
     if (!_supported) return;
     try {
       await Permission.scheduleExactAlarm.request();
-    } catch (e) {
-      debugPrint('openExactAlarmSettings error: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> cancelAll() async {
@@ -180,6 +178,58 @@ class NotificationService {
     } catch (_) {}
   }
 
+  // ============================================================
+  // ✅ الإشعار الدائم (الصلاة القادمة + العد التنازلي)
+  // ============================================================
+  Future<void> showOngoingPrayer({
+    required String title,
+    required String body,
+  }) async {
+    if (!_supported) return;
+    try {
+      await _plugin.show(
+        _ongoingId,
+        title,
+        body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'ongoing_prayer_channel',
+            appState.tr('notifChannelPrayer'),
+            channelDescription: 'Next prayer countdown',
+            importance: Importance.low,
+            priority: Priority.low,
+            icon: '@mipmap/ic_launcher',
+            ongoing: true,
+            autoCancel: false,
+            showWhen: false,
+            onlyAlertOnce: true,
+            playSound: false,
+            enableVibration: false,
+            category: AndroidNotificationCategory.status,
+            visibility: NotificationVisibility.public,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: false,
+            presentBadge: false,
+            presentSound: false,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('showOngoingPrayer error: $e');
+    }
+  }
+
+  Future<void> hideOngoingPrayer() async {
+    if (!_supported) return;
+    try {
+      await _plugin.cancel(_ongoingId);
+    } catch (_) {}
+  }
+
+  // ============================================================
+  // جدولة الإشعارات
+  // ============================================================
   Future<void> reschedule({required List<PrayerEntry> prayers}) async {
     if (!_supported) return;
 
@@ -258,7 +308,7 @@ class NotificationService {
         tz.TZDateTime.from(notifyAt, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'prayer_channel_v2',
+            'prayer_channel_v3',
             appState.tr('notifChannelPrayer'),
             channelDescription: 'Adhan notifications',
             importance: Importance.max,
@@ -269,11 +319,14 @@ class NotificationService {
             category: AndroidNotificationCategory.alarm,
             fullScreenIntent: true,
             audioAttributesUsage: AudioAttributesUsage.alarm,
+            visibility: NotificationVisibility.public,
+            ticker: title,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
+            interruptionLevel: InterruptionLevel.critical,
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
