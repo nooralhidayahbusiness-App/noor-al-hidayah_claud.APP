@@ -13,6 +13,7 @@ import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../services/ads_service.dart';
+import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/community_notification_service.dart';
 import '../services/notification_service.dart';
@@ -45,8 +46,11 @@ class _HomeShellState extends State<HomeShell> {
 
   Timer? _prayerCheckTimer;
   Timer? _ongoingNotifTimer;
-  DateTime? _lastAdhanShownAt;
+  DateTime? _lastPrayerScreenShownAt;
+  DateTime? _lastOngoingPrayerAt;
   bool _lastUrgentState = false;
+  bool _rescheduleInFlight = false;
+  DateTime? _lastRescheduledPrayerDay;
 
   static const String _kOpenCount = 'app_open_count';
   static const String _kShown2 = 'premium_promo_shown_2';
@@ -55,6 +59,8 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[PRAYER] HomeShell initState');
+
     prayerState.start();
     profileState.load();
     reciterPrefs.load();
@@ -62,6 +68,7 @@ class _HomeShellState extends State<HomeShell> {
 
     adsService.initialize();
 
+    prayerState.addListener(_onPrayerStateChanged);
     _startPrayerCheck();
     _startOngoingNotification();
 
@@ -70,18 +77,12 @@ class _HomeShellState extends State<HomeShell> {
     Future.delayed(const Duration(seconds: 1), () {
       notificationService.consumePendingLaunch();
     });
-
-    Future.delayed(const Duration(seconds: 3), () async {
-      if (!mounted) return;
-      final prayers = notificationService.collectPrayerTimes();
-      if (prayers.isNotEmpty) {
-        await notificationService.reschedule(prayers: prayers);
-      }
-    });
   }
 
   @override
   void dispose() {
+    debugPrint('[PRAYER] HomeShell dispose');
+    prayerState.removeListener(_onPrayerStateChanged);
     _prayerCheckTimer?.cancel();
     _ongoingNotifTimer?.cancel();
     super.dispose();
@@ -118,10 +119,13 @@ class _HomeShellState extends State<HomeShell> {
       final diff = now.difference(prayerAt).inSeconds;
 
       if (diff >= 0 && diff < 60) {
-        if (_lastAdhanShownAt == prayerAt) return;
-        _lastAdhanShownAt = prayerAt;
+        if (_lastPrayerScreenShownAt == prayerAt) return;
+        _lastPrayerScreenShownAt = prayerAt;
+
+        debugPrint('[FULLSCREEN] Opening AdhanScreen for ${entry.key} at $prayerAt');
 
         if (!mounted) {
+          debugPrint('[ERROR] Not mounted, cannot show AdhanScreen');
           return;
         }
         Navigator.of(context).push(
@@ -138,15 +142,53 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   // ============================================================
-  // ✅ الإشعار الدائم — يحوي العد التنازلي الحيّ
+  // الإشعار الدائم — يحوي العد التنازلي الحيّ
   // ============================================================
   void _startOngoingNotification() {
-    Future.delayed(const Duration(seconds: 2), _updateOngoing);
+    Future.delayed(const Duration(seconds: 1), _updateOngoing);
 
     _ongoingNotifTimer =
-        Timer.periodic(const Duration(minutes: 1), (_) {
+        Timer.periodic(const Duration(minutes: 1), (_) => _updateOngoing());
+  }
+
+  void _onPrayerStateChanged() {
+    if (prayerState.status == PrayerStatus.ready) {
+      debugPrint('[PRAYER] prayerState is ready — updating + rescheduling');
       _updateOngoing();
-    });
+      _rescheduleAfterPrayerTimesReady();
+    }
+  }
+
+  Future<void> _rescheduleAfterPrayerTimesReady() async {
+    if (_rescheduleInFlight || prayerState.data == null) return;
+
+    final day = DateTime.now();
+    final key = DateTime(day.year, day.month, day.day);
+
+    if (_lastRescheduledPrayerDay == key) return;
+
+    _rescheduleInFlight = true;
+
+    try {
+      debugPrint('[PRAYER] Rescheduling prayers for $key');
+
+      final prayers = notificationService.collectPrayerTimes();
+
+      if (prayers.isNotEmpty) {
+        for (final p in prayers) {
+          debugPrint('[PRAYER] ${p.name} = ${p.time}');
+        }
+        await notificationService.reschedule(prayers: prayers);
+        _lastRescheduledPrayerDay = key;
+        debugPrint('[ALARM] All prayers scheduled successfully');
+      } else {
+        debugPrint('[ERROR] No prayer times to schedule');
+      }
+    } catch (e) {
+      debugPrint('[ERROR] Reschedule failed: $e');
+    } finally {
+      _rescheduleInFlight = false;
+    }
   }
 
   void _updateOngoing() {
@@ -155,20 +197,50 @@ class _HomeShellState extends State<HomeShell> {
 
     final now = DateTime.now();
     final diff = next.at.difference(now);
+
     if (diff.isNegative) return;
 
     final isUrgent = diff.inMinutes < 10;
 
-    if (_lastAdhanShownAt == next.at &&
-        _lastUrgentState == isUrgent) return;
+    if (_lastOngoingPrayerAt == next.at &&
+        _lastUrgentState == isUrgent) {
+      return;
+    }
 
-    _lastAdhanShownAt = next.at;
+    _lastOngoingPrayerAt = next.at;
     _lastUrgentState = isUrgent;
+
+    final data = prayerState.data;
+    final hijri =
+        appState.isArabic ? data?.hijriAr : data?.hijriEn;
+
+    debugPrint('[NOTIFICATION] Next prayer: ${next.key} · target=${next.at} · urgent=$isUrgent');
 
     notificationService.showOngoingPrayer(
       prayerName: appState.tr(next.key),
       targetTime: next.at,
       urgent: isUrgent,
+      hijriDate: hijri,
+    );
+  }
+
+  // ============================================================
+  // 🐛 اختبار الأذان (للمالك فقط)
+  // ============================================================
+  Future<void> _scheduleTestAdhan() async {
+    debugPrint('[TEST] Scheduling test adhan in 1 minute');
+    await notificationService.scheduleTestAdhan();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          appState.isArabic
+              ? 'سيظهر الأذان بعد دقيقة واحدة (أغلق التطبيق وانتظر)'
+              : 'Adhan will appear in 1 minute (close the app and wait)',
+        ),
+        backgroundColor: AppColors.emerald,
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 
@@ -179,16 +251,19 @@ class _HomeShellState extends State<HomeShell> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final count = (prefs.getInt(_kOpenCount) ?? 0) + 1;
+
       await prefs.setInt(_kOpenCount, count);
 
       final email =
           FirebaseAuth.instance.currentUser?.email?.toLowerCase() ?? '';
+
       const ownerEmails = [
         'abdelrahmenbenromdhan11@gmail.com',
         'vevocom888@gmail.com',
         'nooralimanechannel@gmail.com',
         'nooralhidayahbusiness@gmail.com',
       ];
+
       if (ownerEmails.contains(email)) return;
 
       bool shouldShow = false;
@@ -204,6 +279,7 @@ class _HomeShellState extends State<HomeShell> {
       if (!shouldShow || !mounted) return;
 
       await Future.delayed(const Duration(milliseconds: 1500));
+
       if (!mounted) return;
 
       await showPremiumPromoDialog(context);
@@ -238,13 +314,25 @@ class _HomeShellState extends State<HomeShell> {
                           color: AppColors.softGold,
                           iconSize: R.s(context, 26),
                           icon: const Icon(
-                              Icons.edit_location_alt_outlined),
+                            Icons.edit_location_alt_outlined,
+                          ),
                         ),
                         const Spacer(),
                         _buildChatButton(context),
                         SizedBox(width: R.s(context, 4)),
                         _buildNotifButton(context),
                         SizedBox(width: R.s(context, 4)),
+                        // 🐛 زر اختبار الأذان (للمالك فقط)
+                        if (authService.isOwner)
+                          IconButton(
+                            onPressed: _scheduleTestAdhan,
+                            tooltip: appState.isArabic
+                                ? 'اختبار الأذان (دقيقة)'
+                                : 'Test Adhan (1 min)',
+                            color: const Color(0xFFFFA000),
+                            iconSize: R.s(context, 24),
+                            icon: const Icon(Icons.bug_report_rounded),
+                          ),
                         IconButton(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
@@ -260,7 +348,8 @@ class _HomeShellState extends State<HomeShell> {
                         ),
                         const SizedBox(width: 4),
                         IconButton(
-                          onPressed: () => showLanguagePicker(context),
+                          onPressed: () =>
+                              showLanguagePicker(context),
                           tooltip: currentLanguageLabel(),
                           color: AppColors.softGold,
                           iconSize: R.s(context, 24),
@@ -288,7 +377,10 @@ class _HomeShellState extends State<HomeShell> {
           ),
           bottomNavigationBar: SafeArea(
             top: false,
-            child: _BottomBar(index: _index, onSelected: _select),
+            child: _BottomBar(
+              index: _index,
+              onSelected: _select,
+            ),
           ),
         );
       },
@@ -303,6 +395,7 @@ class _HomeShellState extends State<HomeShell> {
       stream: chatService.totalUnreadStream(uid),
       builder: (context, snap) {
         final count = snap.data ?? 0;
+
         return Stack(
           alignment: Alignment.topRight,
           children: [
@@ -339,7 +432,8 @@ class _HomeShellState extends State<HomeShell> {
                     horizontal: 4,
                     vertical: 1,
                   ),
-                  constraints: const BoxConstraints(minWidth: 16),
+                  constraints:
+                      const BoxConstraints(minWidth: 16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFD32F2F),
                     borderRadius: BorderRadius.circular(8),
@@ -369,6 +463,7 @@ class _HomeShellState extends State<HomeShell> {
       stream: _notifService.unreadCountStream(uid),
       builder: (context, snap) {
         final count = snap.data ?? 0;
+
         return Stack(
           alignment: Alignment.topRight,
           children: [
@@ -391,7 +486,8 @@ class _HomeShellState extends State<HomeShell> {
                     horizontal: 4,
                     vertical: 1,
                   ),
-                  constraints: const BoxConstraints(minWidth: 16),
+                  constraints:
+                      const BoxConstraints(minWidth: 16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFD32F2F),
                     borderRadius: BorderRadius.circular(8),
@@ -421,6 +517,7 @@ class _TabData {
     this.assetIcon,
     required this.label,
   });
+
   final IconData? icon;
   final IconData? activeIcon;
   final String? assetIcon;
@@ -428,7 +525,10 @@ class _TabData {
 }
 
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.index, required this.onSelected});
+  const _BottomBar({
+    required this.index,
+    required this.onSelected,
+  });
 
   final int index;
   final ValueChanged<int> onSelected;
@@ -478,7 +578,8 @@ class _BottomBar extends StatelessWidget {
             color: accent.withValues(alpha: 0.94),
             border: Border(
               top: BorderSide(
-                  color: AppColors.gold.withValues(alpha: 0.3)),
+                color: AppColors.gold.withValues(alpha: 0.3),
+              ),
             ),
           ),
           child: SizedBox(
@@ -528,7 +629,10 @@ class _BottomTab extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 2,
+          vertical: 4,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
