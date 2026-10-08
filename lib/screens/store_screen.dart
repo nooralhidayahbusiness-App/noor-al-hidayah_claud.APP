@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_palette.dart';
 import '../core/theme_state.dart';
+import '../data/adhan_timings.dart';
 import '../data/store_items.dart';
 import '../services/adhan_service.dart';
 import '../services/premium_service.dart';
@@ -16,9 +19,12 @@ import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
 import '../widgets/theme_preview.dart';
+import 'adhkar_detail_screen.dart';
+import 'adhkar_screen.dart';
 import 'challenge_screen.dart';
 import 'my_purchases_screen.dart';
 import 'premium_screen.dart';
+import 'qibla_screen.dart';
 
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
@@ -225,10 +231,16 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   void _preview(StoreItem item) {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.92),
-      builder: (_) => _PreviewDialog(item: item),
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black.withValues(alpha: 0.95),
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (_, __, ___) => _AdhanPreviewPage(item: item),
+        transitionsBuilder: (_, anim, __, child) {
+          return FadeTransition(opacity: anim, child: child);
+        },
+      ),
     );
   }
 
@@ -428,6 +440,9 @@ class _StoreScreenState extends State<StoreScreen>
   }
 }
 
+// ============================================================
+// _StoreCard
+// ============================================================
 class _StoreCard extends StatelessWidget {
   const _StoreCard({
     required this.item,
@@ -466,6 +481,9 @@ class _StoreCard extends StatelessWidget {
       item.type == 'background' ||
       item.type == 'adhanBackground' ||
       item.type == 'theme';
+
+  bool get _showTextBadge =>
+      item.isVip && item.type == 'adhanBackground';
 
   @override
   Widget build(BuildContext context) {
@@ -514,11 +532,23 @@ class _StoreCard extends StatelessWidget {
                   ),
                 ),
 
+              // ✅ شارات VIP + Animation + Text
               if (item.isVip)
-                const Positioned(
+                Positioned(
                   top: 8,
                   left: 8,
-                  child: _VipBadge(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _VipBadge(),
+                      const SizedBox(height: 4),
+                      const _AnimatedBadge(),
+                      if (_showTextBadge) ...[
+                        const SizedBox(height: 4),
+                        const _TextBadge(),
+                      ],
+                    ],
+                  ),
                 ),
 
               if (active)
@@ -769,6 +799,658 @@ class _StoreCard extends StatelessWidget {
   }
 }
 
+// ============================================================
+// _AdhanPreviewPage — معاينة كاملة الشاشة
+// ============================================================
+class _AdhanPreviewPage extends StatefulWidget {
+  const _AdhanPreviewPage({required this.item});
+
+  final StoreItem item;
+
+  @override
+  State<_AdhanPreviewPage> createState() => _AdhanPreviewPageState();
+}
+
+class _AdhanPreviewPageState extends State<_AdhanPreviewPage>
+    with TickerProviderStateMixin {
+  late final List<AdhanPhrase> _phrases;
+  int _currentPhraseIndex = 0;
+  Timer? _phraseTimer;
+  bool _prayed = false;
+
+  bool get _showText => widget.item.type == 'adhanBackground';
+
+  @override
+  void initState() {
+    super.initState();
+    _phrases = AdhanTimings.forReciter(adhanService.currentReciterId);
+    if (_showText) _startPhraseAnimation();
+  }
+
+  @override
+  void dispose() {
+    _phraseTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPhraseAnimation() {
+    _phraseTimer?.cancel();
+    _currentPhraseIndex = 0;
+
+    void nextPhrase() {
+      if (!mounted) return;
+      if (_currentPhraseIndex >= _phrases.length - 1) return;
+      final current = _phrases[_currentPhraseIndex];
+      final slowDuration = Duration(
+        milliseconds: (current.duration.inMilliseconds * 1.4).toInt(),
+      );
+      _phraseTimer = Timer(slowDuration, () {
+        if (!mounted) return;
+        setState(() => _currentPhraseIndex++);
+        nextPhrase();
+      });
+    }
+
+    nextPhrase();
+  }
+
+  void _openQibla() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const QiblaScreen()),
+    );
+  }
+
+  void _openAdhkar() {
+    AdhkarCategory? target;
+    try {
+      target = kAdhkarCategories.firstWhere(
+        (c) =>
+            c.id.toLowerCase().contains('after') ||
+            c.id.toLowerCase().contains('prayer') ||
+            c.nameAr.contains('بعد الصلاة'),
+      );
+    } catch (_) {
+      target = null;
+    }
+
+    if (target != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => AdhkarDetailScreen(category: target!),
+        ),
+      );
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const AdhkarScreen()),
+      );
+    }
+  }
+
+  void _togglePrayed() {
+    setState(() => _prayed = !_prayed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (item.imagePath != null)
+            Image.asset(
+              item.imagePath!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _gradientBg(item),
+            )
+          else
+            _gradientBg(item),
+
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.35),
+                  Colors.black.withValues(alpha: 0.15),
+                  Colors.black.withValues(alpha: 0.65),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // ===== الهيدر =====
+                Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(
+                    R.s(context, 6),
+                    R.s(context, 6),
+                    R.s(context, 6),
+                    0,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        color: AppColors.softGold,
+                        iconSize: R.s(context, 26),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                      const Spacer(),
+                      Text(
+                        appState.isArabic
+                            ? 'معاينة'
+                            : 'Preview',
+                        style: TextStyle(
+                          fontSize: R.f(context, 14),
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.softGold,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () {},
+                        color: AppColors.gold,
+                        iconSize: R.s(context, 24),
+                        icon: const Icon(Icons.volume_up_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: R.s(context, 12)),
+
+                // ===== اسم الصلاة + الوقت مع دوائر التوهج =====
+                _PreviewGlow(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        appState.isArabic ? 'العصر' : 'Asr',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.amiri(
+                          fontSize: R.f(context, 72),
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.gold,
+                          height: 1.1,
+                          shadows: [
+                            Shadow(
+                              color: AppColors.gold
+                                  .withValues(alpha: 0.9),
+                              blurRadius: 40,
+                            ),
+                            const Shadow(
+                              color: Color(0xDD000000),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: R.s(context, 4)),
+                      Text(
+                        '4:32 م',
+                        style: TextStyle(
+                          fontSize: R.f(context, 26),
+                          color: AppColors.softGold,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                          shadows: [
+                            Shadow(
+                              color: AppColors.gold.withValues(alpha: 0.7),
+                              blurRadius: 16,
+                            ),
+                            const Shadow(
+                              color: Color(0xCC000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: R.s(context, 14)),
+
+                // ===== نص الأذان (فقط للـ adhanBackground) =====
+                if (_showText)
+                  _PreviewAdhanText(
+                    phrases: _phrases,
+                    currentIndex: _currentPhraseIndex,
+                  ),
+
+                const Spacer(),
+
+                // ===== زر "صليت الآن" =====
+                _PreviewRippleButton(
+                  prayed: _prayed,
+                  onTap: _togglePrayed,
+                  icon: _prayed
+                      ? Icons.check_circle_rounded
+                      : Icons.check_circle_outline_rounded,
+                  label: _prayed
+                      ? appState.tr('adhanPrayedDone')
+                      : appState.tr('adhanPrayed'),
+                ),
+
+                const Spacer(),
+
+                // ===== أزرار القبلة والأذكار =====
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _PreviewCircleButton(
+                      icon: Icons.explore_rounded,
+                      label: appState.tr('qibla'),
+                      onTap: _openQibla,
+                    ),
+                    SizedBox(width: R.s(context, 36)),
+                    _PreviewCircleButton(
+                      icon: Icons.menu_book_rounded,
+                      label: appState.tr('adhkarAfterPrayer'),
+                      onTap: _openAdhkar,
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: R.s(context, 20)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _gradientBg(StoreItem item) => DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: item.gradient.isEmpty
+                ? [AppColors.deepGreen, AppColors.green]
+                : item.gradient,
+          ),
+        ),
+      );
+}
+
+// ============================================================
+// _PreviewGlow — دوائر توهج ماء
+// ============================================================
+class _PreviewGlow extends StatefulWidget {
+  const _PreviewGlow({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_PreviewGlow> createState() => _PreviewGlowState();
+}
+
+class _PreviewGlowState extends State<_PreviewGlow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _glow = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 3500),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _glow.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: R.s(context, 260),
+      height: R.s(context, 160),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          AnimatedBuilder(
+            animation: _glow,
+            builder: (context, _) {
+              return Stack(
+                alignment: Alignment.center,
+                children: List.generate(4, (i) {
+                  final t = (_glow.value + (i / 4.0)) % 1.0;
+                  final opacity = (1 - t) * 0.45;
+                  final size = R.s(context, 180) + (t * R.s(context, 100));
+
+                  return Opacity(
+                    opacity: opacity.clamp(0.0, 1.0),
+                    child: Container(
+                      width: size,
+                      height: size * 0.7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.9),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.gold.withValues(alpha: 0.35),
+                            blurRadius: 30,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              );
+            },
+          ),
+          widget.child,
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _PreviewAdhanText
+// ============================================================
+class _PreviewAdhanText extends StatelessWidget {
+  const _PreviewAdhanText({
+    required this.phrases,
+    required this.currentIndex,
+  });
+
+  final List<AdhanPhrase> phrases;
+  final int currentIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    if (phrases.isEmpty || currentIndex >= phrases.length) {
+      return const SizedBox.shrink();
+    }
+
+    final current = phrases[currentIndex];
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: R.s(context, 20)),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 800),
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.2),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: Container(
+          key: ValueKey(currentIndex),
+          padding: EdgeInsets.symmetric(
+            horizontal: R.s(context, 24),
+            vertical: R.s(context, 14),
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: Colors.black.withValues(alpha: 0.4),
+            border: Border.all(
+              color: AppColors.gold.withValues(alpha: 0.6),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.gold.withValues(alpha: 0.45),
+                blurRadius: 30,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Text(
+            appState.isArabic ? current.textAr : current.textEn,
+            textAlign: TextAlign.center,
+            textDirection: appState.isArabic
+                ? TextDirection.rtl
+                : TextDirection.ltr,
+            style: GoogleFonts.amiri(
+              fontSize: R.f(context, 40),
+              fontWeight: FontWeight.w700,
+              color: AppColors.gold,
+              height: 1.5,
+              shadows: [
+                Shadow(
+                  color: AppColors.gold.withValues(alpha: 0.8),
+                  blurRadius: 16,
+                ),
+                const Shadow(
+                  color: Color(0xCC000000),
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _PreviewCircleButton
+// ============================================================
+class _PreviewCircleButton extends StatelessWidget {
+  const _PreviewCircleButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = R.s(context, 90);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black.withValues(alpha: 0.5),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.7),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gold.withValues(alpha: 0.5),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.gold,
+              size: R.s(context, 38),
+            ),
+          ),
+          SizedBox(height: R.s(context, 6)),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.softGold,
+              fontSize: R.f(context, 12),
+              fontWeight: FontWeight.w700,
+              shadows: const [
+                Shadow(color: Color(0xCC000000), blurRadius: 6),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _PreviewRippleButton
+// ============================================================
+class _PreviewRippleButton extends StatefulWidget {
+  const _PreviewRippleButton({
+    required this.prayed,
+    required this.onTap,
+    required this.icon,
+    required this.label,
+  });
+
+  final bool prayed;
+  final VoidCallback onTap;
+  final IconData icon;
+  final String label;
+
+  @override
+  State<_PreviewRippleButton> createState() => _PreviewRippleButtonState();
+}
+
+class _PreviewRippleButtonState extends State<_PreviewRippleButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ripple = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2400),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _ripple.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final btnW = R.s(context, 240);
+    final btnH = R.s(context, 58);
+    final radius = btnH / 2;
+
+    final activeColor = widget.prayed ? Colors.grey : AppColors.gold;
+
+    return SizedBox(
+      width: btnW * 1.6,
+      height: btnH * 1.6,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedBuilder(
+            animation: _ripple,
+            builder: (context, _) {
+              return Stack(
+                alignment: Alignment.center,
+                children: List.generate(3, (i) {
+                  final t = (_ripple.value + (i / 3.0)) % 1.0;
+                  final opacity = (1 - t) * 0.65;
+                  final scale = 1 + t * 0.55;
+
+                  return Opacity(
+                    opacity: opacity.clamp(0.0, 1.0),
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: btnW,
+                        height: btnH,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(radius),
+                          border: Border.all(
+                            color: activeColor.withValues(alpha: 0.9),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              );
+            },
+          ),
+          GestureDetector(
+            onTap: widget.onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 400),
+              width: btnW,
+              height: btnH,
+              decoration: BoxDecoration(
+                color: widget.prayed
+                    ? Colors.grey.withValues(alpha: 0.45)
+                    : AppColors.gold,
+                borderRadius: BorderRadius.circular(radius),
+                boxShadow: widget.prayed
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: AppColors.gold.withValues(alpha: 0.75),
+                          blurRadius: 28,
+                          spreadRadius: 4,
+                        ),
+                      ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    widget.icon,
+                    color: widget.prayed
+                        ? AppColors.cream.withValues(alpha: 0.6)
+                        : AppColors.deepGreen,
+                    size: R.s(context, 24),
+                  ),
+                  SizedBox(width: R.s(context, 8)),
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontSize: R.f(context, 16),
+                      fontWeight: FontWeight.w900,
+                      color: widget.prayed
+                          ? AppColors.cream.withValues(alpha: 0.65)
+                          : AppColors.deepGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// _RoundIconButton
+// ============================================================
 class _RoundIconButton extends StatelessWidget {
   const _RoundIconButton({
     required this.icon,
@@ -805,94 +1487,9 @@ class _RoundIconButton extends StatelessWidget {
   }
 }
 
-class _PreviewDialog extends StatelessWidget {
-  const _PreviewDialog({required this.item});
-
-  final StoreItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.all(R.s(context, 12)),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: AspectRatio(
-              aspectRatio: 9 / 16,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (item.type == 'theme')
-                    ThemePreview(palette: paletteFor(item.id))
-                  else if (item.imagePath != null)
-                    Image.asset(item.imagePath!, fit: BoxFit.cover)
-                  else
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: item.gradient,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                    ),
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: AppColors.gold.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      child: Text(
-                        appState.isArabic
-                            ? item.nameAr
-                            : item.nameEn,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: AppColors.softGold,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black.withValues(alpha: 0.7),
-                  border: Border.all(color: AppColors.gold, width: 1.5),
-                ),
-                child: const Icon(Icons.close_rounded,
-                    color: AppColors.gold, size: 22),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+// ============================================================
+// _PurchaseDialog
+// ============================================================
 class _PurchaseDialog extends StatelessWidget {
   const _PurchaseDialog({
     required this.item,
@@ -1042,6 +1639,9 @@ class _PurchaseDialog extends StatelessWidget {
   }
 }
 
+// ============================================================
+// _DeactivateDialog
+// ============================================================
 class _DeactivateDialog extends StatelessWidget {
   const _DeactivateDialog({required this.item});
 
@@ -1054,11 +1654,11 @@ class _DeactivateDialog extends StatelessWidget {
 
     final message = isAdhan
         ? (ar
-            ? 'عند إلغاء استعمال هذا المؤذن، ستعود شاشة الأذان لاستخدام الأذان الافتراضي (بدون صوت أو بالأذان الأساسي).'
-            : 'When you deactivate this reciter, the Adhan screen will use the default Adhan.')
+            ? 'عند إلغاء استعمال هذا المؤذن، ستعود شاشة الأذان لاستخدام الأذان الافتراضي.'
+            : 'When you deactivate this reciter, the Adhan will use default.')
         : (ar
             ? 'عند إلغاء استعمال هذه الخلفية، ستعود الخلفية إلى الافتراضية.'
-            : 'When you deactivate this background, it will return to the default.');
+            : 'When you deactivate, background returns to default.');
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -1156,6 +1756,9 @@ class _DeactivateDialog extends StatelessWidget {
   }
 }
 
+// ============================================================
+// _InsufficientPointsDialog
+// ============================================================
 class _InsufficientPointsDialog extends StatelessWidget {
   const _InsufficientPointsDialog();
 
@@ -1243,7 +1846,7 @@ class _InsufficientPointsDialog extends StatelessWidget {
               Text(
                 ar
                     ? 'نقاطك غير كافية لهذا المنتج'
-                    : 'Your points are not enough for this product',
+                    : 'Your points are not enough',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.cream.withValues(alpha: 0.8),
@@ -1257,7 +1860,7 @@ class _InsufficientPointsDialog extends StatelessWidget {
               Text(
                 ar
                     ? 'يمكنك أن تجمع نقاطاً مجانية من خلال:'
-                    : 'You can collect free points through:',
+                    : 'Collect free points via:',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.cream.withValues(alpha: 0.7),
@@ -1269,7 +1872,7 @@ class _InsufficientPointsDialog extends StatelessWidget {
                 icon: Icons.quiz_rounded,
                 title: ar
                     ? 'أكمل 5 تحديات يومية واكسب نقاط'
-                    : 'Complete 5 daily challenges and earn points',
+                    : 'Complete 5 daily challenges',
                 buttonLabel: ar ? 'التحديات' : 'Challenges',
                 color: AppColors.gold,
                 onTap: () {
@@ -1321,7 +1924,7 @@ class _InsufficientPointsDialog extends StatelessWidget {
                     Text(
                       ar
                           ? 'جرّب Premium — 10,000 نقطة شهرياً + متجر مجاني كامل + مضاعفة نقاط التحدي + المزيد'
-                          : 'Try Premium — 10,000 points monthly + free store + 2x challenge points + more',
+                          : 'Try Premium — 10,000 pts monthly + free store + 2x points',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: AppColors.softGold,
@@ -1351,7 +1954,7 @@ class _InsufficientPointsDialog extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          ar ? 'اشترك في Premium' : 'Subscribe to Premium',
+                          ar ? 'اشترك في Premium' : 'Subscribe',
                           style: const TextStyle(
                               fontWeight: FontWeight.w800),
                         ),
@@ -1435,6 +2038,9 @@ class _MethodCard extends StatelessWidget {
   }
 }
 
+// ============================================================
+// _PremiumBanner
+// ============================================================
 class _PremiumBanner extends StatefulWidget {
   final VoidCallback onTap;
 
@@ -1565,6 +2171,9 @@ class _PremiumBannerState extends State<_PremiumBanner>
   }
 }
 
+// ============================================================
+// _VipBadge / _AnimatedBadge / _TextBadge
+// ============================================================
 class _VipBadge extends StatelessWidget {
   const _VipBadge();
 
@@ -1592,6 +2201,78 @@ class _VipBadge extends StatelessWidget {
           fontWeight: FontWeight.w900,
           letterSpacing: 0.5,
         ),
+      ),
+    );
+  }
+}
+
+class _AnimatedBadge extends StatelessWidget {
+  const _AnimatedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFFFD700),
+          width: 1,
+        ),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.auto_awesome_rounded,
+              color: Color(0xFFFFD700), size: 10),
+          SizedBox(width: 3),
+          Text(
+            'ANIMATION',
+            style: TextStyle(
+              color: Color(0xFFFFD700),
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TextBadge extends StatelessWidget {
+  const _TextBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFFFD700),
+          width: 1,
+        ),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.text_fields_rounded,
+              color: Color(0xFFFFD700), size: 10),
+          SizedBox(width: 3),
+          Text(
+            'TEXT',
+            style: TextStyle(
+              color: Color(0xFFFFD700),
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
