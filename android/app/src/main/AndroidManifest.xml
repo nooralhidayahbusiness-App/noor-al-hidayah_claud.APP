@@ -17,7 +17,7 @@
     <!-- ✅ Full-screen intent للأذان -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 
-    <!-- ✅ Foreground service (مستقبلاً) -->
+    <!-- ✅ Foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
 
@@ -27,6 +27,9 @@
     <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <!-- ✅ تجاهل توفير البطارية -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <application
         android:label="Noor Al-Hidayah"
