@@ -48,24 +48,6 @@ class NotificationService {
 
   bool get isSupported => _supported;
 
-  // ============================================================
-  // فحص صلاحية Exact Alarm
-  // ============================================================
-  Future<bool> canUseExactAlarm() async {
-    if (!_supported) return false;
-    try {
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      if (android == null) return true;
-      final can = await android.canScheduleExactNotifications();
-      debugPrint('[ALARM] canScheduleExact = $can');
-      return can ?? false;
-    } catch (e) {
-      debugPrint('[ALARM] canScheduleExact error: $e');
-      return false;
-    }
-  }
-
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
@@ -81,9 +63,9 @@ class NotificationService {
       try {
         final name = await FlutterTimezone.getLocalTimezone();
         tz.setLocalLocation(tz.getLocation(name));
-        debugPrint('[ALARM] Timezone set to $name');
+        debugPrint('[ALARM] Timezone = $name');
       } catch (e) {
-        debugPrint('[ERROR] Timezone failed: $e');
+        debugPrint('[ERROR] Timezone: $e');
       }
 
       const android = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -100,16 +82,64 @@ class NotificationService {
 
       _supported = Platform.isAndroid || Platform.isIOS;
 
+      await _createChannels();
+
       try {
         final details = await _plugin.getNotificationAppLaunchDetails();
         if (details?.didNotificationLaunchApp == true) {
           _pendingLaunchResponse = details?.notificationResponse;
-          debugPrint('[NOTIFICATION] App launched from notification');
         }
       } catch (_) {}
     } catch (e) {
-      debugPrint('[ERROR] Notification init: $e');
+      debugPrint('[ERROR] init: $e');
       _supported = false;
+    }
+  }
+
+  Future<void> _createChannels() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+      // قناة الصلاة (full screen + صوت)
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'prayer_channel_v4',
+          'Prayer Notifications',
+          description: 'Adhan notifications',
+          importance: Importance.max,
+          playSound: true,
+          enableVibration: true,
+          audioAttributesUsage: AudioAttributesUsage.alarm,
+        ),
+      );
+
+      // قناة الإشعار الدائم
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'ongoing_prayer_channel_v4',
+          'Next Prayer Countdown',
+          description: 'Persistent next prayer countdown',
+          importance: Importance.low,
+          playSound: false,
+          enableVibration: false,
+        ),
+      );
+
+      // قناة التذكيرات اليومية
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'daily_channel_v3',
+          'Daily Reminders',
+          description: 'Daily reminders',
+          importance: Importance.defaultImportance,
+        ),
+      );
+
+      debugPrint('[ALARM] Channels created');
+    } catch (e) {
+      debugPrint('[ERROR] createChannels: $e');
     }
   }
 
@@ -140,8 +170,6 @@ class NotificationService {
       when = DateTime.now();
     }
 
-    debugPrint('[NOTIFICATION] Tapped: $prayerKey at $when');
-
     if (onPrayerTap == null) {
       _pendingLaunchResponse = response;
       return;
@@ -150,9 +178,6 @@ class NotificationService {
     onPrayerTap?.call(prayerKey, when);
   }
 
-  // ============================================================
-  // طلب الصلاحيات
-  // ============================================================
   Future<bool> requestPermissions() async {
     if (!_supported) return false;
     try {
@@ -166,26 +191,16 @@ class NotificationService {
       if (android != null) {
         final res = await android.requestNotificationsPermission();
         granted = res ?? false;
-        debugPrint('[NOTIFICATION] Permission granted: $granted');
+        debugPrint('[NOTIFICATION] Permission = $granted');
 
-        try {
-          final exact = await android.requestExactAlarmsPermission();
-          debugPrint('[ALARM] Exact alarm request result: $exact');
-        } catch (e) {
-          debugPrint('[ERROR] Exact alarm request: $e');
-        }
-
+        // محاولات إضافية (اختيارية - لا تفشل التطبيق)
         try {
           await android.requestFullScreenIntentPermission();
-        } catch (e) {
-          debugPrint('[ERROR] Full screen intent: $e');
-        }
+        } catch (_) {}
 
         try {
           await Permission.ignoreBatteryOptimizations.request();
-        } catch (e) {
-          debugPrint('[ERROR] Battery opt: $e');
-        }
+        } catch (_) {}
       }
 
       if (ios != null) {
@@ -204,22 +219,10 @@ class NotificationService {
     }
   }
 
-  Future<void> openExactAlarmSettings() async {
-    if (!_supported) return;
-    try {
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      await android?.requestExactAlarmsPermission();
-    } catch (e) {
-      debugPrint('[ERROR] openExactAlarmSettings: $e');
-    }
-  }
-
   Future<void> cancelAll() async {
     if (!_supported) return;
     try {
       await _plugin.cancelAll();
-      debugPrint('[ALARM] All notifications cancelled');
     } catch (_) {}
   }
 
@@ -235,9 +238,8 @@ class NotificationService {
         appState.isArabic ? 'اضغط لفتح شاشة الأذان' : 'Tap to open Adhan',
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'prayer_channel_v3',
+            'prayer_channel_v4',
             appState.tr('notifChannelPrayer'),
-            channelDescription: 'Adhan notifications',
             importance: Importance.max,
             priority: Priority.max,
             icon: '@mipmap/ic_launcher',
@@ -247,7 +249,6 @@ class NotificationService {
             fullScreenIntent: true,
             audioAttributesUsage: AudioAttributesUsage.alarm,
             visibility: NotificationVisibility.public,
-            color: AppColors.gold,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -258,38 +259,29 @@ class NotificationService {
         payload: 'asr|${DateTime.now().millisecondsSinceEpoch}',
       );
     } catch (e) {
-      debugPrint('[TEST] ❌ Immediate failed: $e');
+      debugPrint('[TEST] Immediate failed: $e');
     }
   }
 
   // ============================================================
-  // ⏱️ اختبار الأذان — 30 ثانية + فحص الصلاحية
+  // ⏱️ اختبار الأذان — 30 ثانية (بدون exact alarm)
   // ============================================================
   Future<bool> scheduleTestAdhan() async {
     if (!_supported) return false;
 
-    // ✅ فحص الصلاحية أولاً
-    final canExact = await canUseExactAlarm();
-    final mode = canExact
-        ? AndroidScheduleMode.exactAllowWhileIdle
-        : AndroidScheduleMode.inexactAllowWhileIdle;
-
-    debugPrint('[TEST] Using schedule mode: $mode (exact=$canExact)');
-
     final now = DateTime.now().add(const Duration(seconds: 30));
-    debugPrint('[TEST] Target time: $now');
+    debugPrint('[TEST] Target: $now');
 
     try {
       await _plugin.zonedSchedule(
         _testAdhanId,
         appState.isArabic ? 'اختبار الأذان' : 'Adhan Test',
-        appState.isArabic ? 'سيتم فتح شاشة الأذان' : 'Adhan screen will open',
+        appState.isArabic ? 'سيتم فتح شاشة الأذان' : 'Adhan will open',
         tz.TZDateTime.from(now, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'prayer_channel_v3',
+            'prayer_channel_v4',
             appState.tr('notifChannelPrayer'),
-            channelDescription: 'Adhan notifications',
             importance: Importance.max,
             priority: Priority.max,
             icon: '@mipmap/ic_launcher',
@@ -299,60 +291,29 @@ class NotificationService {
             fullScreenIntent: true,
             audioAttributesUsage: AudioAttributesUsage.alarm,
             visibility: NotificationVisibility.public,
-            color: AppColors.gold,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
-            interruptionLevel: InterruptionLevel.critical,
           ),
         ),
-        androidScheduleMode: mode,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: 'asr|${now.millisecondsSinceEpoch}',
       );
-      debugPrint('[TEST] ✅ Test adhan scheduled');
+      debugPrint('[TEST] ✅ Scheduled');
       return true;
     } catch (e) {
       debugPrint('[TEST] ❌ Failed: $e');
-      // محاولة أخيرة بـ inexact
-      try {
-        await _plugin.zonedSchedule(
-          _testAdhanId,
-          appState.isArabic ? 'اختبار الأذان' : 'Adhan Test',
-          appState.isArabic ? 'سيتم فتح شاشة الأذان' : 'Adhan screen will open',
-          tz.TZDateTime.from(now, tz.local),
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              'prayer_channel_v3',
-              appState.tr('notifChannelPrayer'),
-              channelDescription: 'Adhan notifications',
-              importance: Importance.max,
-              priority: Priority.max,
-              icon: '@mipmap/ic_launcher',
-              playSound: true,
-              enableVibration: true,
-              category: AndroidNotificationCategory.alarm,
-              fullScreenIntent: true,
-              audioAttributesUsage: AudioAttributesUsage.alarm,
-            ),
-          ),
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          payload: 'asr|${now.millisecondsSinceEpoch}',
-        );
-        debugPrint('[TEST] ✅ Test adhan scheduled (forced inexact)');
-        return true;
-      } catch (e2) {
-        debugPrint('[TEST] ❌ Both failed: $e2');
-        return false;
-      }
+      return false;
     }
   }
 
+  // ============================================================
+  // الإشعار الدائم
+  // ============================================================
   Future<void> showOngoingPrayer({
     required String prayerName,
     required DateTime targetTime,
@@ -360,6 +321,7 @@ class NotificationService {
     String? hijriDate,
   }) async {
     if (!_supported) return;
+
     try {
       final now = DateTime.now();
       final today = now;
@@ -385,12 +347,14 @@ class NotificationService {
             ][today.weekday - 1];
 
       final dateStr = '$weekday، ${today.day} ${months[today.month - 1]}';
+
       final title = appState.isArabic
           ? 'Noor Al-Hidayah • الصلاة القادمة: $prayerName'
           : 'Noor Al-Hidayah • Next prayer: $prayerName';
 
       final hijri = (hijriDate ?? '').trim();
       final body = hijri.isNotEmpty ? '$dateStr • $hijri' : dateStr;
+
       final expanded = appState.isArabic
           ? 'الصلاة القادمة: $prayerName\n$body\nالوقت المتبقي بالعد التنازلي'
           : 'Next prayer: $prayerName\n$body\nLive countdown';
@@ -401,9 +365,8 @@ class NotificationService {
         body,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'ongoing_prayer_channel_v3',
+            'ongoing_prayer_channel_v4',
             appState.tr('notifChannelPrayer'),
-            channelDescription: 'Persistent next prayer countdown',
             importance: Importance.low,
             priority: Priority.low,
             icon: '@mipmap/ic_launcher',
@@ -421,7 +384,9 @@ class NotificationService {
               contentTitle: title,
               summaryText: hijri.isNotEmpty ? hijri : null,
             ),
-            color: urgent ? const Color(0xFFFFA000) : const Color(0xFF4CAF50),
+            color: urgent
+                ? const Color(0xFFFFA000)
+                : const Color(0xFF4CAF50),
             colorized: false,
             category: AndroidNotificationCategory.status,
             visibility: NotificationVisibility.public,
@@ -433,8 +398,9 @@ class NotificationService {
           ),
         ),
       );
+      debugPrint('[NOTIFICATION] Ongoing shown: $prayerName');
     } catch (e) {
-      debugPrint('[ERROR] showOngoingPrayer: $e');
+      debugPrint('[ERROR] Ongoing: $e');
     }
   }
 
@@ -445,13 +411,13 @@ class NotificationService {
     } catch (_) {}
   }
 
-  Future<void> reschedule({
-    required List<PrayerEntry> prayers,
-  }) async {
+  // ============================================================
+  // جدولة الصلوات (بدون exact)
+  // ============================================================
+  Future<void> reschedule({required List<PrayerEntry> prayers}) async {
     if (!_supported) return;
 
-    final canExact = await canUseExactAlarm();
-    debugPrint('[ALARM] Rescheduling (exact=$canExact)');
+    debugPrint('[ALARM] Rescheduling ${prayers.length} prayers');
 
     await cancelAll();
 
@@ -473,7 +439,6 @@ class NotificationService {
         at: p.time,
         notifyAt: notifyAt,
         beforeMin: beforeMin,
-        exact: canExact,
       );
     }
 
@@ -512,7 +477,6 @@ class NotificationService {
     required DateTime at,
     required DateTime notifyAt,
     required int beforeMin,
-    required bool exact,
   }) async {
     final prayerName = appState.tr(name);
     final title = beforeMin == 0
@@ -520,10 +484,6 @@ class NotificationService {
         : '${appState.tr('notifAdhanBefore')} $beforeMin ${appState.tr('minutes')} · $prayerName';
     final body = appState.tr('notifAdhanBody');
     final payload = '$name|${at.millisecondsSinceEpoch}';
-
-    final mode = exact
-        ? AndroidScheduleMode.exactAllowWhileIdle
-        : AndroidScheduleMode.inexactAllowWhileIdle;
 
     try {
       await _plugin.zonedSchedule(
@@ -533,9 +493,8 @@ class NotificationService {
         tz.TZDateTime.from(notifyAt, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'prayer_channel_v3',
+            'prayer_channel_v4',
             appState.tr('notifChannelPrayer'),
-            channelDescription: 'Adhan notifications',
             importance: Importance.max,
             priority: Priority.max,
             icon: '@mipmap/ic_launcher',
@@ -545,7 +504,6 @@ class NotificationService {
             fullScreenIntent: true,
             audioAttributesUsage: AudioAttributesUsage.alarm,
             visibility: NotificationVisibility.public,
-            color: AppColors.gold,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -554,14 +512,14 @@ class NotificationService {
             interruptionLevel: InterruptionLevel.critical,
           ),
         ),
-        androidScheduleMode: mode,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
       );
-      debugPrint('[ALARM] ✅ $name scheduled at $notifyAt ($mode)');
+      debugPrint('[ALARM] ✅ $name at $notifyAt');
     } catch (e) {
-      debugPrint('[ERROR] Schedule $name failed ($mode): $e');
+      debugPrint('[ERROR] $name: $e');
     }
   }
 
@@ -584,9 +542,8 @@ class NotificationService {
         tz.TZDateTime.from(first, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'daily_channel_v2',
+            'daily_channel_v3',
             appState.tr('notifChannelDaily'),
-            channelDescription: appState.tr('notifChannelDailyDesc'),
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
             icon: '@mipmap/ic_launcher',
