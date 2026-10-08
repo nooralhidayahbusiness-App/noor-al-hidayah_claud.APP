@@ -15,12 +15,11 @@ class AdhanService {
   String _currentReciterId = 'default';
   bool _isPlaying = false;
   Timer? _autoStopTimer;
+  bool _contextSet = false;
 
-  /// حالة التشغيل.
   bool get isPlaying => _isPlaying;
   String get currentReciterId => _currentReciterId;
 
-  /// Stream للمستمعين لمعرفة حالة التشغيل.
   Stream<PlayerState> get stateStream => _player.onPlayerStateChanged;
   Stream<Duration> get positionStream => _player.onPositionChanged;
   Stream<void> get completeStream => _player.onPlayerComplete;
@@ -28,6 +27,34 @@ class AdhanService {
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _currentReciterId = prefs.getString('active_adhan_reciter') ?? 'default';
+    await _setupAudioContext();
+  }
+
+  /// ✅ ضبط AudioContext للأذان (نمط منبّه — صوت عالٍ + خلفية)
+  Future<void> _setupAudioContext() async {
+    if (_contextSet) return;
+    try {
+      await _player.setAudioContext(
+        AudioContext(
+          android: const AudioContextAndroid(
+            isSpeakerphoneOn: true,
+            stayAwake: true,
+            contentType: AndroidContentType.music,
+            usageType: AndroidUsageType.alarm,
+            audioFocus: AndroidAudioFocus.gain,
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: const {
+              AVAudioSessionOptions.mixWithOthers,
+            },
+          ),
+        ),
+      );
+      _contextSet = true;
+    } catch (e) {
+      debugPrint('Adhan AudioContext error: $e');
+    }
   }
 
   Future<void> setReciter(String id) async {
@@ -39,17 +66,20 @@ class AdhanService {
   /// يشغل الأذان للمؤذن المختار.
   Future<bool> play({String? reciterId}) async {
     try {
+      await _setupAudioContext();
+
       final id = reciterId ?? _currentReciterId;
       final reciter = adhanReciterById(id) ?? kAdhanReciters.first;
 
+      // أوقف أي تشغيل سابق
       await _player.stop();
-      await _player.setReleaseMode(ReleaseMode.stop);
 
-      if (kIsWeb) {
-        await _player.play(UrlSource(reciter.mp3Url));
-      } else {
-        await _player.play(UrlSource(reciter.mp3Url));
-      }
+      // اضبط النمط
+      await _player.setReleaseMode(ReleaseMode.stop);
+      await _player.setVolume(1.0);
+
+      // شغّل الرابط
+      await _player.play(UrlSource(reciter.mp3Url));
 
       _isPlaying = true;
 
