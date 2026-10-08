@@ -16,6 +16,7 @@ import '../widgets/themed_background.dart';
 import 'account_screen.dart';
 import 'admin/admin_panel_screen.dart';
 import 'store_screen.dart';
+import 'support_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -137,6 +138,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
     );
     if (mounted) _load();
+  }
+
+  // ✅ جديد: فتح شاشة الدعم
+  Future<void> _openSupport() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SupportScreen()),
+    );
   }
 
   Future<void> _openReciterPicker() async {
@@ -668,6 +676,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   trailing: 'Flaticon',
                                 ),
                               ],
+                            ),
+                          ),
+                          SizedBox(height: R.s(context, 14)),
+
+                          // ✅ جديد: قسم الدعم والتواصل
+                          _SectionHeader(
+                              title: appState.tr('supportTitle')),
+                          GlassCard(
+                            ornament: false,
+                            child: _NavRow(
+                              icon: Icons.support_agent_rounded,
+                              title: appState.tr('supportTitle'),
+                              onTap: _openSupport,
                             ),
                           ),
                           SizedBox(height: R.s(context, 14)),
