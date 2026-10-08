@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,6 +12,9 @@ class StorageService {
   static const _lng = 'location_lng';
   static const _address = 'location_address';
   static const _label = 'location_label';
+
+  // ✅ جديد: cache لمواقيت الصلاة
+  static const _prayerCacheKey = 'prayer_times_cache_v2';
 
   Future<SavedLocation?> loadLocation() async {
     try {
@@ -70,5 +75,63 @@ class StorageService {
       await prefs.remove(_lng);
       await prefs.setString(_address, location.address ?? location.label);
     }
+  }
+
+  // ============================================================
+  // ✅ cache لمواقيت الصلاة
+  // ============================================================
+
+  /// يحفظ JSON مواقيت الصلاة كـ cache.
+  /// [locationKey] = "lat_lng" أو "address".
+  Future<void> savePrayerCache(
+    Map<String, dynamic> json,
+    String locationKey,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final payload = {
+        'savedAt': DateTime.now().toIso8601String(),
+        'locationKey': locationKey,
+        'data': json,
+      };
+      await prefs.setString(_prayerCacheKey, jsonEncode(payload));
+    } catch (e) {
+      debugPrint('savePrayerCache error: $e');
+    }
+  }
+
+  /// يعيد JSON مخزّن أو null.
+  /// [maxAgeHours] = أقصى عمر للـ cache قبل اعتباره غير صالح.
+  Future<Map<String, dynamic>?> loadPrayerCache(
+    String locationKey, {
+    int maxAgeHours = 24 * 7,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_prayerCacheKey);
+      if (raw == null) return null;
+
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final savedKey = decoded['locationKey'] as String?;
+      if (savedKey != locationKey) return null;
+
+      final savedAt = DateTime.tryParse(decoded['savedAt'] as String? ?? '');
+      if (savedAt == null) return null;
+      if (DateTime.now().difference(savedAt).inHours > maxAgeHours) {
+        return null;
+      }
+
+      return decoded['data'] as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('loadPrayerCache error: $e');
+      return null;
+    }
+  }
+
+  Future<void> clearPrayerCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prayerCacheKey);
+    } catch (_) {}
   }
 }
