@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +10,7 @@ import '../core/theme.dart';
 import '../core/theme_palette.dart';
 import '../core/theme_state.dart';
 import '../data/adhan_timings.dart';
+import '../data/adhkar.dart';
 import '../data/store_items.dart';
 import '../services/adhan_service.dart';
 import '../services/premium_service.dart';
@@ -236,8 +236,8 @@ class _StoreScreenState extends State<StoreScreen>
         opaque: false,
         barrierColor: Colors.black.withValues(alpha: 0.95),
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (_, __, ___) => _AdhanPreviewPage(item: item),
-        transitionsBuilder: (_, anim, __, child) {
+        pageBuilder: (_, _, _) => _AdhanPreviewPage(item: item),
+        transitionsBuilder: (_, anim, _, child) {
           return FadeTransition(opacity: anim, child: child);
         },
       ),
@@ -440,9 +440,6 @@ class _StoreScreenState extends State<StoreScreen>
   }
 }
 
-// ============================================================
-// _StoreCard
-// ============================================================
 class _StoreCard extends StatelessWidget {
   const _StoreCard({
     required this.item,
@@ -532,7 +529,6 @@ class _StoreCard extends StatelessWidget {
                   ),
                 ),
 
-              // ✅ شارات VIP + Animation + Text
               if (item.isVip)
                 Positioned(
                   top: 8,
@@ -799,9 +795,6 @@ class _StoreCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _AdhanPreviewPage — معاينة كاملة الشاشة
-// ============================================================
 class _AdhanPreviewPage extends StatefulWidget {
   const _AdhanPreviewPage({required this.item});
 
@@ -926,7 +919,6 @@ class _AdhanPreviewPageState extends State<_AdhanPreviewPage>
           SafeArea(
             child: Column(
               children: [
-                // ===== الهيدر =====
                 Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(
                     R.s(context, 6),
@@ -944,9 +936,7 @@ class _AdhanPreviewPageState extends State<_AdhanPreviewPage>
                       ),
                       const Spacer(),
                       Text(
-                        appState.isArabic
-                            ? 'معاينة'
-                            : 'Preview',
+                        appState.isArabic ? 'معاينة' : 'Preview',
                         style: TextStyle(
                           fontSize: R.f(context, 14),
                           fontWeight: FontWeight.w700,
@@ -967,7 +957,6 @@ class _AdhanPreviewPageState extends State<_AdhanPreviewPage>
 
                 SizedBox(height: R.s(context, 12)),
 
-                // ===== اسم الصلاة + الوقت مع دوائر التوهج =====
                 _PreviewGlow(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1021,7 +1010,6 @@ class _AdhanPreviewPageState extends State<_AdhanPreviewPage>
 
                 SizedBox(height: R.s(context, 14)),
 
-                // ===== نص الأذان (فقط للـ adhanBackground) =====
                 if (_showText)
                   _PreviewAdhanText(
                     phrases: _phrases,
@@ -1030,7 +1018,6 @@ class _AdhanPreviewPageState extends State<_AdhanPreviewPage>
 
                 const Spacer(),
 
-                // ===== زر "صليت الآن" =====
                 _PreviewRippleButton(
                   prayed: _prayed,
                   onTap: _togglePrayed,
@@ -1044,7 +1031,6 @@ class _AdhanPreviewPageState extends State<_AdhanPreviewPage>
 
                 const Spacer(),
 
-                // ===== أزرار القبلة والأذكار =====
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -1084,9 +1070,6 @@ class _AdhanPreviewPageState extends State<_AdhanPreviewPage>
       );
 }
 
-// ============================================================
-// _PreviewGlow — دوائر توهج ماء
-// ============================================================
 class _PreviewGlow extends StatefulWidget {
   const _PreviewGlow({required this.child});
 
@@ -1159,9 +1142,6 @@ class _PreviewGlowState extends State<_PreviewGlow>
   }
 }
 
-// ============================================================
-// _PreviewAdhanText
-// ============================================================
 class _PreviewAdhanText extends StatelessWidget {
   const _PreviewAdhanText({
     required this.phrases,
@@ -1246,9 +1226,6 @@ class _PreviewAdhanText extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _PreviewCircleButton
-// ============================================================
 class _PreviewCircleButton extends StatelessWidget {
   const _PreviewCircleButton({
     required this.icon,
@@ -1317,9 +1294,6 @@ class _PreviewCircleButton extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _PreviewRippleButton
-// ============================================================
 class _PreviewRippleButton extends StatefulWidget {
   const _PreviewRippleButton({
     required this.prayed,
@@ -1448,9 +1422,6 @@ class _PreviewRippleButtonState extends State<_PreviewRippleButton>
   }
 }
 
-// ============================================================
-// _RoundIconButton
-// ============================================================
 class _RoundIconButton extends StatelessWidget {
   const _RoundIconButton({
     required this.icon,
@@ -1487,9 +1458,6 @@ class _RoundIconButton extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _PurchaseDialog
-// ============================================================
 class _PurchaseDialog extends StatelessWidget {
   const _PurchaseDialog({
     required this.item,
@@ -1639,9 +1607,6 @@ class _PurchaseDialog extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _DeactivateDialog
-// ============================================================
 class _DeactivateDialog extends StatelessWidget {
   const _DeactivateDialog({required this.item});
 
@@ -1756,9 +1721,6 @@ class _DeactivateDialog extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _InsufficientPointsDialog
-// ============================================================
 class _InsufficientPointsDialog extends StatelessWidget {
   const _InsufficientPointsDialog();
 
@@ -2038,9 +2000,6 @@ class _MethodCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _PremiumBanner
-// ============================================================
 class _PremiumBanner extends StatefulWidget {
   final VoidCallback onTap;
 
@@ -2171,9 +2130,6 @@ class _PremiumBannerState extends State<_PremiumBanner>
   }
 }
 
-// ============================================================
-// _VipBadge / _AnimatedBadge / _TextBadge
-// ============================================================
 class _VipBadge extends StatelessWidget {
   const _VipBadge();
 
