@@ -16,6 +16,7 @@ import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
 import '../widgets/theme_preview.dart';
+import 'challenge_screen.dart';
 import 'my_purchases_screen.dart';
 import 'premium_screen.dart';
 
