@@ -6,6 +6,7 @@ import 'core/firebase_options.dart';
 import 'core/theme.dart';
 import 'screens/adhan_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/adhan_service.dart';
 import 'services/auth_service.dart';
 import 'services/notification_service.dart';
 import 'services/push_service.dart';
@@ -20,7 +21,7 @@ void main() async {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
   } catch (_) {}
 
-  // 2) الإشعارات المحلية (صلوات)
+  // 2) الإشعارات المحلية
   try {
     await notificationService.init();
     notificationService.onPrayerTap = (prayerKey, time) {
@@ -37,17 +38,22 @@ void main() async {
     };
   } catch (_) {}
 
-  // 3) راقب تسجيل الدخول لحفظ التوكن
+  // 3) خدمة الأذان
+  try {
+    await adhanService.init();
+  } catch (_) {}
+
+  // 4) راقب تسجيل الدخول
   authService.authChanges.listen((user) {
     if (user != null) {
       pushService.saveTokenForCurrentUser();
     }
   });
 
-  // 4) شغّل التطبيق أولاً (مهم: قبل OneSignal)
+  // 5) شغّل التطبيق
   runApp(const NoorApp());
 
-  // 5) الآن شغّل OneSignal — بدون await (لا يحجب UI)
+  // 6) OneSignal بعد runApp
   Future.microtask(() async {
     try {
       await pushService.init();
