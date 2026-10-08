@@ -43,11 +43,12 @@ class _HomeShellState extends State<HomeShell> {
   final CommunityNotificationService _notifService =
       CommunityNotificationService();
 
-  // ===== Prayer check =====
+  // Prayer checks
   Timer? _prayerCheckTimer;
+  Timer? _ongoingNotifTimer;
   DateTime? _lastAdhanShownAt;
 
-  // ===== Premium Promo =====
+  // Premium Promo
   static const String _kOpenCount = 'app_open_count';
   static const String _kShown2 = 'premium_promo_shown_2';
   static const String _kShown5 = 'premium_promo_shown_5';
@@ -60,13 +61,11 @@ class _HomeShellState extends State<HomeShell> {
     reciterPrefs.load();
     themeState.load();
 
-    // AdMob
     adsService.initialize();
 
-    // ✅ فحص وقت الصلاة كل 30 ثانية
     _startPrayerCheck();
+    _startOngoingNotification();
 
-    // Promo
     _checkPromo();
 
     Future.delayed(const Duration(seconds: 3), () async {
@@ -81,11 +80,12 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void dispose() {
     _prayerCheckTimer?.cancel();
+    _ongoingNotifTimer?.cancel();
     super.dispose();
   }
 
   // ============================================================
-  // ✅ فحص وقت الصلاة وفتح شاشة الأذان تلقائياً
+  // فحص وقت الصلاة + فتح شاشة الأذان تلقائياً
   // ============================================================
   void _startPrayerCheck() {
     _prayerCheckTimer =
@@ -114,7 +114,6 @@ class _HomeShellState extends State<HomeShell> {
 
       final diff = now.difference(prayerAt).inSeconds;
 
-      // في أول دقيقة من وقت الصلاة
       if (diff >= 0 && diff < 60) {
         if (_lastAdhanShownAt == prayerAt) return;
         _lastAdhanShownAt = prayerAt;
@@ -134,7 +133,49 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   // ============================================================
-  // Premium Promo — يظهر في المرة 2 و 5 فقط
+  // ✅ الإشعار الدائم — الصلاة القادمة + العد التنازلي
+  // ============================================================
+  void _startOngoingNotification() {
+    // تحديث أول مرة بعد 2 ثانية
+    Future.delayed(const Duration(seconds: 2), _updateOngoing);
+
+    // تحديث كل دقيقة
+    _ongoingNotifTimer =
+        Timer.periodic(const Duration(minutes: 1), (_) {
+      _updateOngoing();
+    });
+  }
+
+  void _updateOngoing() {
+    final next = prayerState.nextPrayer();
+    if (next == null) return;
+
+    final now = DateTime.now();
+    final diff = next.at.difference(now);
+    if (diff.isNegative) return;
+
+    final h = diff.inHours;
+    final m = diff.inMinutes % 60;
+
+    String countdown;
+    if (h > 0) {
+      countdown = '$h ${appState.tr('hourShort')} $m ${appState.tr('minuteShort')}';
+    } else {
+      countdown = '$m ${appState.tr('minuteShort')}';
+    }
+
+    final title = '🕌 ${appState.tr('nextPrayer')}: ${appState.tr(next.key)}';
+    final body =
+        '$countdown · ${next.timeText}';
+
+    notificationService.showOngoingPrayer(
+      title: title,
+      body: body,
+    );
+  }
+
+  // ============================================================
+  // Premium Promo
   // ============================================================
   Future<void> _checkPromo() async {
     try {
@@ -256,9 +297,6 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  // ============================================================
-  // زر الشات
-  // ============================================================
   Widget _buildChatButton(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const SizedBox.shrink();
@@ -325,9 +363,6 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  // ============================================================
-  // زر الإشعارات
-  // ============================================================
   Widget _buildNotifButton(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const SizedBox.shrink();
