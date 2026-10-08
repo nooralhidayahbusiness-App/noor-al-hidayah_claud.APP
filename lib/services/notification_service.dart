@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -9,6 +9,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../core/app_state.dart';
 import '../core/prayer_state.dart';
+import '../core/theme.dart';
 import 'user_service.dart';
 
 class PrayerEntry {
@@ -122,9 +123,6 @@ class NotificationService {
     onPrayerTap?.call(prayerKey, when);
   }
 
-  // ============================================================
-  // ✅ طلب الصلاحيات (يشمل تجاهل توفير البطارية)
-  // ============================================================
   Future<bool> requestPermissions() async {
     if (!_supported) return false;
     try {
@@ -147,7 +145,6 @@ class NotificationService {
           await android.requestFullScreenIntentPermission();
         } catch (_) {}
 
-        // ✅ تجاهل توفير البطارية
         try {
           await Permission.ignoreBatteryOptimizations.request();
         } catch (_) {}
@@ -375,7 +372,6 @@ class NotificationService {
       debugPrint('✅ Scheduled $name at $notifyAt');
     } catch (e) {
       debugPrint('❌ Exact failed for $name, retry inexact: $e');
-      // ✅ fallback: لو exact فشل، جرّب inexact
       try {
         await _plugin.zonedSchedule(
           id,
