@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -177,9 +178,6 @@ class NotificationService {
     } catch (_) {}
   }
 
-  // ============================================================
-  // ✅ إشعار العد التنازلي — حيّ (chronometer)
-  // ============================================================
   Future<void> showOngoingPrayer({
     required String prayerName,
     required DateTime targetTime,
@@ -261,9 +259,6 @@ class NotificationService {
     } catch (_) {}
   }
 
-  // ============================================================
-  // جدولة إشعارات الصلاة
-  // ============================================================
   Future<void> reschedule({required List<PrayerEntry> prayers}) async {
     if (!_supported) return;
 
