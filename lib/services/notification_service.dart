@@ -29,6 +29,9 @@ class NotificationService {
 
   OnPrayerTap? onPrayerTap;
 
+  /// ✅ إشعار مُعلَّق من cold start
+  NotificationResponse? _pendingLaunchResponse;
+
   static const _prayerIds = {
     'fajr': 100,
     'dhuhr': 101,
@@ -72,10 +75,30 @@ class NotificationService {
       );
 
       _supported = Platform.isAndroid || Platform.isIOS;
+
+      // ✅ التقاط الإشعار الذي فتح التطبيق (cold start)
+      try {
+        final details = await _plugin.getNotificationAppLaunchDetails();
+        if (details?.didNotificationLaunchApp == true) {
+          _pendingLaunchResponse = details?.notificationResponse;
+          debugPrint('Pending launch notification: '
+              '${_pendingLaunchResponse?.payload}');
+        }
+      } catch (e) {
+        debugPrint('getLaunchDetails error: $e');
+      }
     } catch (e) {
       debugPrint('Notification init error: $e');
       _supported = false;
     }
+  }
+
+  /// ✅ يُستدعى بعد أن يصبح Navigator جاهزاً (في SplashScreen مثلاً)
+  void consumePendingLaunch() {
+    final resp = _pendingLaunchResponse;
+    if (resp == null) return;
+    _pendingLaunchResponse = null;
+    _onTap(resp);
   }
 
   void _onTap(NotificationResponse response) {
@@ -96,14 +119,18 @@ class NotificationService {
       when = DateTime.now();
     }
 
+    // ✅ إذا لم يكن onPrayerTap جاهزاً بعد، احتفظ بالطلب
+    if (onPrayerTap == null) {
+      _pendingLaunchResponse = response;
+      return;
+    }
+
     onPrayerTap?.call(prayerKey, when);
   }
 
-  /// ✅ طلب كل الصلاحيات المطلوبة + فتح الإعدادات إذا لزم
   Future<bool> requestPermissions() async {
     if (!_supported) return false;
     try {
-      // 1) صلاحية الإشعارات العامة
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       final ios = _plugin.resolvePlatformSpecificImplementation<
@@ -115,20 +142,9 @@ class NotificationService {
         final res = await android.requestNotificationsPermission();
         granted = res ?? false;
 
-        // 2) صلاحية Alarm الدقيقة (Android 12+)
         try {
           final alarmGranted = await android.requestExactAlarmsPermission();
           debugPrint('Exact alarm permission: $alarmGranted');
-
-          // 3) إذا رُفضت → افتح الإعدادات (Android 14+)
-          if (alarmGranted != true) {
-            final status = await Permission.scheduleExactAlarm.status;
-            debugPrint('Alarm status: $status');
-            if (status.isDenied || status.isPermanentlyDenied) {
-              // فتح إعدادات النظام لتفعيل "المنبهات والتذكيرات"
-              await android.requestExactAlarmsPermission();
-            }
-          }
         } catch (e) {
           debugPrint('Alarm permission error: $e');
         }
@@ -148,7 +164,6 @@ class NotificationService {
     }
   }
 
-  /// ✅ فتح إعدادات المنبهات (Android 14+)
   Future<void> openExactAlarmSettings() async {
     if (!_supported) return;
     try {
@@ -318,47 +333,18 @@ class NotificationService {
     if (data == null) return list;
 
     try {
-      final dyn = data as dynamic;
       final now = DateTime.now();
 
-      void add(String key, dynamic value) {
-        if (value is DateTime) {
-          list.add(PrayerEntry(key, value));
-        } else if (value is String) {
-          final parsed = _parseTimeText(value, now);
-          if (parsed != null) list.add(PrayerEntry(key, parsed));
-        }
+      void add(String key, String value) {
+        final parsed = _parseTimeText(value, now);
+        if (parsed != null) list.add(PrayerEntry(key, parsed));
       }
 
-      try {
-        add('fajr', dyn.fajr);
-      } catch (_) {}
-      try {
-        add('dhuhr', dyn.dhuhr);
-      } catch (_) {}
-      try {
-        add('asr', dyn.asr);
-      } catch (_) {}
-      try {
-        add('maghrib', dyn.maghrib);
-      } catch (_) {}
-      try {
-        add('isha', dyn.isha);
-      } catch (_) {}
-
-      if (list.isEmpty) {
-        try {
-          final prayers = dyn.prayers as List;
-          for (final p in prayers) {
-            final pd = p as dynamic;
-            final name = (pd.name ?? pd.key) as String?;
-            final at = pd.at ?? pd.time;
-            if (name != null && at is DateTime) {
-              list.add(PrayerEntry(name.toLowerCase(), at));
-            }
-          }
-        } catch (_) {}
-      }
+      add('fajr', data.fajr);
+      add('dhuhr', data.dhuhr);
+      add('asr', data.asr);
+      add('maghrib', data.maghrib);
+      add('isha', data.isha);
     } catch (_) {}
 
     return list;
