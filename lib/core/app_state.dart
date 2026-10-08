@@ -462,6 +462,8 @@ const Map<String, String> _ar = {
       'هذا البريد مسجل بطريقة أخرى. استخدم تسجيل الدخول بالبريد',
   'authErrGoogleNotEnabled':
       'تسجيل الدخول بـ Google غير مفعّل حالياً',
+// ✅ Support
+'supportTitle': 'الدعم والتواصل',
 };
 
 // =====================================================================
@@ -803,4 +805,6 @@ const Map<String, String> _en = {
       'This email is registered another way. Use email sign-in instead.',
   'authErrGoogleNotEnabled':
       'Google Sign-In is not enabled currently',
+// ✅ Support
+'supportTitle': 'Support & Contact',
 };
