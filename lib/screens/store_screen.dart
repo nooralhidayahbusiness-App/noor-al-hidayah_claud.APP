@@ -6,6 +6,7 @@ import '../core/theme.dart';
 import '../core/theme_palette.dart';
 import '../core/theme_state.dart';
 import '../data/store_items.dart';
+import '../services/adhan_service.dart';
 import '../services/premium_service.dart';
 import '../services/user_service.dart';
 import '../widgets/auth_widgets.dart';
@@ -27,7 +28,7 @@ class _StoreScreenState extends State<StoreScreen>
   late final TabController _tabs = TabController(length: 4, vsync: this);
 
   bool _loading = true;
-  bool _isPremium = false; // ✅ جديد
+  bool _isPremium = false;
   int _points = 0;
   Map<String, dynamic> _inventory = {};
   String? _busyId;
@@ -51,7 +52,6 @@ class _StoreScreenState extends State<StoreScreen>
       final stats = await userService.loadStats();
       final inv = await userService.loadInventory();
 
-      // ✅ جديد: فحص حالة Premium
       final uid = FirebaseAuth.instance.currentUser?.uid;
       final isPremium = uid == null
           ? false
@@ -108,6 +108,8 @@ class _StoreScreenState extends State<StoreScreen>
         break;
       case 'adhan':
         await themeState.setAdhan(item.id);
+        // ✅ تفعيل المؤذن فوراً
+        await adhanService.setReciter(item.id);
         break;
       case 'adhanBackground':
         await themeState.setAdhanBackground(item.id);
@@ -136,7 +138,6 @@ class _StoreScreenState extends State<StoreScreen>
       return;
     }
 
-    // ✅ جديد: المستخدم Premium → لا يحتاج نقاط
     if (!_isPremium && _points < item.price) {
       showAuthMessage(context, appState.tr('notEnoughPoints'), error: true);
       return;
@@ -205,7 +206,6 @@ class _StoreScreenState extends State<StoreScreen>
 
     setState(() => _busyId = item.id);
     try {
-      // ✅ جديد: لا تخصم النقاط إذا Premium
       if (!_isPremium) {
         await userService.addPoints(-item.price);
       }
@@ -231,7 +231,7 @@ class _StoreScreenState extends State<StoreScreen>
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const PremiumScreen()),
     );
-    await _load(); // ✅ جديد: أعد التحميل بعد العودة
+    await _load();
   }
 
   @override
@@ -271,7 +271,6 @@ class _StoreScreenState extends State<StoreScreen>
               ),
               const SizedBox(height: 12),
 
-              // ===== بطاقة Premium (تختفي لـ Premium) =====
               if (!_isPremium)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -368,7 +367,7 @@ class _StoreScreenState extends State<StoreScreen>
         active: _isActive(items[i]),
         busy: _busyId == items[i].id,
         nameAr: appState.isArabic,
-        isPremium: _isPremium, // ✅ جديد
+        isPremium: _isPremium,
         onTap: () => _onItemTap(items[i]),
       ),
     );
@@ -376,7 +375,7 @@ class _StoreScreenState extends State<StoreScreen>
 }
 
 // ============================================================
-// _PremiumBanner — بطاقة Premium في أعلى المتجر
+// _PremiumBanner
 // ============================================================
 class _PremiumBanner extends StatefulWidget {
   final VoidCallback onTap;
@@ -517,7 +516,7 @@ class _StoreTile extends StatelessWidget {
     required this.active,
     required this.busy,
     required this.nameAr,
-    required this.isPremium, // ✅ جديد
+    required this.isPremium,
     required this.onTap,
   });
 
@@ -526,7 +525,7 @@ class _StoreTile extends StatelessWidget {
   final bool active;
   final bool busy;
   final bool nameAr;
-  final bool isPremium; // ✅ جديد
+  final bool isPremium;
   final VoidCallback onTap;
 
   @override
@@ -720,7 +719,6 @@ class _StoreTile extends StatelessWidget {
         ),
       );
     }
-    // ✅ جديد: شارة "مجاني" للمستخدم Premium
     if (isPremium) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
