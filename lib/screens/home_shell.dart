@@ -43,12 +43,11 @@ class _HomeShellState extends State<HomeShell> {
   final CommunityNotificationService _notifService =
       CommunityNotificationService();
 
-  // Prayer checks
   Timer? _prayerCheckTimer;
   Timer? _ongoingNotifTimer;
   DateTime? _lastAdhanShownAt;
+  bool _lastUrgentState = false;
 
-  // Premium Promo
   static const String _kOpenCount = 'app_open_count';
   static const String _kShown2 = 'premium_promo_shown_2';
   static const String _kShown5 = 'premium_promo_shown_5';
@@ -68,6 +67,11 @@ class _HomeShellState extends State<HomeShell> {
 
     _checkPromo();
 
+    // ✅ إشعار الإشعارات المُعلّقة بعد استقرار الشاشة
+    Future.delayed(const Duration(seconds: 1), () {
+      notificationService.consumePendingLaunch();
+    });
+
     Future.delayed(const Duration(seconds: 3), () async {
       if (!mounted) return;
       final prayers = notificationService.collectPrayerTimes();
@@ -85,7 +89,7 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   // ============================================================
-  // فحص وقت الصلاة + فتح شاشة الأذان تلقائياً
+  // فحص وقت الصلاة + فتح شاشة الأذان
   // ============================================================
   void _startPrayerCheck() {
     _prayerCheckTimer =
@@ -133,13 +137,12 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   // ============================================================
-  // ✅ الإشعار الدائم — الصلاة القادمة + العد التنازلي
+  // ✅ الإشعار الدائم — يحوي العد التنازلي الحيّ
   // ============================================================
   void _startOngoingNotification() {
-    // تحديث أول مرة بعد 2 ثانية
     Future.delayed(const Duration(seconds: 2), _updateOngoing);
 
-    // تحديث كل دقيقة
+    // التحديث كل دقيقة (لتغيير اللون في آخر 10 دقائق)
     _ongoingNotifTimer =
         Timer.periodic(const Duration(minutes: 1), (_) {
       _updateOngoing();
@@ -154,23 +157,19 @@ class _HomeShellState extends State<HomeShell> {
     final diff = next.at.difference(now);
     if (diff.isNegative) return;
 
-    final h = diff.inHours;
-    final m = diff.inMinutes % 60;
+    final isUrgent = diff.inMinutes < 10;
 
-    String countdown;
-    if (h > 0) {
-      countdown = '$h ${appState.tr('hourShort')} $m ${appState.tr('minuteShort')}';
-    } else {
-      countdown = '$m ${appState.tr('minuteShort')}';
-    }
+    // حدّث فقط عند الحاجة (تغيّر الصلاة أو حالة الاستعجال)
+    if (_lastAdhanShownAt == next.at &&
+        _lastUrgentState == isUrgent) return;
 
-    final title = '🕌 ${appState.tr('nextPrayer')}: ${appState.tr(next.key)}';
-    final body =
-        '$countdown · ${next.timeText}';
+    _lastAdhanShownAt = next.at;
+    _lastUrgentState = isUrgent;
 
     notificationService.showOngoingPrayer(
-      title: title,
-      body: body,
+      prayerName: appState.tr(next.key),
+      targetTime: next.at,
+      urgent: isUrgent,
     );
   }
 
