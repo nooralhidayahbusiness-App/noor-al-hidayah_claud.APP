@@ -16,7 +16,6 @@ import '../widgets/auth_widgets.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
 import '../widgets/theme_preview.dart';
-import 'challenge_screen.dart';
 import 'my_purchases_screen.dart';
 import 'premium_screen.dart';
 
@@ -53,9 +52,6 @@ class _StoreScreenState extends State<StoreScreen>
     super.dispose();
   }
 
-  // ============================================================
-  // Helpers
-  // ============================================================
   String _keyOf(StoreItem item) => '${item.type}|${item.id}';
 
   String _listKey(String type) => switch (type) {
@@ -131,9 +127,6 @@ class _StoreScreenState extends State<StoreScreen>
     }
   }
 
-  // ============================================================
-  // Play / Stop preview (للمؤذن)
-  // ============================================================
   Future<void> _togglePlay(StoreItem item) async {
     if (_playingReciterId == item.id) {
       await adhanService.stop();
@@ -141,7 +134,6 @@ class _StoreScreenState extends State<StoreScreen>
       return;
     }
 
-    // أوقف أي تشغيل سابق
     await adhanService.stop();
 
     setState(() => _playingReciterId = item.id);
@@ -150,7 +142,6 @@ class _StoreScreenState extends State<StoreScreen>
       setState(() => _playingReciterId = null);
     }
 
-    // إيقاف تلقائي بعد 30 ثانية
     Future.delayed(const Duration(seconds: 30), () {
       if (mounted && _playingReciterId == item.id) {
         adhanService.stop();
@@ -159,9 +150,6 @@ class _StoreScreenState extends State<StoreScreen>
     });
   }
 
-  // ============================================================
-  // Purchase flow
-  // ============================================================
   Future<void> _purchase(StoreItem item) async {
     if (!_isPremium && _points < item.price) {
       await _showInsufficientPoints();
@@ -192,9 +180,6 @@ class _StoreScreenState extends State<StoreScreen>
     }
   }
 
-  // ============================================================
-  // Activate / Deactivate owned
-  // ============================================================
   Future<void> _activateOwned(StoreItem item) async {
     if (_isActive(item)) return;
     setState(() => _busyKey = _keyOf(item));
@@ -238,9 +223,6 @@ class _StoreScreenState extends State<StoreScreen>
     }
   }
 
-  // ============================================================
-  // Preview (للخلفيات)
-  // ============================================================
   void _preview(StoreItem item) {
     showDialog(
       context: context,
@@ -249,13 +231,9 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  // ============================================================
-  // Dialogs
-  // ============================================================
   Future<bool?> _showPurchaseDialog(StoreItem item) {
     return showDialog<bool>(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (_) => _PurchaseDialog(
         item: item,
         isPremium: _isPremium,
@@ -267,7 +245,6 @@ class _StoreScreenState extends State<StoreScreen>
   Future<bool?> _showDeactivateDialog(StoreItem item) {
     return showDialog<bool>(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (_) => _DeactivateDialog(item: item),
     );
   }
@@ -275,14 +252,10 @@ class _StoreScreenState extends State<StoreScreen>
   Future<void> _showInsufficientPoints() async {
     await showDialog<void>(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (_) => const _InsufficientPointsDialog(),
     );
   }
 
-  // ============================================================
-  // Navigation
-  // ============================================================
   Future<void> _openMyPurchases() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const MyPurchasesScreen()),
@@ -297,15 +270,6 @@ class _StoreScreenState extends State<StoreScreen>
     await _load();
   }
 
-  void _openChallenges() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ChallengeScreen()),
-    );
-  }
-
-  // ============================================================
-  // Build
-  // ============================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -313,7 +277,6 @@ class _StoreScreenState extends State<StoreScreen>
         child: SafeArea(
           child: Column(
             children: [
-              // ===== AppBar =====
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 20, 0),
                 child: Row(
@@ -344,7 +307,6 @@ class _StoreScreenState extends State<StoreScreen>
               ),
               const SizedBox(height: 12),
 
-              // ===== Premium banner =====
               if (!_isPremium)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -352,7 +314,6 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               if (!_isPremium) const SizedBox(height: 12),
 
-              // ===== الرصيد =====
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: GlassCard(
@@ -384,7 +345,6 @@ class _StoreScreenState extends State<StoreScreen>
               ),
               const SizedBox(height: 12),
 
-              // ===== Tabs =====
               TabBar(
                 controller: _tabs,
                 isScrollable: true,
@@ -406,7 +366,6 @@ class _StoreScreenState extends State<StoreScreen>
                 ],
               ),
 
-              // ===== Grid =====
               Expanded(
                 child: _loading
                     ? const Center(
@@ -468,9 +427,6 @@ class _StoreScreenState extends State<StoreScreen>
   }
 }
 
-// ============================================================
-// _StoreCard
-// ============================================================
 class _StoreCard extends StatelessWidget {
   const _StoreCard({
     required this.item,
@@ -541,10 +497,8 @@ class _StoreCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // ===== الخلفية =====
               _buildBackground(context),
 
-              // ===== Overlay gradient =====
               if (item.type != 'theme')
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -559,7 +513,6 @@ class _StoreCard extends StatelessWidget {
                   ),
                 ),
 
-              // ===== VIP badges =====
               if (item.isVip)
                 const Positioned(
                   top: 8,
@@ -567,7 +520,6 @@ class _StoreCard extends StatelessWidget {
                   child: _VipBadge(),
                 ),
 
-              // ===== Active check =====
               if (active)
                 const Positioned(
                   top: 8,
@@ -576,13 +528,11 @@ class _StoreCard extends StatelessWidget {
                       color: AppColors.gold, size: 22),
                 ),
 
-              // ===== المحتوى =====
               if (!expanded)
                 _buildCollapsedContent(context)
               else
                 _buildExpandedContent(context),
 
-              // ===== Busy overlay =====
               if (busy)
                 Positioned.fill(
                   child: Container(
@@ -626,7 +576,6 @@ class _StoreCard extends StatelessWidget {
         ),
       );
 
-  // ====== العرض المُصغّر (اسم + أيقونة) ======
   Widget _buildCollapsedContent(BuildContext context) {
     return Positioned(
       left: 12,
@@ -657,7 +606,6 @@ class _StoreCard extends StatelessWidget {
     );
   }
 
-  // ====== العرض المُوسّع (blur + أزرار) ======
   Widget _buildExpandedContent(BuildContext context) {
     return Positioned.fill(
       child: ClipRRect(
@@ -695,7 +643,6 @@ class _StoreCard extends StatelessWidget {
   }
 
   List<Widget> _buildActions(BuildContext context) {
-    // ✅ المؤذن
     if (_isAdhan) {
       final playBtn = _RoundIconButton(
         icon: playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
@@ -733,7 +680,6 @@ class _StoreCard extends StatelessWidget {
       ];
     }
 
-    // ✅ خلفيات
     if (_isBackground) {
       final previewBtn = _RoundIconButton(
         icon: Icons.visibility_rounded,
@@ -822,9 +768,6 @@ class _StoreCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _RoundIconButton
-// ============================================================
 class _RoundIconButton extends StatelessWidget {
   const _RoundIconButton({
     required this.icon,
@@ -861,9 +804,6 @@ class _RoundIconButton extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _PreviewDialog — معاينة الخلفية كاملة
-// ============================================================
 class _PreviewDialog extends StatelessWidget {
   const _PreviewDialog({required this.item});
 
@@ -897,8 +837,6 @@ class _PreviewDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-
-                  // اسم المنتج
                   Positioned(
                     left: 16,
                     right: 16,
@@ -930,7 +868,6 @@ class _PreviewDialog extends StatelessWidget {
               ),
             ),
           ),
-          // زر X
           Positioned(
             top: 8,
             right: 8,
@@ -955,9 +892,6 @@ class _PreviewDialog extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _PurchaseDialog — تأكيد الشراء
-// ============================================================
 class _PurchaseDialog extends StatelessWidget {
   const _PurchaseDialog({
     required this.item,
@@ -1107,9 +1041,6 @@ class _PurchaseDialog extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _DeactivateDialog — تحذير إلغاء الاستعمال
-// ============================================================
 class _DeactivateDialog extends StatelessWidget {
   const _DeactivateDialog({required this.item});
 
@@ -1224,9 +1155,6 @@ class _DeactivateDialog extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _InsufficientPointsDialog
-// ============================================================
 class _InsufficientPointsDialog extends StatelessWidget {
   const _InsufficientPointsDialog();
 
@@ -1265,7 +1193,6 @@ class _InsufficientPointsDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // X
               Align(
                 alignment: Alignment.topRight,
                 child: GestureDetector(
@@ -1286,8 +1213,6 @@ class _InsufficientPointsDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-
-              // أيقونة
               Center(
                 child: Container(
                   width: 70,
@@ -1302,8 +1227,6 @@ class _InsufficientPointsDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // رسالة الاعتذار
               Text(
                 ar
                     ? 'عزيزي المستعمل، نعتذر منك'
@@ -1330,7 +1253,6 @@ class _InsufficientPointsDialog extends StatelessWidget {
               const SizedBox(height: 20),
               Divider(color: AppColors.gold.withValues(alpha: 0.25)),
               const SizedBox(height: 16),
-
               Text(
                 ar
                     ? 'يمكنك أن تجمع نقاطاً مجانية من خلال:'
@@ -1342,8 +1264,6 @@ class _InsufficientPointsDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-
-              // زر التحدي
               _MethodCard(
                 icon: Icons.quiz_rounded,
                 title: ar
@@ -1360,8 +1280,6 @@ class _InsufficientPointsDialog extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 10),
-
-              // زر الإعلانات
               _MethodCard(
                 icon: Icons.play_circle_fill_rounded,
                 title: ar
@@ -1380,8 +1298,6 @@ class _InsufficientPointsDialog extends StatelessWidget {
               const SizedBox(height: 20),
               Divider(color: AppColors.gold.withValues(alpha: 0.25)),
               const SizedBox(height: 14),
-
-              // Premium
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -1518,9 +1434,6 @@ class _MethodCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// _PremiumBanner
-// ============================================================
 class _PremiumBanner extends StatefulWidget {
   final VoidCallback onTap;
 
@@ -1651,9 +1564,6 @@ class _PremiumBannerState extends State<_PremiumBanner>
   }
 }
 
-// ============================================================
-// _VipBadge
-// ============================================================
 class _VipBadge extends StatelessWidget {
   const _VipBadge();
 
