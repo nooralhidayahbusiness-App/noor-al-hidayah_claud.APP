@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +20,7 @@ import '../widgets/app_branding.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/premium_promo_dialog.dart';
+import 'adhan_screen.dart';
 import 'challenge_screen.dart';
 import 'chats_list_screen.dart';
 import 'notifications_screen.dart';
@@ -40,6 +43,10 @@ class _HomeShellState extends State<HomeShell> {
   final CommunityNotificationService _notifService =
       CommunityNotificationService();
 
+  // ===== Prayer check =====
+  Timer? _prayerCheckTimer;
+  DateTime? _lastAdhanShownAt;
+
   // ===== Premium Promo =====
   static const String _kOpenCount = 'app_open_count';
   static const String _kShown2 = 'premium_promo_shown_2';
@@ -53,10 +60,13 @@ class _HomeShellState extends State<HomeShell> {
     reciterPrefs.load();
     themeState.load();
 
-    // ✅ تهيئة AdMob
+    // AdMob
     adsService.initialize();
 
-    // ✅ عداد الفتح + عرض Promo
+    // ✅ فحص وقت الصلاة كل 30 ثانية
+    _startPrayerCheck();
+
+    // Promo
     _checkPromo();
 
     Future.delayed(const Duration(seconds: 3), () async {
@@ -68,6 +78,61 @@ class _HomeShellState extends State<HomeShell> {
     });
   }
 
+  @override
+  void dispose() {
+    _prayerCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  // ============================================================
+  // ✅ فحص وقت الصلاة وفتح شاشة الأذان تلقائياً
+  // ============================================================
+  void _startPrayerCheck() {
+    _prayerCheckTimer =
+        Timer.periodic(const Duration(seconds: 30), (_) {
+      _checkForPrayerTime();
+    });
+  }
+
+  void _checkForPrayerTime() {
+    final data = prayerState.data;
+    if (data == null) return;
+
+    final now = DateTime.now();
+
+    for (final entry in data.prayers) {
+      final parts = entry.value.split(':');
+      if (parts.length < 2) continue;
+
+      final prayerAt = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+      );
+
+      final diff = now.difference(prayerAt).inSeconds;
+
+      // في أول دقيقة من وقت الصلاة
+      if (diff >= 0 && diff < 60) {
+        if (_lastAdhanShownAt == prayerAt) return;
+        _lastAdhanShownAt = prayerAt;
+
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AdhanScreen(
+              prayerKey: entry.key,
+              prayerTime: prayerAt,
+            ),
+          ),
+        );
+        return;
+      }
+    }
+  }
+
   // ============================================================
   // Premium Promo — يظهر في المرة 2 و 5 فقط
   // ============================================================
@@ -77,7 +142,6 @@ class _HomeShellState extends State<HomeShell> {
       final count = (prefs.getInt(_kOpenCount) ?? 0) + 1;
       await prefs.setInt(_kOpenCount, count);
 
-      // لا تعرض للمالك (owner)
       final email =
           FirebaseAuth.instance.currentUser?.email?.toLowerCase() ?? '';
       const ownerEmails = [
@@ -100,7 +164,6 @@ class _HomeShellState extends State<HomeShell> {
 
       if (!shouldShow || !mounted) return;
 
-      // تأخير بسيط ليستقر التطبيق قبل العرض
       await Future.delayed(const Duration(milliseconds: 1500));
       if (!mounted) return;
 
