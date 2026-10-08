@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "762471094332",
+    "project_id": "noor-al-hidaiyah",
+    "storage_bucket": "noor-al-hidaiyah.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:762471094332:android:8a851d27fb4e78861d8b39",
+        "android_client_info": {
+          "package_name": "com.nooralhidayah.noor_al_hidayah"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "762471094332-8a5du3g51jhfdh6sdg3hlk1p6o600egm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nooralhidayah.noor_al_hidayah",
+            "certificate_hash": "f948adf2a7857e1f8954ff50537e8c60313be6db"
+          }
+        },
+        {
+          "client_id": "762471094332-og9u4e44h5i4qvhjlv7uo7d3fi6nipuc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nooralhidayah.noor_al_hidayah",
+            "certificate_hash": "347407f9d27a5dfd2ebbe84a3662c4c2222cc630"
+          }
+        },
+        {
+          "client_id": "762471094332-l8vkd8up5i13ivjt1btr0urllgvtoupm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEOjWxOmO0i5-PIDv7RQCubiP1Oidms0M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "762471094332-l8vkd8up5i13ivjt1btr0urllgvtoupm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
