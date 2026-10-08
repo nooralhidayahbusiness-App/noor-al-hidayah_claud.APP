@@ -469,6 +469,7 @@ const Map<String, String> _ar = {
 'minuteShort': 'د',
 'adhkarAfterPrayer': 'أذكار بعد الصلاة',
 'adhanPrayedDone': 'أكملت الصلاة ✓',
+'deactivatedToDefault': 'تم إلغاء الاستعمال — سيتم استخدام الافتراضي',
 };
 
 // =====================================================================
@@ -817,4 +818,5 @@ const Map<String, String> _en = {
 'minuteShort': 'm',
 'adhkarAfterPrayer': 'Adhkar after prayer',
 'adhanPrayedDone': 'Prayer completed ✓',
+'deactivatedToDefault': 'Deactivated — default will be used',
 };
