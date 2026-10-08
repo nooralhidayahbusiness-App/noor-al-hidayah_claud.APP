@@ -14,12 +14,15 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 1) Firebase
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
   } catch (_) {}
+
+  // 2) الإشعارات المحلية (صلوات)
   try {
     await notificationService.init();
-    // عند الضغط على إشعار الصلاة → افتح شاشة الأذان
     notificationService.onPrayerTap = (prayerKey, time) {
       final nav = navigatorKey.currentState;
       if (nav == null) return;
@@ -34,19 +37,22 @@ void main() async {
     };
   } catch (_) {}
 
-  // ✅ جديد: تهيئة FCM
-  try {
-    await pushService.init();
-  } catch (_) {}
-
-  // ✅ جديد: راقب حالة تسجيل الدخول لحفظ FCM token
+  // 3) راقب تسجيل الدخول لحفظ التوكن
   authService.authChanges.listen((user) {
     if (user != null) {
       pushService.saveTokenForCurrentUser();
     }
   });
 
+  // 4) شغّل التطبيق أولاً (مهم: قبل OneSignal)
   runApp(const NoorApp());
+
+  // 5) الآن شغّل OneSignal — بدون await (لا يحجب UI)
+  Future.microtask(() async {
+    try {
+      await pushService.init();
+    } catch (_) {}
+  });
 }
 
 class NoorApp extends StatelessWidget {
