@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -16,7 +17,6 @@ class PrayerEntry {
   const PrayerEntry(this.name, this.time);
 }
 
-/// دالة تُستدعى عند الضغط على إشعار الصلاة.
 typedef OnPrayerTap = void Function(String prayerKey, DateTime prayerTime);
 
 class NotificationService {
@@ -67,10 +67,7 @@ class NotificationService {
       );
 
       await _plugin.initialize(
-        const InitializationSettings(
-          android: android,
-          iOS: ios,
-        ),
+        const InitializationSettings(android: android, iOS: ios),
         onDidReceiveNotificationResponse: _onTap,
       );
 
@@ -85,7 +82,6 @@ class NotificationService {
     final payload = response.payload;
     if (payload == null || payload.isEmpty) return;
 
-    // الصيغة: "prayerKey|timestampMs"
     final parts = payload.split('|');
     if (parts.isEmpty) return;
 
@@ -103,32 +99,62 @@ class NotificationService {
     onPrayerTap?.call(prayerKey, when);
   }
 
+  /// ✅ طلب كل الصلاحيات المطلوبة + فتح الإعدادات إذا لزم
   Future<bool> requestPermissions() async {
     if (!_supported) return false;
     try {
+      // 1) صلاحية الإشعارات العامة
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       final ios = _plugin.resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin>();
 
+      bool granted = false;
+
       if (android != null) {
-        final granted = await android.requestNotificationsPermission();
+        final res = await android.requestNotificationsPermission();
+        granted = res ?? false;
+
+        // 2) صلاحية Alarm الدقيقة (Android 12+)
         try {
-          await android.requestExactAlarmsPermission();
-        } catch (_) {}
-        return granted ?? false;
+          final alarmGranted = await android.requestExactAlarmsPermission();
+          debugPrint('Exact alarm permission: $alarmGranted');
+
+          // 3) إذا رُفضت → افتح الإعدادات (Android 14+)
+          if (alarmGranted != true) {
+            final status = await Permission.scheduleExactAlarm.status;
+            debugPrint('Alarm status: $status');
+            if (status.isDenied || status.isPermanentlyDenied) {
+              // فتح إعدادات النظام لتفعيل "المنبهات والتذكيرات"
+              await android.requestExactAlarmsPermission();
+            }
+          }
+        } catch (e) {
+          debugPrint('Alarm permission error: $e');
+        }
       }
       if (ios != null) {
-        final granted = await ios.requestPermissions(
+        final res = await ios.requestPermissions(
           alert: true,
           badge: true,
           sound: true,
         );
-        return granted ?? false;
+        granted = res ?? false;
       }
+      return granted;
+    } catch (e) {
+      debugPrint('requestPermissions error: $e');
       return false;
-    } catch (_) {
-      return false;
+    }
+  }
+
+  /// ✅ فتح إعدادات المنبهات (Android 14+)
+  Future<void> openExactAlarmSettings() async {
+    if (!_supported) return;
+    try {
+      await Permission.scheduleExactAlarm.request();
+    } catch (e) {
+      debugPrint('openExactAlarmSettings error: $e');
     }
   }
 
@@ -139,9 +165,7 @@ class NotificationService {
     } catch (_) {}
   }
 
-  Future<void> reschedule({
-    required List<PrayerEntry> prayers,
-  }) async {
+  Future<void> reschedule({required List<PrayerEntry> prayers}) async {
     if (!_supported) return;
 
     await cancelAll();
@@ -176,7 +200,6 @@ class NotificationService {
         minute: 0,
       );
     }
-
     if (notifs['quranReminder'] == true) {
       await _scheduleDaily(
         id: _quranReminderId,
@@ -186,7 +209,6 @@ class NotificationService {
         minute: 0,
       );
     }
-
     if (notifs['dailyVerse'] == true) {
       await _scheduleDaily(
         id: _dailyVerseId,
@@ -221,13 +243,17 @@ class NotificationService {
         tz.TZDateTime.from(notifyAt, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'prayer_channel',
+            'prayer_channel_v2',
             appState.tr('notifChannelPrayer'),
-            importance: Importance.high,
-            priority: Priority.high,
+            channelDescription: 'Adhan notifications',
+            importance: Importance.max,
+            priority: Priority.max,
             icon: '@mipmap/ic_launcher',
             playSound: true,
+            enableVibration: true,
             category: AndroidNotificationCategory.alarm,
+            fullScreenIntent: true,
+            audioAttributesUsage: AudioAttributesUsage.alarm,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -240,8 +266,9 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
       );
+      debugPrint('✅ Scheduled $name at $notifyAt');
     } catch (e) {
-      debugPrint('Schedule error ($id): $e');
+      debugPrint('❌ Schedule error ($name): $e');
     }
   }
 
@@ -266,7 +293,7 @@ class NotificationService {
         tz.TZDateTime.from(first, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'daily_channel',
+            'daily_channel_v2',
             appState.tr('notifChannelDaily'),
             channelDescription: appState.tr('notifChannelDailyDesc'),
             importance: Importance.defaultImportance,
