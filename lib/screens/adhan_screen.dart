@@ -10,6 +10,7 @@ import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../data/adhan_reciters.dart';
 import '../data/adhan_timings.dart';
+import '../data/adhkar.dart';
 import '../services/adhan_service.dart';
 import '../widgets/glass_card.dart';
 import 'adhkar_detail_screen.dart';
@@ -32,7 +33,6 @@ class AdhanScreen extends StatefulWidget {
 
 class _AdhanScreenState extends State<AdhanScreen>
     with TickerProviderStateMixin {
-  bool _playing = false;
   bool _prayed = false;
   int _currentPhraseIndex = 0;
   Timer? _phraseTimer;
@@ -58,7 +58,6 @@ class _AdhanScreenState extends State<AdhanScreen>
   Future<void> _startAdhan() async {
     final ok = await adhanService.play();
     if (!mounted) return;
-    setState(() => _playing = ok);
     if (ok) _startPhraseAnimation();
   }
 
@@ -85,11 +84,9 @@ class _AdhanScreenState extends State<AdhanScreen>
   // ============================================================
   Future<void> _onPrayedPressed() async {
     if (!_prayed) {
-      // المرحلة 1: تحول إلى رمادي مكتوم
       HapticFeedback.mediumImpact();
       setState(() => _prayed = true);
     } else {
-      // المرحلة 2: إغلاق الشاشة
       await adhanService.stop();
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -128,16 +125,13 @@ class _AdhanScreenState extends State<AdhanScreen>
   }
 
   void _openAfterPrayerAdhkar() {
-    // البحث عن قسم "أذكار بعد الصلاة"
     AdhkarCategory? target;
     try {
       target = kAdhkarCategories.firstWhere(
         (c) =>
             c.id.toLowerCase().contains('after') ||
             c.id.toLowerCase().contains('prayer') ||
-            c.id.toLowerCase().contains('salat') ||
-            c.nameAr.contains('بعد الصلاة') ||
-            c.nameEn.toLowerCase().contains('after'),
+            c.nameAr.contains('بعد الصلاة'),
       );
     } catch (_) {
       target = null;
@@ -166,7 +160,7 @@ class _AdhanScreenState extends State<AdhanScreen>
 
         return PopScope(
           canPop: false,
-          onPopInvoked: (didPop) async {
+          onPopInvokedWithResult: (didPop, _) async {
             if (didPop) return;
             await _stopAndClose();
           },
@@ -174,7 +168,6 @@ class _AdhanScreenState extends State<AdhanScreen>
             body: Stack(
               fit: StackFit.expand,
               children: [
-                // خلفية الأذان المختارة من المتجر
                 if (bgImage != null)
                   Image.asset(
                     bgImage,
@@ -184,7 +177,6 @@ class _AdhanScreenState extends State<AdhanScreen>
                 else
                   _fallbackBg(currentBg),
 
-                // طبقة تعتيم
                 DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -203,7 +195,7 @@ class _AdhanScreenState extends State<AdhanScreen>
                 SafeArea(
                   child: Column(
                     children: [
-                      // ===== الهيدر: زر الإغلاق + زر الكتم =====
+                      // ===== الهيدر =====
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                           R.s(context, 6),
@@ -231,12 +223,8 @@ class _AdhanScreenState extends State<AdhanScreen>
                               ),
                             ),
                             const Spacer(),
-                            // زر كتم/إلغاء كتم
                             IconButton(
                               onPressed: _toggleMute,
-                              tooltip: adhanService.isMuted
-                                  ? 'إلغاء الكتم'
-                                  : 'كتم الصوت',
                               color: adhanService.isMuted
                                   ? AppColors.cream.withValues(alpha: 0.5)
                                   : AppColors.gold,
@@ -251,7 +239,6 @@ class _AdhanScreenState extends State<AdhanScreen>
                         ),
                       ),
 
-                      // ===== اسم الصلاة + الوقت =====
                       SizedBox(height: R.s(context, 10)),
                       Text(
                         appState.tr(widget.prayerKey),
@@ -286,7 +273,6 @@ class _AdhanScreenState extends State<AdhanScreen>
 
                       const Spacer(),
 
-                      // ===== النص المتحرك =====
                       _AnimatedAdhanText(
                         phrases: _phrases,
                         currentIndex: _currentPhraseIndex,
@@ -366,7 +352,6 @@ class _AdhanScreenState extends State<AdhanScreen>
                             horizontal: R.s(context, 16)),
                         child: Row(
                           children: [
-                            // زر القبلة
                             Expanded(
                               child: _ActionButton(
                                 icon: Icons.explore_rounded,
@@ -375,7 +360,6 @@ class _AdhanScreenState extends State<AdhanScreen>
                               ),
                             ),
                             SizedBox(width: R.s(context, 8)),
-                            // زر أذكار بعد الصلاة
                             Expanded(
                               child: _ActionButton(
                                 icon: Icons.menu_book_rounded,
