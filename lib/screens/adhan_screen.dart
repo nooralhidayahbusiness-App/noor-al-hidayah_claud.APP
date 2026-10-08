@@ -12,7 +12,6 @@ import '../data/adhan_reciters.dart';
 import '../data/adhan_timings.dart';
 import '../data/adhkar.dart';
 import '../services/adhan_service.dart';
-import '../widgets/glass_card.dart';
 import 'adhkar_detail_screen.dart';
 import 'adhkar_screen.dart';
 import 'qibla_screen.dart';
@@ -69,7 +68,11 @@ class _AdhanScreenState extends State<AdhanScreen>
       if (!mounted) return;
       if (_currentPhraseIndex >= _phrases.length - 1) return;
       final current = _phrases[_currentPhraseIndex];
-      _phraseTimer = Timer(current.duration, () {
+      // ✅ أبطأ 1.4x لمطابقة الصوت
+      final slowDuration = Duration(
+        milliseconds: (current.duration.inMilliseconds * 1.4).toInt(),
+      );
+      _phraseTimer = Timer(slowDuration, () {
         if (!mounted) return;
         setState(() => _currentPhraseIndex++);
         nextPhrase();
@@ -204,7 +207,6 @@ class _AdhanScreenState extends State<AdhanScreen>
                           children: [
                             IconButton(
                               onPressed: _stopAndClose,
-                              tooltip: appState.tr('close'),
                               color: AppColors.softGold,
                               iconSize: R.s(context, 24),
                               icon: const Icon(Icons.close_rounded),
@@ -236,60 +238,62 @@ class _AdhanScreenState extends State<AdhanScreen>
                         ),
                       ),
 
-                      SizedBox(height: R.s(context, 8)),
+                      SizedBox(height: R.s(context, 12)),
 
-                      // ===== اسم الصلاة (كبير + نور) =====
-                      Text(
-                        appState.tr(widget.prayerKey),
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.amiri(
-                          fontSize: R.f(context, 76),
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.gold,
-                          height: 1.1,
-                          shadows: [
-                            Shadow(
-                              color: AppColors.gold.withValues(alpha: 0.9),
-                              blurRadius: 45,
+                      // ===== اسم الصلاة + الوقت (مع دوائر توهج) =====
+                      _GlowWrapper(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              appState.tr(widget.prayerKey),
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.amiri(
+                                fontSize: R.f(context, 72),
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.gold,
+                                height: 1.1,
+                                shadows: [
+                                  Shadow(
+                                    color: AppColors.gold
+                                        .withValues(alpha: 0.9),
+                                    blurRadius: 40,
+                                  ),
+                                  const Shadow(
+                                    color: Color(0xDD000000),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
                             ),
-                            Shadow(
-                              color: AppColors.gold.withValues(alpha: 0.6),
-                              blurRadius: 22,
-                            ),
-                            const Shadow(
-                              color: Color(0xDD000000),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
+                            SizedBox(height: R.s(context, 4)),
+                            Text(
+                              _formatTime(widget.prayerTime),
+                              style: TextStyle(
+                                fontSize: R.f(context, 26),
+                                color: AppColors.softGold,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2,
+                                shadows: [
+                                  Shadow(
+                                    color: AppColors.gold
+                                        .withValues(alpha: 0.7),
+                                    blurRadius: 16,
+                                  ),
+                                  const Shadow(
+                                    color: Color(0xCC000000),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
 
-                      SizedBox(height: R.s(context, 6)),
-
-                      // ===== الوقت (كبير + نور) =====
-                      Text(
-                        _formatTime(widget.prayerTime),
-                        style: TextStyle(
-                          fontSize: R.f(context, 28),
-                          color: AppColors.softGold,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.2,
-                          shadows: [
-                            Shadow(
-                              color: AppColors.gold.withValues(alpha: 0.7),
-                              blurRadius: 18,
-                            ),
-                            const Shadow(
-                              color: Color(0xCC000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      SizedBox(height: R.s(context, 16)),
+                      SizedBox(height: R.s(context, 14)),
 
                       // ===== النص المتحرك =====
                       _AnimatedAdhanText(
@@ -297,96 +301,9 @@ class _AdhanScreenState extends State<AdhanScreen>
                         currentIndex: _currentPhraseIndex,
                       ),
 
-                      // ===== المساحة الفارغة الوسطى =====
                       const Spacer(),
 
-                      // ===== أزرار دائرية في الوسط =====
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _CircleActionButton(
-                            icon: Icons.explore_rounded,
-                            label: appState.tr('qibla'),
-                            onTap: _openQibla,
-                          ),
-                          SizedBox(width: R.s(context, 32)),
-                          _CircleActionButton(
-                            icon: Icons.menu_book_rounded,
-                            label: appState.tr('adhkarAfterPrayer'),
-                            onTap: _openAfterPrayerAdhkar,
-                          ),
-                        ],
-                      ),
-
-                      const Spacer(),
-
-                      // ===== اسم المؤذن (مضغوط) =====
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: R.s(context, 16)),
-                        child: GlassCard(
-                          ornament: false,
-                          child: Row(
-                            children: [
-                              Container(
-                                width: R.s(context, 36),
-                                height: R.s(context, 36),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.gold
-                                      .withValues(alpha: 0.15),
-                                  border: Border.all(
-                                    color: AppColors.gold
-                                        .withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.record_voice_over_rounded,
-                                  color: AppColors.gold,
-                                  size: R.s(context, 18),
-                                ),
-                              ),
-                              SizedBox(width: R.s(context, 10)),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      appState.isArabic
-                                          ? _currentReciterNameAr()
-                                          : _currentReciterNameEn(),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: R.f(context, 13),
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.softGold,
-                                      ),
-                                    ),
-                                    if (_currentReciterCountry()
-                                        .isNotEmpty) ...[
-                                      SizedBox(height: R.s(context, 2)),
-                                      Text(
-                                        _currentReciterCountry(),
-                                        style: TextStyle(
-                                          fontSize: R.f(context, 10.5),
-                                          color: AppColors.cream
-                                              .withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: R.s(context, 14)),
-
-                      // ===== زر "صليت الآن" (مع تموّج الماء) =====
+                      // ===== زر "صليت الآن" في الوسط =====
                       _RippleButton(
                         prayed: _prayed,
                         onTap: _onPrayedPressed,
@@ -396,6 +313,26 @@ class _AdhanScreenState extends State<AdhanScreen>
                         label: _prayed
                             ? appState.tr('adhanPrayedDone')
                             : appState.tr('adhanPrayed'),
+                      ),
+
+                      const Spacer(),
+
+                      // ===== أزرار القبلة والأذكار (دوائر) =====
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _CircleActionButton(
+                            icon: Icons.explore_rounded,
+                            label: appState.tr('qibla'),
+                            onTap: _openQibla,
+                          ),
+                          SizedBox(width: R.s(context, 36)),
+                          _CircleActionButton(
+                            icon: Icons.menu_book_rounded,
+                            label: appState.tr('adhkarAfterPrayer'),
+                            onTap: _openAfterPrayerAdhkar,
+                          ),
+                        ],
                       ),
 
                       SizedBox(height: R.s(context, 20)),
@@ -428,22 +365,6 @@ class _AdhanScreenState extends State<AdhanScreen>
     return 'assets/images/adhan_backgrounds/$id.png';
   }
 
-  String _currentReciterNameAr() {
-    final r = adhanReciterById(adhanService.currentReciterId);
-    return r?.nameAr ?? 'الأذان الأساسي';
-  }
-
-  String _currentReciterNameEn() {
-    final r = adhanReciterById(adhanService.currentReciterId);
-    return r?.nameEn ?? 'Default Adhan';
-  }
-
-  String _currentReciterCountry() {
-    final r = adhanReciterById(adhanService.currentReciterId);
-    if (r == null) return '';
-    return appState.isArabic ? r.countryAr : r.countryEn;
-  }
-
   String _formatTime(DateTime dt) {
     final h = dt.hour;
     final m = dt.minute.toString().padLeft(2, '0');
@@ -454,6 +375,83 @@ class _AdhanScreenState extends State<AdhanScreen>
         ? (isPm ? 'م' : 'ص')
         : (isPm ? 'PM' : 'AM');
     return '$hour12:$m $suffix';
+  }
+}
+
+// ============================================================
+// _GlowWrapper — 4 حلقات توهج ماء سلسة خلف المحتوى
+// ============================================================
+class _GlowWrapper extends StatefulWidget {
+  const _GlowWrapper({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_GlowWrapper> createState() => _GlowWrapperState();
+}
+
+class _GlowWrapperState extends State<_GlowWrapper>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _glow = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 3500),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _glow.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: R.s(context, 260),
+      height: R.s(context, 160),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 4 حلقات توهج
+          AnimatedBuilder(
+            animation: _glow,
+            builder: (context, _) {
+              return Stack(
+                alignment: Alignment.center,
+                children: List.generate(4, (i) {
+                  final t = (_glow.value + (i / 4.0)) % 1.0;
+                  final opacity = (1 - t) * 0.45;
+                  final size = R.s(context, 180) + (t * R.s(context, 100));
+
+                  return Opacity(
+                    opacity: opacity.clamp(0.0, 1.0),
+                    child: Container(
+                      width: size,
+                      height: size * 0.7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.9),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.gold.withValues(alpha: 0.35),
+                            blurRadius: 30,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              );
+            },
+          ),
+          // المحتوى
+          widget.child,
+        ],
+      ),
+    );
   }
 }
 
@@ -485,7 +483,7 @@ class _AnimatedAdhanText extends StatelessWidget {
         children: [
           if (previous != null)
             AnimatedOpacity(
-              duration: const Duration(milliseconds: 400),
+              duration: const Duration(milliseconds: 600),
               opacity: 0.4,
               child: Text(
                 appState.isArabic ? previous.textAr : previous.textEn,
@@ -494,7 +492,7 @@ class _AnimatedAdhanText extends StatelessWidget {
                     ? TextDirection.rtl
                     : TextDirection.ltr,
                 style: GoogleFonts.amiri(
-                  fontSize: R.f(context, 24),
+                  fontSize: R.f(context, 26),
                   color: AppColors.softGold.withValues(alpha: 0.7),
                   height: 1.6,
                 ),
@@ -502,7 +500,7 @@ class _AnimatedAdhanText extends StatelessWidget {
             ),
           SizedBox(height: R.s(context, 14)),
           AnimatedSwitcher(
-            duration: const Duration(milliseconds: 600),
+            duration: const Duration(milliseconds: 800),
             transitionBuilder: (child, animation) {
               return FadeTransition(
                 opacity: animation,
@@ -518,11 +516,11 @@ class _AnimatedAdhanText extends StatelessWidget {
             child: Container(
               key: ValueKey(currentIndex),
               padding: EdgeInsets.symmetric(
-                horizontal: R.s(context, 20),
-                vertical: R.s(context, 12),
+                horizontal: R.s(context, 24),
+                vertical: R.s(context, 14),
               ),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 color: Colors.black.withValues(alpha: 0.4),
                 border: Border.all(
                   color: AppColors.gold.withValues(alpha: 0.6),
@@ -543,7 +541,7 @@ class _AnimatedAdhanText extends StatelessWidget {
                     ? TextDirection.rtl
                     : TextDirection.ltr,
                 style: GoogleFonts.amiri(
-                  fontSize: R.f(context, 34),
+                  fontSize: R.f(context, 40),
                   fontWeight: FontWeight.w700,
                   color: AppColors.gold,
                   height: 1.5,
@@ -569,7 +567,7 @@ class _AnimatedAdhanText extends StatelessWidget {
 }
 
 // ============================================================
-// زر دائري كبير (القبلة / الأذكار)
+// زر دائري كبير
 // ============================================================
 class _CircleActionButton extends StatelessWidget {
   const _CircleActionButton({
@@ -584,7 +582,7 @@ class _CircleActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = R.s(context, 110);
+    final size = R.s(context, 90);
 
     return GestureDetector(
       onTap: onTap,
@@ -604,8 +602,8 @@ class _CircleActionButton extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: AppColors.gold.withValues(alpha: 0.5),
-                  blurRadius: 24,
-                  spreadRadius: 3,
+                  blurRadius: 20,
+                  spreadRadius: 2,
                 ),
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.4),
@@ -616,18 +614,17 @@ class _CircleActionButton extends StatelessWidget {
             child: Icon(
               icon,
               color: AppColors.gold,
-              size: R.s(context, 46),
+              size: R.s(context, 38),
             ),
           ),
-          SizedBox(height: R.s(context, 8)),
+          SizedBox(height: R.s(context, 6)),
           Text(
             label,
-            maxLines: 2,
-            textAlign: TextAlign.center,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: AppColors.softGold,
-              fontSize: R.f(context, 13),
+              fontSize: R.f(context, 12),
               fontWeight: FontWeight.w700,
               shadows: const [
                 Shadow(color: Color(0xCC000000), blurRadius: 6),
@@ -641,7 +638,7 @@ class _CircleActionButton extends StatelessWidget {
 }
 
 // ============================================================
-// زر "صليت الآن" — مع تموّج الماء (ripple)
+// زر "صليت الآن" مع تموّج
 // ============================================================
 class _RippleButton extends StatefulWidget {
   const _RippleButton({
@@ -675,21 +672,19 @@ class _RippleButtonState extends State<_RippleButton>
 
   @override
   Widget build(BuildContext context) {
-    final btnW = R.s(context, 270);
-    final btnH = R.s(context, 62);
+    final btnW = R.s(context, 240);
+    final btnH = R.s(context, 58);
     final radius = btnH / 2;
 
-    final activeColor =
-        widget.prayed ? Colors.grey : AppColors.gold;
+    final activeColor = widget.prayed ? Colors.grey : AppColors.gold;
 
     return SizedBox(
-      width: btnW * 1.7,
-      height: btnH * 1.7,
+      width: btnW * 1.6,
+      height: btnH * 1.6,
       child: Stack(
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          // === تموّج الماء (3 حلقات) ===
           AnimatedBuilder(
             animation: _ripple,
             builder: (context, _) {
@@ -721,8 +716,6 @@ class _RippleButtonState extends State<_RippleButton>
               );
             },
           ),
-
-          // === الزر نفسه ===
           GestureDetector(
             onTap: widget.onTap,
             child: AnimatedContainer(
@@ -739,13 +732,8 @@ class _RippleButtonState extends State<_RippleButton>
                     : [
                         BoxShadow(
                           color: AppColors.gold.withValues(alpha: 0.75),
-                          blurRadius: 30,
+                          blurRadius: 28,
                           spreadRadius: 4,
-                        ),
-                        BoxShadow(
-                          color: AppColors.gold.withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          spreadRadius: 1,
                         ),
                       ],
               ),
@@ -757,18 +745,17 @@ class _RippleButtonState extends State<_RippleButton>
                     color: widget.prayed
                         ? AppColors.cream.withValues(alpha: 0.6)
                         : AppColors.deepGreen,
-                    size: R.s(context, 26),
+                    size: R.s(context, 24),
                   ),
-                  SizedBox(width: R.s(context, 10)),
+                  SizedBox(width: R.s(context, 8)),
                   Text(
                     widget.label,
                     style: TextStyle(
-                      fontSize: R.f(context, 17),
+                      fontSize: R.f(context, 16),
                       fontWeight: FontWeight.w900,
                       color: widget.prayed
                           ? AppColors.cream.withValues(alpha: 0.65)
                           : AppColors.deepGreen,
-                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
