@@ -10,7 +10,6 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../core/app_state.dart';
 import '../core/prayer_state.dart';
-import '../core/theme.dart';
 import 'user_service.dart';
 
 class PrayerEntry {
@@ -45,6 +44,8 @@ class NotificationService {
   static const _dailyVerseId = 302;
   static const int _ongoingId = 400;
   static const int _testAdhanId = 999;
+
+  static const Color _goldColor = Color(0xFFD4AF37);
 
   bool get isSupported => _supported;
 
@@ -102,7 +103,6 @@ class NotificationService {
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
 
-      // قناة الصلاة (full screen + صوت)
       await android?.createNotificationChannel(
         const AndroidNotificationChannel(
           'prayer_channel_v4',
@@ -115,7 +115,6 @@ class NotificationService {
         ),
       );
 
-      // قناة الإشعار الدائم
       await android?.createNotificationChannel(
         const AndroidNotificationChannel(
           'ongoing_prayer_channel_v4',
@@ -127,7 +126,6 @@ class NotificationService {
         ),
       );
 
-      // قناة التذكيرات اليومية
       await android?.createNotificationChannel(
         const AndroidNotificationChannel(
           'daily_channel_v3',
@@ -193,7 +191,6 @@ class NotificationService {
         granted = res ?? false;
         debugPrint('[NOTIFICATION] Permission = $granted');
 
-        // محاولات إضافية (اختيارية - لا تفشل التطبيق)
         try {
           await android.requestFullScreenIntentPermission();
         } catch (_) {}
@@ -226,9 +223,6 @@ class NotificationService {
     } catch (_) {}
   }
 
-  // ============================================================
-  // 🔔 إشعار فوري
-  // ============================================================
   Future<void> showImmediateNotification() async {
     if (!_supported) return;
     try {
@@ -263,9 +257,6 @@ class NotificationService {
     }
   }
 
-  // ============================================================
-  // ⏱️ اختبار الأذان — 30 ثانية (بدون exact alarm)
-  // ============================================================
   Future<bool> scheduleTestAdhan() async {
     if (!_supported) return false;
 
@@ -311,9 +302,6 @@ class NotificationService {
     }
   }
 
-  // ============================================================
-  // الإشعار الدائم
-  // ============================================================
   Future<void> showOngoingPrayer({
     required String prayerName,
     required DateTime targetTime,
@@ -411,9 +399,6 @@ class NotificationService {
     } catch (_) {}
   }
 
-  // ============================================================
-  // جدولة الصلوات (بدون exact)
-  // ============================================================
   Future<void> reschedule({required List<PrayerEntry> prayers}) async {
     if (!_supported) return;
 
@@ -504,6 +489,7 @@ class NotificationService {
             fullScreenIntent: true,
             audioAttributesUsage: AudioAttributesUsage.alarm,
             visibility: NotificationVisibility.public,
+            color: _goldColor,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
