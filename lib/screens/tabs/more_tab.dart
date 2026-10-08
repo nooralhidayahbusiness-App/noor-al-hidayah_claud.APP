@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/language_picker_sheet.dart';
 import '../account_screen.dart';
+import '../support_screen.dart';
 
 class MoreTab extends StatelessWidget {
   const MoreTab({super.key});
@@ -24,6 +25,7 @@ class MoreTab extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
           children: [
+            // ============ القسم الأول: الإعدادات العامة ============
             GlassCard(
               ornament: false,
               child: Column(
@@ -55,8 +57,30 @@ class MoreTab extends StatelessWidget {
                 ],
               ),
             ),
+
+            const SizedBox(height: 16),
+
+            // ============ القسم الثاني: الدعم والتواصل ✅ ============
+            GlassCard(
+              ornament: false,
+              child: Column(
+                children: [
+                  _MoreRow(
+                    icon: Icons.support_agent_rounded,
+                    title: appState.tr('supportTitle'),
+                    chevron: chevron,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const SupportScreen()),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             const SizedBox(height: 28),
 
+            // ============ Credits ============
             Center(
               child: Column(
                 children: [
