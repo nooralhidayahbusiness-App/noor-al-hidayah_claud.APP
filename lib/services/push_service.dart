@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -11,49 +9,54 @@ class PushService {
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // ============================================================
-  // OneSignal App ID (public — safe to hardcode)
-  // ============================================================
   static const String _oneSignalAppId = '4e7862a1-4191-4788-a703-72a3fea3d12d';
 
   bool _initialized = false;
 
-  // ============================================================
-  // التهيئة (تُستدعى مرة واحدة من main.dart)
-  // ============================================================
   Future<void> init() async {
     if (_initialized) return;
-    if (kIsWeb) return; // OneSignal على الويب يحتاج VAPID — مؤجل
+    if (kIsWeb) return;
     _initialized = true;
 
     try {
-      // 1) إعداد مستوى تسجيل الأخطاء
-      OneSignal.Debug.setLogLevel(OSLogLevel.warn);
+      // 1) Logging لتشخيص المشاكل
+      OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
 
       // 2) تهيئة OneSignal
       OneSignal.initialize(_oneSignalAppId);
+      debugPrint('OneSignal initialized with app ID');
 
       // 3) طلب إذن الإشعارات
-      await OneSignal.Notifications.requestPermission(true);
+      final granted = await OneSignal.Notifications.requestPermission(true);
+      debugPrint('OneSignal permission granted: $granted');
 
-      // 4) عند تسجيل الدخول، اربط المستخدم بـ OneSignal
-      OneSignal.login(FirebaseAuth.instance.currentUser?.uid ?? 'guest');
+      // 4) اربط المستخدم الحالي (إن وُجد)
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        OneSignal.login(uid);
+        debugPrint('OneSignal logged in as $uid');
+      } else {
+        OneSignal.login('guest');
+        debugPrint('OneSignal logged in as guest');
+      }
 
-      // 5) راقب تغيّر subscription ID (يُستخدم لحفظ التوكن في Firestore)
+      // 5) راقب subscription ID
       OneSignal.User.pushSubscription.addObserver((state) {
         final subId = OneSignal.User.pushSubscription.id;
-        final uid = FirebaseAuth.instance.currentUser?.uid;
-        if (subId != null && uid != null) {
-          _saveSubscription(uid, subId);
+        final currentUid = FirebaseAuth.instance.currentUser?.uid;
+        debugPrint('OneSignal sub changed: $subId');
+        if (subId != null && currentUid != null) {
+          _saveSubscription(currentUid, subId);
         }
       });
 
-      // 6) راقب الإشعارات المستلمة أثناء فتح التطبيق
+      // 6) اعرض الإشعارات حتى لو التطبيق مفتوح
       OneSignal.Notifications.addForegroundWillDisplayListener((event) {
         debugPrint('OneSignal foreground: ${event.notification.title}');
+        // OneSignal يعرضها تلقائياً في الإصدار 5+
       });
 
-      // 7) عند الضغط على إشعار فتح التطبيق
+      // 7) عند الضغط على إشعار
       OneSignal.Notifications.addClickListener((event) {
         debugPrint('OneSignal clicked: ${event.notification.additionalData}');
       });
@@ -62,18 +65,15 @@ class PushService {
     }
   }
 
-  // ============================================================
-  // ربط المستخدم الحالي بـ OneSignal (يُستدعى بعد تسجيل الدخول)
-  // ============================================================
+  /// ربط المستخدم الحالي بـ OneSignal (يُستدعى بعد تسجيل الدخول)
   Future<void> saveTokenForCurrentUser() async {
     if (kIsWeb) return;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     try {
-      // ربط المستخدم في OneSignal
       OneSignal.login(uid);
+      debugPrint('OneSignal re-logged in as $uid');
 
-      // حفظ subscription ID في Firestore
       final subId = OneSignal.User.pushSubscription.id;
       if (subId != null) {
         await _saveSubscription(uid, subId);
@@ -95,18 +95,18 @@ class PushService {
         'platform': defaultTargetPlatform.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      debugPrint('Saved subscription $subId for user $uid');
     } catch (e) {
       debugPrint('saveSubscription error: $e');
     }
   }
 
-  // ============================================================
-  // فصل المستخدم (يُستدعى قبل signOut)
-  // ============================================================
+  /// فصل المستخدم عند sign out
   Future<void> removeCurrentToken() async {
     if (kIsWeb) return;
     try {
       OneSignal.logout();
+      debugPrint('OneSignal logged out');
     } catch (e) {
       debugPrint('removeToken error: $e');
     }
