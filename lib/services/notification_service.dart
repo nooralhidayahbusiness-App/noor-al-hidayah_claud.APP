@@ -28,7 +28,6 @@ class NotificationService {
   bool _supported = false;
 
   OnPrayerTap? onPrayerTap;
-
   NotificationResponse? _pendingLaunchResponse;
 
   static const _prayerIds = {
@@ -42,8 +41,6 @@ class NotificationService {
   static const _dailyChallengeId = 300;
   static const _quranReminderId = 301;
   static const _dailyVerseId = 302;
-
-  // ✅ ID للإشعار الدائم
   static const int _ongoingId = 400;
 
   bool get isSupported => _supported;
@@ -105,8 +102,6 @@ class NotificationService {
     if (parts.isEmpty) return;
 
     final prayerKey = parts[0];
-
-    // تجاهل الإشعار الدائم (لا payload)
     if (prayerKey.isEmpty) return;
 
     DateTime when;
@@ -127,6 +122,9 @@ class NotificationService {
     onPrayerTap?.call(prayerKey, when);
   }
 
+  // ============================================================
+  // ✅ طلب الصلاحيات (يشمل تجاهل توفير البطارية)
+  // ============================================================
   Future<bool> requestPermissions() async {
     if (!_supported) return false;
     try {
@@ -145,9 +143,13 @@ class NotificationService {
           await android.requestExactAlarmsPermission();
         } catch (_) {}
 
-        // ✅ صلاحية الشاشة الكاملة (Android 14+)
         try {
           await android.requestFullScreenIntentPermission();
+        } catch (_) {}
+
+        // ✅ تجاهل توفير البطارية
+        try {
+          await Permission.ignoreBatteryOptimizations.request();
         } catch (_) {}
       }
       if (ios != null) {
@@ -179,21 +181,49 @@ class NotificationService {
   }
 
   // ============================================================
-  // ✅ الإشعار الدائم (الصلاة القادمة + العد التنازلي)
+  // ✅ إشعار العد التنازلي — حيّ (chronometer)
   // ============================================================
   Future<void> showOngoingPrayer({
-    required String title,
-    required String body,
+    required String prayerName,
+    required DateTime targetTime,
+    required bool urgent,
   }) async {
     if (!_supported) return;
     try {
+      final now = DateTime.now();
+      final today = now;
+      final months = appState.isArabic
+          ? [
+              'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+              'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+            ]
+          : [
+              'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+            ];
+      final weekday = appState.isArabic
+          ? [
+              'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس',
+              'الجمعة', 'السبت', 'الأحد',
+            ][today.weekday - 1]
+          : [
+              'Mon', 'Tue', 'Wed', 'Thu',
+              'Fri', 'Sat', 'Sun',
+            ][today.weekday - 1];
+      final dateStr = '$weekday، ${today.day} ${months[today.month - 1]}';
+
+      final title = appState.isArabic
+          ? '🕌 الصلاة القادمة: $prayerName'
+          : '🕌 Next prayer: $prayerName';
+      final body = dateStr;
+
       await _plugin.show(
         _ongoingId,
         title,
         body,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'ongoing_prayer_channel',
+            'ongoing_prayer_channel_v2',
             appState.tr('notifChannelPrayer'),
             channelDescription: 'Next prayer countdown',
             importance: Importance.low,
@@ -201,10 +231,17 @@ class NotificationService {
             icon: '@mipmap/ic_launcher',
             ongoing: true,
             autoCancel: false,
-            showWhen: false,
+            showWhen: true,
             onlyAlertOnce: true,
             playSound: false,
             enableVibration: false,
+            usesChronometer: true,
+            chronometerCountDown: true,
+            when: targetTime.millisecondsSinceEpoch,
+            color: urgent
+                ? const Color(0xFFFFA000)
+                : const Color(0xFF4CAF50),
+            colorized: true,
             category: AndroidNotificationCategory.status,
             visibility: NotificationVisibility.public,
           ),
@@ -228,7 +265,7 @@ class NotificationService {
   }
 
   // ============================================================
-  // جدولة الإشعارات
+  // جدولة إشعارات الصلاة
   // ============================================================
   Future<void> reschedule({required List<PrayerEntry> prayers}) async {
     if (!_supported) return;
@@ -320,7 +357,8 @@ class NotificationService {
             fullScreenIntent: true,
             audioAttributesUsage: AudioAttributesUsage.alarm,
             visibility: NotificationVisibility.public,
-            ticker: title,
+            color: AppColors.gold,
+            colorized: false,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -336,7 +374,44 @@ class NotificationService {
       );
       debugPrint('✅ Scheduled $name at $notifyAt');
     } catch (e) {
-      debugPrint('❌ Schedule error ($name): $e');
+      debugPrint('❌ Exact failed for $name, retry inexact: $e');
+      // ✅ fallback: لو exact فشل، جرّب inexact
+      try {
+        await _plugin.zonedSchedule(
+          id,
+          title,
+          body,
+          tz.TZDateTime.from(notifyAt, tz.local),
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              'prayer_channel_v3',
+              appState.tr('notifChannelPrayer'),
+              channelDescription: 'Adhan notifications',
+              importance: Importance.max,
+              priority: Priority.max,
+              icon: '@mipmap/ic_launcher',
+              playSound: true,
+              enableVibration: true,
+              category: AndroidNotificationCategory.alarm,
+              fullScreenIntent: true,
+              audioAttributesUsage: AudioAttributesUsage.alarm,
+              visibility: NotificationVisibility.public,
+            ),
+            iOS: const DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
+          ),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          payload: payload,
+        );
+        debugPrint('✅ Scheduled $name at $notifyAt (inexact)');
+      } catch (e2) {
+        debugPrint('❌ Both schedules failed for $name: $e2');
+      }
     }
   }
 
