@@ -232,15 +232,61 @@ class NotificationService {
   }
 
   // ============================================================
-  // 🐛 اختبار الأذان — جدولة بعد دقيقة
+  // 🔔 عرض إشعار فوري (بدون جدولة) — للتشخيص
   // ============================================================
-  Future<void> scheduleTestAdhan() async {
+  Future<void> showImmediateNotification() async {
     if (!_supported) {
       debugPrint('[TEST] Not supported');
       return;
     }
 
-    final now = DateTime.now().add(const Duration(minutes: 1));
+    try {
+      await _plugin.show(
+        _testAdhanId,
+        appState.isArabic ? 'اختبار فوري' : 'Immediate Test',
+        appState.isArabic
+            ? 'اضغط لفتح شاشة الأذان'
+            : 'Tap to open Adhan screen',
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'prayer_channel_v3',
+            appState.tr('notifChannelPrayer'),
+            channelDescription: 'Adhan notifications',
+            importance: Importance.max,
+            priority: Priority.max,
+            icon: '@mipmap/ic_launcher',
+            playSound: true,
+            enableVibration: true,
+            category: AndroidNotificationCategory.alarm,
+            fullScreenIntent: true,
+            audioAttributesUsage: AudioAttributesUsage.alarm,
+            visibility: NotificationVisibility.public,
+            color: AppColors.gold,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        payload: 'asr|${DateTime.now().millisecondsSinceEpoch}',
+      );
+      debugPrint('[TEST] ✅ Immediate notification shown');
+    } catch (e) {
+      debugPrint('[TEST] ❌ Immediate failed: $e');
+    }
+  }
+
+  // ============================================================
+  // ⏱️ اختبار الأذان — 10 ثوانٍ
+  // ============================================================
+  Future<bool> scheduleTestAdhan() async {
+    if (!_supported) {
+      debugPrint('[TEST] Not supported');
+      return false;
+    }
+
+    final now = DateTime.now().add(const Duration(seconds: 10));
     debugPrint('[TEST] Scheduling test adhan for $now');
 
     try {
@@ -266,7 +312,6 @@ class NotificationService {
             audioAttributesUsage: AudioAttributesUsage.alarm,
             visibility: NotificationVisibility.public,
             color: AppColors.gold,
-            colorized: false,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -280,10 +325,11 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: 'asr|${now.millisecondsSinceEpoch}',
       );
-      debugPrint('[TEST] ✅ Test adhan scheduled');
+      debugPrint('[TEST] ✅ Test adhan scheduled (exact)');
+      return true;
     } catch (e) {
-      debugPrint('[TEST] ❌ Failed: $e');
-      // Fallback inexact
+      debugPrint('[TEST] ❌ Exact failed: $e');
+
       try {
         await _plugin.zonedSchedule(
           _testAdhanId,
@@ -292,13 +338,20 @@ class NotificationService {
               ? 'سيتم فتح شاشة الأذان الآن'
               : 'Adhan screen will open now',
           tz.TZDateTime.from(now, tz.local),
-          const NotificationDetails(
+          NotificationDetails(
             android: AndroidNotificationDetails(
               'prayer_channel_v3',
-              'Adhan',
+              appState.tr('notifChannelPrayer'),
+              channelDescription: 'Adhan notifications',
               importance: Importance.max,
               priority: Priority.max,
+              icon: '@mipmap/ic_launcher',
+              playSound: true,
+              enableVibration: true,
+              category: AndroidNotificationCategory.alarm,
               fullScreenIntent: true,
+              audioAttributesUsage: AudioAttributesUsage.alarm,
+              visibility: NotificationVisibility.public,
             ),
           ),
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -307,8 +360,10 @@ class NotificationService {
           payload: 'asr|${now.millisecondsSinceEpoch}',
         );
         debugPrint('[TEST] ✅ Test adhan scheduled (inexact)');
+        return true;
       } catch (e2) {
         debugPrint('[TEST] ❌ Both failed: $e2');
+        return false;
       }
     }
   }
@@ -392,8 +447,6 @@ class NotificationService {
           ? 'الصلاة القادمة: $prayerName\n$body\nالوقت المتبقي يظهر تلقائيًا بالعد التنازلي'
           : 'Next prayer: $prayerName\n$body\nThe remaining time is shown as a live countdown';
 
-      debugPrint('[NOTIFICATION] Showing ongoing: $prayerName → $targetTime');
-
       await _plugin.show(
         _ongoingId,
         title,
@@ -407,10 +460,6 @@ class NotificationService {
             importance: Importance.low,
             priority: Priority.low,
             icon: '@mipmap/ic_launcher',
-            largeIcon:
-                const DrawableResourceAndroidBitmap(
-              '@mipmap/ic_launcher',
-            ),
             ongoing: true,
             autoCancel: false,
             showWhen: true,
@@ -458,8 +507,6 @@ class NotificationService {
   }) async {
     if (!_supported) return;
 
-    debugPrint('[ALARM] Cancel existing + reschedule');
-
     await cancelAll();
 
     final settings =
@@ -499,12 +546,8 @@ class NotificationService {
     if (notifs['dailyChallenge'] == true) {
       await _scheduleDaily(
         id: _dailyChallengeId,
-        title: appState.tr(
-          'notifDailyChallengeTitle',
-        ),
-        body: appState.tr(
-          'notifDailyChallengeBody',
-        ),
+        title: appState.tr('notifDailyChallengeTitle'),
+        body: appState.tr('notifDailyChallengeBody'),
         hour: 9,
         minute: 0,
       );
@@ -513,12 +556,8 @@ class NotificationService {
     if (notifs['quranReminder'] == true) {
       await _scheduleDaily(
         id: _quranReminderId,
-        title: appState.tr(
-          'notifQuranReminderTitle',
-        ),
-        body: appState.tr(
-          'notifQuranReminderBody',
-        ),
+        title: appState.tr('notifQuranReminderTitle'),
+        body: appState.tr('notifQuranReminderBody'),
         hour: 6,
         minute: 0,
       );
@@ -527,12 +566,8 @@ class NotificationService {
     if (notifs['dailyVerse'] == true) {
       await _scheduleDaily(
         id: _dailyVerseId,
-        title: appState.tr(
-          'notifDailyVerseTitle',
-        ),
-        body: appState.tr(
-          'notifDailyVerseBody',
-        ),
+        title: appState.tr('notifDailyVerseTitle'),
+        body: appState.tr('notifDailyVerseBody'),
         hour: 7,
         minute: 0,
       );
@@ -552,39 +587,30 @@ class NotificationService {
         ? '${appState.tr('notifAdhanNow')} · $prayerName'
         : '${appState.tr('notifAdhanBefore')} $beforeMin ${appState.tr('minutes')} · $prayerName';
 
-    final body =
-        appState.tr('notifAdhanBody');
+    final body = appState.tr('notifAdhanBody');
 
-    final payload =
-        '$name|${at.millisecondsSinceEpoch}';
+    final payload = '$name|${at.millisecondsSinceEpoch}';
 
     try {
       await _plugin.zonedSchedule(
         id,
         title,
         body,
-        tz.TZDateTime.from(
-          notifyAt,
-          tz.local,
-        ),
+        tz.TZDateTime.from(notifyAt, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
             'prayer_channel_v3',
             appState.tr('notifChannelPrayer'),
-            channelDescription:
-                'Adhan notifications',
+            channelDescription: 'Adhan notifications',
             importance: Importance.max,
             priority: Priority.max,
             icon: '@mipmap/ic_launcher',
             playSound: true,
             enableVibration: true,
-            category:
-                AndroidNotificationCategory.alarm,
+            category: AndroidNotificationCategory.alarm,
             fullScreenIntent: true,
-            audioAttributesUsage:
-                AudioAttributesUsage.alarm,
-            visibility:
-                NotificationVisibility.public,
+            audioAttributesUsage: AudioAttributesUsage.alarm,
+            visibility: NotificationVisibility.public,
             color: AppColors.gold,
             colorized: false,
           ),
@@ -592,15 +618,12 @@ class NotificationService {
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
-            interruptionLevel:
-                InterruptionLevel.critical,
+            interruptionLevel: InterruptionLevel.critical,
           ),
         ),
-        androidScheduleMode:
-            AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation
-                .absoluteTime,
+            UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
       );
 
@@ -613,55 +636,37 @@ class NotificationService {
           id,
           title,
           body,
-          tz.TZDateTime.from(
-            notifyAt,
-            tz.local,
-          ),
+          tz.TZDateTime.from(notifyAt, tz.local),
           NotificationDetails(
-            android:
-                AndroidNotificationDetails(
+            android: AndroidNotificationDetails(
               'prayer_channel_v3',
-              appState.tr(
-                'notifChannelPrayer',
-              ),
-              channelDescription:
-                  'Adhan notifications',
-              importance:
-                  Importance.max,
-              priority:
-                  Priority.max,
-              icon:
-                  '@mipmap/ic_launcher',
+              appState.tr('notifChannelPrayer'),
+              channelDescription: 'Adhan notifications',
+              importance: Importance.max,
+              priority: Priority.max,
+              icon: '@mipmap/ic_launcher',
               playSound: true,
               enableVibration: true,
-              category:
-                  AndroidNotificationCategory.alarm,
-              fullScreenIntent:
-                  true,
-              audioAttributesUsage:
-                  AudioAttributesUsage.alarm,
-              visibility:
-                  NotificationVisibility.public,
+              category: AndroidNotificationCategory.alarm,
+              fullScreenIntent: true,
+              audioAttributesUsage: AudioAttributesUsage.alarm,
+              visibility: NotificationVisibility.public,
             ),
-            iOS:
-                const DarwinNotificationDetails(
+            iOS: const DarwinNotificationDetails(
               presentAlert: true,
               presentBadge: true,
               presentSound: true,
             ),
           ),
-          androidScheduleMode:
-              AndroidScheduleMode
-                  .inexactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation
-                  .absoluteTime,
+              UILocalNotificationDateInterpretation.absoluteTime,
           payload: payload,
         );
 
-        debugPrint('[ALARM] ✅ Scheduled $name at $notifyAt (inexact)');
+        debugPrint('[ALARM] ✅ Scheduled $name (inexact)');
       } catch (e2) {
-        debugPrint('[ERROR] Both schedules failed for $name: $e2');
+        debugPrint('[ERROR] Both failed for $name: $e2');
       }
     }
   }
@@ -684,9 +689,7 @@ class NotificationService {
     );
 
     if (first.isBefore(now)) {
-      first = first.add(
-        const Duration(days: 1),
-      );
+      first = first.add(const Duration(days: 1));
     }
 
     try {
@@ -694,39 +697,22 @@ class NotificationService {
         id,
         title,
         body,
-        tz.TZDateTime.from(
-          first,
-          tz.local,
-        ),
+        tz.TZDateTime.from(first, tz.local),
         NotificationDetails(
-          android:
-              AndroidNotificationDetails(
+          android: AndroidNotificationDetails(
             'daily_channel_v2',
-            appState.tr(
-              'notifChannelDaily',
-            ),
-            channelDescription:
-                appState.tr(
-              'notifChannelDailyDesc',
-            ),
-            importance:
-                Importance.defaultImportance,
-            priority:
-                Priority.defaultPriority,
-            icon:
-                '@mipmap/ic_launcher',
+            appState.tr('notifChannelDaily'),
+            channelDescription: appState.tr('notifChannelDailyDesc'),
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            icon: '@mipmap/ic_launcher',
           ),
-          iOS:
-              const DarwinNotificationDetails(),
+          iOS: const DarwinNotificationDetails(),
         ),
-        androidScheduleMode:
-            AndroidScheduleMode
-                .inexactAllowWhileIdle,
-        matchDateTimeComponents:
-            DateTimeComponents.time,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
         uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation
-                .absoluteTime,
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
     } catch (e) {
       debugPrint('[ERROR] Daily schedule ($id): $e');
@@ -743,13 +729,10 @@ class NotificationService {
       final now = DateTime.now();
 
       void add(String key, String value) {
-        final parsed =
-            _parseTimeText(value, now);
+        final parsed = _parseTimeText(value, now);
 
         if (parsed != null) {
-          list.add(
-            PrayerEntry(key, parsed),
-          );
+          list.add(PrayerEntry(key, parsed));
         }
       }
 
@@ -763,10 +746,7 @@ class NotificationService {
     return list;
   }
 
-  DateTime? _parseTimeText(
-    String text,
-    DateTime day,
-  ) {
+  DateTime? _parseTimeText(String text, DateTime day) {
     try {
       final isAm =
           text.contains('ص') ||
@@ -789,11 +769,9 @@ class NotificationService {
 
       if (parts.length < 2) return null;
 
-      var h =
-          int.tryParse(parts[0]) ?? 0;
+      var h = int.tryParse(parts[0]) ?? 0;
 
-      final m =
-          int.tryParse(parts[1]) ?? 0;
+      final m = int.tryParse(parts[1]) ?? 0;
 
       if (isPm && h < 12) {
         h += 12;
@@ -803,13 +781,7 @@ class NotificationService {
         h = 0;
       }
 
-      return DateTime(
-        day.year,
-        day.month,
-        day.day,
-        h,
-        m,
-      );
+      return DateTime(day.year, day.month, day.day, h, m);
     } catch (_) {
       return null;
     }
