@@ -464,6 +464,9 @@ const Map<String, String> _ar = {
       'تسجيل الدخول بـ Google غير مفعّل حالياً',
 // ✅ Support
 'supportTitle': 'الدعم والتواصل',
+'nextPrayer': 'الصلاة القادمة',
+'hourShort': 'س',
+'minuteShort': 'د',
 };
 
 // =====================================================================
@@ -807,4 +810,7 @@ const Map<String, String> _en = {
       'Google Sign-In is not enabled currently',
 // ✅ Support
 'supportTitle': 'Support & Contact',
+'nextPrayer': 'Next prayer',
+'hourShort': 'h',
+'minuteShort': 'm',
 };
