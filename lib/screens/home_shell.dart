@@ -67,7 +67,6 @@ class _HomeShellState extends State<HomeShell> {
 
     _checkPromo();
 
-    // ✅ إشعار الإشعارات المُعلّقة بعد استقرار الشاشة
     Future.delayed(const Duration(seconds: 1), () {
       notificationService.consumePendingLaunch();
     });
@@ -122,7 +121,9 @@ class _HomeShellState extends State<HomeShell> {
         if (_lastAdhanShownAt == prayerAt) return;
         _lastAdhanShownAt = prayerAt;
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AdhanScreen(
@@ -142,7 +143,6 @@ class _HomeShellState extends State<HomeShell> {
   void _startOngoingNotification() {
     Future.delayed(const Duration(seconds: 2), _updateOngoing);
 
-    // التحديث كل دقيقة (لتغيير اللون في آخر 10 دقائق)
     _ongoingNotifTimer =
         Timer.periodic(const Duration(minutes: 1), (_) {
       _updateOngoing();
@@ -159,7 +159,6 @@ class _HomeShellState extends State<HomeShell> {
 
     final isUrgent = diff.inMinutes < 10;
 
-    // حدّث فقط عند الحاجة (تغيّر الصلاة أو حالة الاستعجال)
     if (_lastAdhanShownAt == next.at &&
         _lastUrgentState == isUrgent) return;
 
