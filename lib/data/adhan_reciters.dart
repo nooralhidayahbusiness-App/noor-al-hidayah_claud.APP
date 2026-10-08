@@ -23,25 +23,45 @@ class AdhanReciter {
 
 /// قائمة المؤذنين — روابط MP3 مباشرة مجانية.
 const List<AdhanReciter> kAdhanReciters = [
+  // ============ الافتراضي ============
   AdhanReciter(
     id: 'default',
     nameAr: 'الأذان الأساسي',
     nameEn: 'Default Adhan',
     countryAr: 'أذان عام',
     countryEn: 'General',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan1.mp3',
+    mp3Url: 'https://www.islamcan.com/audio/adhan/azan1.mp3',
     price: 0,
   ),
+
+  // ============ مؤذنون جدد (من praytimes.org) ============
   AdhanReciter(
-    id: 'makkah',
-    nameAr: 'الحرم المكي',
-    nameEn: 'Makkah Haram',
-    countryAr: 'السعودية',
-    countryEn: 'Saudi Arabia',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan2.mp3',
+    id: 'abdulbasit',
+    nameAr: 'عبد الباسط عبد الصمد',
+    nameEn: 'Abdul Basit',
+    countryAr: 'مصر',
+    countryEn: 'Egypt',
+    mp3Url: 'https://praytimes.org/audio/sunni/Abdul-Basit.mp3',
+    price: 700,
+    isVip: true,
+  ),
+  AdhanReciter(
+    id: 'abdulhakam',
+    nameAr: 'عبد الحكيم',
+    nameEn: 'Abdul Hakam',
+    countryAr: 'مصر',
+    countryEn: 'Egypt',
+    mp3Url: 'https://praytimes.org/audio/sunni/Abdul-Hakam.mp3',
     price: 500,
+  ),
+  AdhanReciter(
+    id: 'alaqsa',
+    nameAr: 'المسجد الأقصى',
+    nameEn: 'Al-Aqsa Mosque',
+    countryAr: 'فلسطين',
+    countryEn: 'Palestine',
+    mp3Url: 'https://praytimes.org/audio/sunni/Adhan-Alaqsa.mp3',
+    price: 600,
   ),
   AdhanReciter(
     id: 'madinah',
@@ -49,8 +69,16 @@ const List<AdhanReciter> kAdhanReciters = [
     nameEn: 'Madinah Haram',
     countryAr: 'السعودية',
     countryEn: 'Saudi Arabia',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan3.mp3',
+    mp3Url: 'https://praytimes.org/audio/sunni/Adhan-Madinah.mp3',
+    price: 500,
+  ),
+  AdhanReciter(
+    id: 'makkah',
+    nameAr: 'الحرم المكي',
+    nameEn: 'Makkah Haram',
+    countryAr: 'السعودية',
+    countryEn: 'Saudi Arabia',
+    mp3Url: 'https://praytimes.org/audio/sunni/Adhan-Makkah.mp3',
     price: 500,
   ),
   AdhanReciter(
@@ -59,69 +87,35 @@ const List<AdhanReciter> kAdhanReciters = [
     nameEn: 'Egyptian Adhan',
     countryAr: 'مصر',
     countryEn: 'Egypt',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan4.mp3',
+    mp3Url: 'https://praytimes.org/audio/sunni/Adhan-Egypt.mp3',
     price: 400,
   ),
   AdhanReciter(
-    id: 'turkey',
-    nameAr: 'الأذان التركي',
-    nameEn: 'Turkish Adhan',
-    countryAr: 'تركيا',
-    countryEn: 'Turkey',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan5.mp3',
-    price: 400,
-  ),
-  AdhanReciter(
-    id: 'morocco',
-    nameAr: 'الأذان المغربي',
-    nameEn: 'Moroccan Adhan',
-    countryAr: 'المغرب',
-    countryEn: 'Morocco',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan6.mp3',
-    price: 400,
-  ),
-  AdhanReciter(
-    id: 'yemen',
-    nameAr: 'الأذان اليمني',
-    nameEn: 'Yemeni Adhan',
-    countryAr: 'اليمن',
-    countryEn: 'Yemen',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan7.mp3',
-    price: 300,
-  ),
-  AdhanReciter(
-    id: 'egypt_old',
-    nameAr: 'الأذان المصري التقليدي',
-    nameEn: 'Classic Egyptian Adhan',
+    id: 'naghshbandi',
+    nameAr: 'النقشبندي',
+    nameEn: 'Naghshbandi',
     countryAr: 'مصر',
     countryEn: 'Egypt',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan8.mp3',
+    mp3Url: 'https://praytimes.org/audio/sunni/Naghshbandi.mp3',
     price: 600,
   ),
   AdhanReciter(
-    id: 'syria',
-    nameAr: 'الأذان الشامي',
-    nameEn: 'Levantine Adhan',
-    countryAr: 'سوريا',
-    countryEn: 'Syria',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan9.mp3',
-    price: 500,
-  ),
-  AdhanReciter(
-    id: 'fajr_egypt',
-    nameAr: 'أذان الفجر المصري',
-    nameEn: 'Egyptian Fajr Adhan',
+    id: 'saber',
+    nameAr: 'صابر',
+    nameEn: 'Saber',
     countryAr: 'مصر',
     countryEn: 'Egypt',
-    mp3Url:
-        'https://www.islamcan.com/audio/adhan/azan10.mp3',
-    price: 700,
+    mp3Url: 'https://praytimes.org/audio/sunni/Saber.mp3',
+    price: 400,
+  ),
+  AdhanReciter(
+    id: 'yusufislam',
+    nameAr: 'يوسف إسلام',
+    nameEn: 'Yusuf Islam',
+    countryAr: 'بريطانيا',
+    countryEn: 'UK',
+    mp3Url: 'https://praytimes.org/audio/sunni/Yusuf-Islam.mp3',
+    price: 500,
   ),
 ];
 
