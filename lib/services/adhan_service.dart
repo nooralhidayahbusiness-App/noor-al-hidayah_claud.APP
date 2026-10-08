@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/adhan_reciters.dart';
 
-/// خدمة تشغيل الأذان + إدارة الصوت.
 class AdhanService {
   AdhanService._();
   static final AdhanService instance = AdhanService._();
@@ -17,6 +16,9 @@ class AdhanService {
   Timer? _autoStopTimer;
   bool _contextSet = false;
 
+  // ✅ نفس المفتاح المستخدم في themeState
+  static const String _prefsKey = 'active_adhan';
+
   bool get isPlaying => _isPlaying;
   String get currentReciterId => _currentReciterId;
 
@@ -25,12 +27,13 @@ class AdhanService {
   Stream<void> get completeStream => _player.onPlayerComplete;
 
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _currentReciterId = prefs.getString('active_adhan_reciter') ?? 'default';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _currentReciterId = prefs.getString(_prefsKey) ?? 'default';
+    } catch (_) {}
     await _setupAudioContext();
   }
 
-  /// ✅ ضبط AudioContext للأذان (نمط منبّه — صوت عالٍ + خلفية)
   Future<void> _setupAudioContext() async {
     if (_contextSet) return;
     try {
@@ -45,9 +48,7 @@ class AdhanService {
           ),
           iOS: AudioContextIOS(
             category: AVAudioSessionCategory.playback,
-            options: const {
-              AVAudioSessionOptions.mixWithOthers,
-            },
+            options: const {AVAudioSessionOptions.mixWithOthers},
           ),
         ),
       );
@@ -57,18 +58,26 @@ class AdhanService {
     }
   }
 
+  /// يضبط المؤذن النشط + يحفظه
   Future<void> setReciter(String id) async {
     _currentReciterId = id;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('active_adhan_reciter', id);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefsKey, id);
+    } catch (_) {}
   }
 
-  /// يشغل الأذان للمؤذن المختار.
   Future<bool> play({String? reciterId}) async {
     try {
       await _setupAudioContext();
 
-      final id = reciterId ?? _currentReciterId;
+      // ✅ اقرأ من prefs كل مرة لتفادي stale data
+      String id = reciterId ?? _currentReciterId;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        id = reciterId ?? prefs.getString(_prefsKey) ?? _currentReciterId;
+      } catch (_) {}
+
       final reciter = adhanReciterById(id) ?? kAdhanReciters.first;
 
       await _player.stop();
@@ -78,11 +87,8 @@ class AdhanService {
       await _player.play(UrlSource(reciter.mp3Url));
 
       _isPlaying = true;
-
       _autoStopTimer?.cancel();
-      _autoStopTimer = Timer(const Duration(minutes: 3), () {
-        stop();
-      });
+      _autoStopTimer = Timer(const Duration(minutes: 3), stop);
 
       return true;
     } catch (e) {
