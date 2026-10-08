@@ -88,9 +88,6 @@ class _HomeShellState extends State<HomeShell> {
     super.dispose();
   }
 
-  // ============================================================
-  // فحص وقت الصلاة + فتح شاشة الأذان
-  // ============================================================
   void _startPrayerCheck() {
     _prayerCheckTimer =
         Timer.periodic(const Duration(seconds: 30), (_) {
@@ -122,12 +119,9 @@ class _HomeShellState extends State<HomeShell> {
         if (_lastPrayerScreenShownAt == prayerAt) return;
         _lastPrayerScreenShownAt = prayerAt;
 
-        debugPrint('[FULLSCREEN] Opening AdhanScreen for ${entry.key} at $prayerAt');
+        debugPrint('[FULLSCREEN] Opening AdhanScreen for ${entry.key}');
 
-        if (!mounted) {
-          debugPrint('[ERROR] Not mounted, cannot show AdhanScreen');
-          return;
-        }
+        if (!mounted) return;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AdhanScreen(
@@ -141,9 +135,6 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
-  // ============================================================
-  // الإشعار الدائم — يحوي العد التنازلي الحيّ
-  // ============================================================
   void _startOngoingNotification() {
     Future.delayed(const Duration(seconds: 1), _updateOngoing);
 
@@ -153,7 +144,7 @@ class _HomeShellState extends State<HomeShell> {
 
   void _onPrayerStateChanged() {
     if (prayerState.status == PrayerStatus.ready) {
-      debugPrint('[PRAYER] prayerState is ready — updating + rescheduling');
+      debugPrint('[PRAYER] prayerState ready');
       _updateOngoing();
       _rescheduleAfterPrayerTimesReady();
     }
@@ -170,19 +161,12 @@ class _HomeShellState extends State<HomeShell> {
     _rescheduleInFlight = true;
 
     try {
-      debugPrint('[PRAYER] Rescheduling prayers for $key');
-
       final prayers = notificationService.collectPrayerTimes();
 
       if (prayers.isNotEmpty) {
-        for (final p in prayers) {
-          debugPrint('[PRAYER] ${p.name} = ${p.time}');
-        }
         await notificationService.reschedule(prayers: prayers);
         _lastRescheduledPrayerDay = key;
-        debugPrint('[ALARM] All prayers scheduled successfully');
-      } else {
-        debugPrint('[ERROR] No prayer times to schedule');
+        debugPrint('[ALARM] All prayers scheduled');
       }
     } catch (e) {
       debugPrint('[ERROR] Reschedule failed: $e');
@@ -214,8 +198,6 @@ class _HomeShellState extends State<HomeShell> {
     final hijri =
         appState.isArabic ? data?.hijriAr : data?.hijriEn;
 
-    debugPrint('[NOTIFICATION] Next prayer: ${next.key} · target=${next.at} · urgent=$isUrgent');
-
     notificationService.showOngoingPrayer(
       prayerName: appState.tr(next.key),
       targetTime: next.at,
@@ -225,28 +207,50 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   // ============================================================
-  // 🐛 اختبار الأذان (للمالك فقط)
+  // 🐛 اختبار الأذان — 10 ثوانٍ
   // ============================================================
   Future<void> _scheduleTestAdhan() async {
-    debugPrint('[TEST] Scheduling test adhan in 1 minute');
-    await notificationService.scheduleTestAdhan();
+    final ok = await notificationService.scheduleTestAdhan();
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          appState.isArabic
-              ? 'سيظهر الأذان بعد دقيقة واحدة (أغلق التطبيق وانتظر)'
-              : 'Adhan will appear in 1 minute (close the app and wait)',
+          ok
+              ? (appState.isArabic
+                  ? '✅ تم الجدولة — أغلق التطبيق وانتظر 10 ثوانٍ'
+                  : '✅ Scheduled — close the app and wait 10s')
+              : (appState.isArabic
+                  ? '❌ فشلت الجدولة — تحقق من صلاحية المنبهات'
+                  : '❌ Scheduling failed — check alarm permission'),
         ),
-        backgroundColor: AppColors.emerald,
-        duration: const Duration(seconds: 4),
+        backgroundColor:
+            ok ? AppColors.emerald : Colors.redAccent,
+        duration: const Duration(seconds: 5),
       ),
     );
   }
 
   // ============================================================
-  // Premium Promo
+  // 🔔 عرض إشعار فوري (بدون جدولة)
   // ============================================================
+  Future<void> _showImmediate() async {
+    await notificationService.showImmediateNotification();
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          appState.isArabic
+              ? '🔔 يجب أن يظهر الإشعار الآن — اسحب شريط الإشعارات'
+              : '🔔 Notification should appear now — swipe down',
+        ),
+        backgroundColor: AppColors.emerald,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
   Future<void> _checkPromo() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -322,17 +326,26 @@ class _HomeShellState extends State<HomeShell> {
                         SizedBox(width: R.s(context, 4)),
                         _buildNotifButton(context),
                         SizedBox(width: R.s(context, 4)),
-                        // 🐛 زر اختبار الأذان (للمالك فقط)
-                        if (authService.isOwner)
+                        if (authService.isOwner) ...[
                           IconButton(
                             onPressed: _scheduleTestAdhan,
                             tooltip: appState.isArabic
-                                ? 'اختبار الأذان (دقيقة)'
-                                : 'Test Adhan (1 min)',
+                                ? 'اختبار الأذان (10 ثوان)'
+                                : 'Test Adhan (10s)',
                             color: const Color(0xFFFFA000),
                             iconSize: R.s(context, 24),
                             icon: const Icon(Icons.bug_report_rounded),
                           ),
+                          IconButton(
+                            onPressed: _showImmediate,
+                            tooltip: appState.isArabic
+                                ? 'عرض إشعار فوري'
+                                : 'Show immediate',
+                            color: const Color(0xFF4CAF50),
+                            iconSize: R.s(context, 24),
+                            icon: const Icon(Icons.notifications_active_rounded),
+                          ),
+                        ],
                         IconButton(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
