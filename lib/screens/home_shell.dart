@@ -47,8 +47,6 @@ class _HomeShellState extends State<HomeShell> {
   Timer? _prayerCheckTimer;
   Timer? _ongoingNotifTimer;
   DateTime? _lastPrayerScreenShownAt;
-  DateTime? _lastOngoingPrayerAt;
-  bool _lastUrgentState = false;
   bool _rescheduleInFlight = false;
   DateTime? _lastRescheduledPrayerDay;
 
@@ -79,11 +77,12 @@ class _HomeShellState extends State<HomeShell> {
       notificationService.consumePendingLaunch();
     });
 
-    // ✅ طلب الصلاحيات + تحديث الإشعار بعد 3 ثوانٍ
+    // ✅ طلب الصلاحيات + تحديث الإشعار + إعادة الجدولة بعد 3 ثوانٍ
     Future.delayed(const Duration(seconds: 3), () async {
       if (!mounted) return;
       await notificationService.requestPermissions();
       await _updateOngoing();
+      await _rescheduleAfterPrayerTimesReady();
     });
 
     // ✅ عند تسجيل الدخول → حدّث الإشعار الدائم
@@ -159,6 +158,7 @@ class _HomeShellState extends State<HomeShell> {
   void _startOngoingNotification() {
     Future.delayed(const Duration(seconds: 1), _updateOngoing);
 
+    // ✅ يُعاد نشر الإشعار الدائم كل دقيقة (يتجدد مكانه بدون صوت)
     _ongoingNotifTimer =
         Timer.periodic(const Duration(minutes: 1), (_) => _updateOngoing());
   }
@@ -194,6 +194,9 @@ class _HomeShellState extends State<HomeShell> {
     } finally {
       _rescheduleInFlight = false;
     }
+
+    // ✅ نعيد نشر الإشعار الدائم بعد الجدولة
+    if (mounted) _updateOngoing();
   }
 
   Future<void> _updateOngoing() async {
@@ -211,15 +214,6 @@ class _HomeShellState extends State<HomeShell> {
     final isUrgent = diff.inMinutes < 10;
 
     debugPrint('[NOTIFICATION] Next: ${next.key} · ${next.at} · urgent=$isUrgent');
-
-    // ✅ حدّث فقط عند الحاجة (لكن مرة أولى عند التحميل)
-    if (_lastOngoingPrayerAt == next.at &&
-        _lastUrgentState == isUrgent) {
-      return;
-    }
-
-    _lastOngoingPrayerAt = next.at;
-    _lastUrgentState = isUrgent;
 
     final data = prayerState.data;
     final hijri =
@@ -240,19 +234,21 @@ class _HomeShellState extends State<HomeShell> {
     final ok = await notificationService.scheduleTestAdhan();
     if (!mounted) return;
 
+    final err = notificationService.lastError;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           ok
               ? (appState.isArabic
-                  ? '✅ تم الجدولة — أغلق التطبيق وانتظر 30 ثانية'
-                  : '✅ Scheduled — close app and wait 30s')
+                  ? '✅ تم الجدولة — اقفل الشاشة وانتظر 30 ثانية'
+                  : '✅ Scheduled — lock the screen and wait 30s')
               : (appState.isArabic
-                  ? '❌ فشلت الجدولة'
-                  : '❌ Scheduling failed'),
+                  ? '❌ فشلت الجدولة\n$err'
+                  : '❌ Scheduling failed\n$err'),
         ),
         backgroundColor: ok ? AppColors.emerald : Colors.redAccent,
-        duration: const Duration(seconds: 5),
+        duration: Duration(seconds: ok ? 5 : 15),
       ),
     );
   }
