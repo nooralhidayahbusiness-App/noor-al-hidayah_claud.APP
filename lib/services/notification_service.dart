@@ -28,6 +28,9 @@ class NotificationService {
   bool _initialized = false;
   bool _supported = false;
 
+  /// آخر خطأ حدث أثناء الجدولة (يظهر في رسالة الاختبار)
+  String lastError = '';
+
   OnPrayerTap? onPrayerTap;
   NotificationResponse? _pendingLaunchResponse;
 
@@ -38,6 +41,9 @@ class NotificationService {
     'maghrib': 103,
     'isha': 104,
   };
+
+  /// عدد الأيام التي تُجدول مسبقاً (اليوم + الأيام التالية)
+  static const int _daysAhead = 3;
 
   static const _dailyChallengeId = 300;
   static const _quranReminderId = 301;
@@ -223,6 +229,67 @@ class NotificationService {
     } catch (_) {}
   }
 
+  /// ✅ جدولة بدقة عالية (alarmClock) مع بديل احتياطي (inexact)
+  Future<void> _zonedScheduleSafe({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime when,
+    required NotificationDetails details,
+    String? payload,
+  }) async {
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        when,
+        details,
+        androidScheduleMode: AndroidScheduleMode.alarmClock,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('[ALARM] alarmClock failed ($e) → fallback inexact');
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        when,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: payload,
+      );
+    }
+  }
+
+  NotificationDetails _prayerDetails({Color? color}) {
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        'prayer_channel_v4',
+        appState.tr('notifChannelPrayer'),
+        importance: Importance.max,
+        priority: Priority.max,
+        icon: '@mipmap/ic_launcher',
+        playSound: true,
+        enableVibration: true,
+        category: AndroidNotificationCategory.alarm,
+        fullScreenIntent: true,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+        visibility: NotificationVisibility.public,
+        color: color,
+      ),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+  }
+
   Future<void> showImmediateNotification() async {
     if (!_supported) return;
     try {
@@ -230,26 +297,7 @@ class NotificationService {
         _testAdhanId,
         appState.isArabic ? 'اختبار فوري' : 'Immediate Test',
         appState.isArabic ? 'اضغط لفتح شاشة الأذان' : 'Tap to open Adhan',
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            'prayer_channel_v4',
-            appState.tr('notifChannelPrayer'),
-            importance: Importance.max,
-            priority: Priority.max,
-            icon: '@mipmap/ic_launcher',
-            playSound: true,
-            enableVibration: true,
-            category: AndroidNotificationCategory.alarm,
-            fullScreenIntent: true,
-            audioAttributesUsage: AudioAttributesUsage.alarm,
-            visibility: NotificationVisibility.public,
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
+        _prayerDetails(),
         payload: 'asr|${DateTime.now().millisecondsSinceEpoch}',
       );
     } catch (e) {
@@ -258,45 +306,28 @@ class NotificationService {
   }
 
   Future<bool> scheduleTestAdhan() async {
-    if (!_supported) return false;
+    lastError = '';
+    if (!_supported) {
+      lastError = 'not supported';
+      return false;
+    }
 
-    final now = DateTime.now().add(const Duration(seconds: 30));
-    debugPrint('[TEST] Target: $now');
+    final target = DateTime.now().add(const Duration(seconds: 30));
+    debugPrint('[TEST] Target: $target');
 
     try {
-      await _plugin.zonedSchedule(
-        _testAdhanId,
-        appState.isArabic ? 'اختبار الأذان' : 'Adhan Test',
-        appState.isArabic ? 'سيتم فتح شاشة الأذان' : 'Adhan will open',
-        tz.TZDateTime.from(now, tz.local),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            'prayer_channel_v4',
-            appState.tr('notifChannelPrayer'),
-            importance: Importance.max,
-            priority: Priority.max,
-            icon: '@mipmap/ic_launcher',
-            playSound: true,
-            enableVibration: true,
-            category: AndroidNotificationCategory.alarm,
-            fullScreenIntent: true,
-            audioAttributesUsage: AudioAttributesUsage.alarm,
-            visibility: NotificationVisibility.public,
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        payload: 'asr|${now.millisecondsSinceEpoch}',
+      await _zonedScheduleSafe(
+        id: _testAdhanId,
+        title: appState.isArabic ? 'اختبار الأذان' : 'Adhan Test',
+        body: appState.isArabic ? 'سيتم فتح شاشة الأذان' : 'Adhan will open',
+        when: tz.TZDateTime.from(target, tz.local),
+        details: _prayerDetails(),
+        payload: 'asr|${target.millisecondsSinceEpoch}',
       );
       debugPrint('[TEST] ✅ Scheduled');
       return true;
     } catch (e) {
+      lastError = e.toString();
       debugPrint('[TEST] ❌ Failed: $e');
       return false;
     }
@@ -399,32 +430,60 @@ class NotificationService {
     } catch (_) {}
   }
 
+  /// معرّف إشعار الصلاة ليوم معيّن (0 = اليوم، 1 = غداً ...)
+  int _prayerNotifId(String name, int dayOffset) {
+    final base = _prayerIds[name] ?? 100;
+    return base + (dayOffset * 10);
+  }
+
   Future<void> reschedule({required List<PrayerEntry> prayers}) async {
     if (!_supported) return;
 
     debugPrint('[ALARM] Rescheduling ${prayers.length} prayers');
 
-    await cancelAll();
+    // ✅ نلغي إشعارات الصلاة والتذكيرات فقط
+    // (cancelAll كان يمسح الإشعار الدائم وإشعار الاختبار أيضاً)
+    try {
+      for (int d = 0; d < _daysAhead; d++) {
+        for (final name in _prayerIds.keys) {
+          await _plugin.cancel(_prayerNotifId(name, d));
+        }
+      }
+      await _plugin.cancel(_dailyChallengeId);
+      await _plugin.cancel(_quranReminderId);
+      await _plugin.cancel(_dailyVerseId);
+    } catch (_) {}
 
     final settings = await userService.loadSettings();
     final notifs = (settings['notifications'] as Map?) ?? {};
     final beforeMin =
         (notifs['adhanBeforeMinutes'] as num?)?.toInt() ?? 0;
 
-    for (final p in prayers) {
-      final enabled = notifs[p.name] == true;
-      if (!enabled) continue;
+    final now = DateTime.now();
 
-      final notifyAt = p.time.subtract(Duration(minutes: beforeMin));
-      if (notifyAt.isBefore(DateTime.now())) continue;
+    for (int d = 0; d < _daysAhead; d++) {
+      for (final p in prayers) {
+        final enabled = notifs[p.name] == true;
+        if (!enabled) continue;
 
-      await _schedulePrayer(
-        id: _prayerIds[p.name] ?? 100,
-        name: p.name,
-        at: p.time,
-        notifyAt: notifyAt,
-        beforeMin: beforeMin,
-      );
+        final prayerAt = DateTime(
+          p.time.year,
+          p.time.month,
+          p.time.day + d,
+          p.time.hour,
+          p.time.minute,
+        );
+        final notifyAt = prayerAt.subtract(Duration(minutes: beforeMin));
+        if (notifyAt.isBefore(now)) continue;
+
+        await _schedulePrayer(
+          id: _prayerNotifId(p.name, d),
+          name: p.name,
+          at: prayerAt,
+          notifyAt: notifyAt,
+          beforeMin: beforeMin,
+        );
+      }
     }
 
     if (notifs['dailyChallenge'] == true) {
@@ -471,40 +530,17 @@ class NotificationService {
     final payload = '$name|${at.millisecondsSinceEpoch}';
 
     try {
-      await _plugin.zonedSchedule(
-        id,
-        title,
-        body,
-        tz.TZDateTime.from(notifyAt, tz.local),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            'prayer_channel_v4',
-            appState.tr('notifChannelPrayer'),
-            importance: Importance.max,
-            priority: Priority.max,
-            icon: '@mipmap/ic_launcher',
-            playSound: true,
-            enableVibration: true,
-            category: AndroidNotificationCategory.alarm,
-            fullScreenIntent: true,
-            audioAttributesUsage: AudioAttributesUsage.alarm,
-            visibility: NotificationVisibility.public,
-            color: _goldColor,
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-            interruptionLevel: InterruptionLevel.critical,
-          ),
-        ),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
+      await _zonedScheduleSafe(
+        id: id,
+        title: title,
+        body: body,
+        when: tz.TZDateTime.from(notifyAt, tz.local),
+        details: _prayerDetails(color: _goldColor),
         payload: payload,
       );
       debugPrint('[ALARM] ✅ $name at $notifyAt');
     } catch (e) {
+      lastError = e.toString();
       debugPrint('[ERROR] $name: $e');
     }
   }
