@@ -44,6 +44,9 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            // ✅ إيقاف R8: كان يكسر حفظ الإشعارات المجدولة في نسخة release
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
