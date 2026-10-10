@@ -64,10 +64,6 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-7354273374998913~5567231375"/>
 
-        <meta-data
-            android:name="com.onesignal.messaging.default_notification_icon"
-            android:resource="@drawable/ic_notification" />
-        
         <!-- ✅ Boot Receiver لإعادة الجدولة بعد restart -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
@@ -84,6 +80,17 @@
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false" />
+
+        <!-- ✅ الإشعار الدائم للصلاة القادمة: تحديث الألوان والعدّاد تلقائياً -->
+        <receiver
+            android:name=".PrayerCountdownReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.nooralhidayah.noor_al_hidayah.PRAYER_COUNTDOWN_TICK"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
     </application>
 
     <queries>
