@@ -232,12 +232,17 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   void _preview(StoreItem item) {
+    // ✅ خلفيات التطبيق: تُعرض كصورة فقط بدون مواقيت أو أزرار
+    final plainBackground = item.type == 'background';
+
     Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: false,
         barrierColor: Colors.black.withValues(alpha: 0.95),
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (_, _, _) => _AdhanPreviewPage(item: item),
+        pageBuilder: (_, _, _) => plainBackground
+            ? _BackgroundPreviewPage(item: item)
+            : _AdhanPreviewPage(item: item),
         transitionsBuilder: (_, anim, _, child) {
           return FadeTransition(opacity: anim, child: child);
         },
@@ -794,6 +799,74 @@ class _StoreCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ============================================================
+// ✅ معاينة خلفية التطبيق: صورة فقط بدون مواقيت أو أزرار
+// ============================================================
+class _BackgroundPreviewPage extends StatelessWidget {
+  const _BackgroundPreviewPage({required this.item});
+
+  final StoreItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (item.imagePath != null)
+            Image.asset(
+              item.imagePath!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _gradientBg(),
+            )
+          else
+            _gradientBg(),
+          SafeArea(
+            child: Align(
+              alignment: AlignmentDirectional.topStart,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.45),
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.softGold,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _gradientBg() => DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: item.gradient.isEmpty
+                ? [AppColors.deepGreen, AppColors.green]
+                : item.gradient,
+          ),
+        ),
+      );
 }
 
 class _AdhanPreviewPage extends StatefulWidget {
