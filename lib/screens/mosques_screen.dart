@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,19 +27,65 @@ class _MosquesScreenState extends State<MosquesScreen> {
   String? _error;
   List<Mosque> _mosques = [];
   Mosque? _selected;
-  int _radiusKm = 10;
+  int _radiusKm = 5;
 
   late LatLng _userLatLng;
 
   @override
   void initState() {
     super.initState();
+    // قيمة مبدئية للخريطة (يُحدَّث الموقع الحقيقي داخل _load)
     final loc = prayerState.location;
     _userLatLng = LatLng(
-      loc?.latitude ?? 24.4539, // أبو ظبي افتراضياً
+      loc?.latitude ?? 24.4539,
       loc?.longitude ?? 54.3773,
     );
     _load();
+  }
+
+  /// ✅ تحديد موقع المستخدم: GPS أولاً، ثم الموقع المحفوظ في التطبيق.
+  Future<bool> _resolveLocation() async {
+    // 1) GPS
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (enabled) {
+        var perm = await Geolocator.checkPermission();
+        if (perm == LocationPermission.denied) {
+          perm = await Geolocator.requestPermission();
+        }
+        if (perm == LocationPermission.always ||
+            perm == LocationPermission.whileInUse) {
+          try {
+            final pos = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                timeLimit: Duration(seconds: 10),
+              ),
+            );
+            _userLatLng = LatLng(pos.latitude, pos.longitude);
+            return true;
+          } catch (_) {
+            final last = await Geolocator.getLastKnownPosition();
+            if (last != null) {
+              _userLatLng = LatLng(last.latitude, last.longitude);
+              return true;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('GPS error: $e');
+    }
+
+    // 2) الموقع المحفوظ في التطبيق
+    final loc = prayerState.location;
+    final lat = loc?.latitude;
+    final lng = loc?.longitude;
+    if (lat != null && lng != null) {
+      _userLatLng = LatLng(lat, lng);
+      return true;
+    }
+    return false;
   }
 
   Future<void> _load() async {
@@ -48,6 +95,17 @@ class _MosquesScreenState extends State<MosquesScreen> {
     });
 
     try {
+      final hasLocation = await _resolveLocation();
+      if (!mounted) return;
+      if (!hasLocation) {
+        throw Exception('Location unavailable — enable GPS or set location');
+      }
+
+      // حرّك الخريطة إلى موقع المستخدم
+      try {
+        _mapController.move(_userLatLng, 14);
+      } catch (_) {}
+
       debugPrint(
           '🔍 Search: ${_userLatLng.latitude}, ${_userLatLng.longitude} (${_radiusKm}km)');
       final list = await mosquesService.findNearby(
@@ -65,7 +123,7 @@ class _MosquesScreenState extends State<MosquesScreen> {
       debugPrint('❌ Error: $e');
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = e.toString().replaceFirst('Exception: ', '');
         _loading = false;
       });
     }
@@ -154,7 +212,8 @@ class _MosquesScreenState extends State<MosquesScreen> {
                     borderRadius: BorderRadius.circular(20),
                     child: Stack(
                       children: [
-                        _buildMap(),
+                        // ✅ Positioned.fill: يضمن أن الخريطة تأخذ كامل المساحة
+                        Positioned.fill(child: _buildMap()),
                         Positioned(
                           top: 8,
                           right: 8,
@@ -179,6 +238,8 @@ class _MosquesScreenState extends State<MosquesScreen> {
                         if (_error != null && !_loading)
                           Center(
                             child: Container(
+                              margin: EdgeInsets.symmetric(
+                                  horizontal: R.s(context, 20)),
                               padding: EdgeInsets.all(R.s(context, 12)),
                               decoration: BoxDecoration(
                                 color: AppColors.deepGreen
@@ -196,9 +257,22 @@ class _MosquesScreenState extends State<MosquesScreen> {
                                   SizedBox(height: R.s(context, 8)),
                                   Text(
                                     appState.tr('mosquesError'),
+                                    textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: AppColors.cream,
                                       fontSize: R.f(context, 12),
+                                    ),
+                                  ),
+                                  SizedBox(height: R.s(context, 4)),
+                                  Text(
+                                    _error!,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: AppColors.cream
+                                          .withValues(alpha: 0.5),
+                                      fontSize: R.f(context, 9),
                                     ),
                                   ),
                                   SizedBox(height: R.s(context, 8)),
@@ -245,10 +319,14 @@ class _MosquesScreenState extends State<MosquesScreen> {
         backgroundColor: AppColors.deepGreen,
       ),
       children: [
+        // ✅ خريطة داكنة (CARTO) مع بديل احتياطي (OpenStreetMap)
         TileLayer(
           urlTemplate:
-              'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-          userAgentPackageName: 'noor.al.hidayah.app',
+              'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c', 'd'],
+          fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          maxNativeZoom: 19,
+          userAgentPackageName: 'com.nooralhidayah.noor_al_hidayah',
         ),
         MarkerLayer(
           markers: [
