@@ -17,6 +17,7 @@ import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/community_notification_service.dart';
 import '../services/notification_service.dart';
+import '../services/prayer_countdown_service.dart';
 import '../widgets/app_branding.dart';
 import '../widgets/asset_icon.dart';
 import '../widgets/language_picker_sheet.dart';
@@ -203,6 +204,17 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Future<void> _updateOngoing() async {
+    final data = prayerState.data;
+    final hijri = appState.isArabic ? data?.hijriAr : data?.hijriEn;
+
+    // ✅ الإشعار الدائم المخصّص (Android): عدّاد حيّ + ألوان + تحديث تلقائي
+    final nativeOk = await prayerCountdownService.sync(
+      today: notificationService.collectPrayerTimes(),
+      hijri: hijri,
+    );
+    if (nativeOk) return;
+
+    // ---- احتياط: الإشعار العادي (إذا لم يتوفر الجزء الأصلي) ----
     final next = prayerState.nextPrayer();
     if (next == null) {
       debugPrint('[NOTIFICATION] No next prayer yet');
@@ -211,16 +223,9 @@ class _HomeShellState extends State<HomeShell> {
 
     final now = DateTime.now();
     final diff = next.at.difference(now);
-
     if (diff.isNegative) return;
 
     final isUrgent = diff.inMinutes < 10;
-
-    debugPrint('[NOTIFICATION] Next: ${next.key} · ${next.at} · urgent=$isUrgent');
-
-    final data = prayerState.data;
-    final hijri =
-        appState.isArabic ? data?.hijriAr : data?.hijriEn;
 
     await notificationService.showOngoingPrayer(
       prayerName: appState.tr(next.key),
