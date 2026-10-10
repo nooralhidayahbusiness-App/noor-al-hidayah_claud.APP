@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -125,10 +126,26 @@ class AdhanService {
     return null;
   }
 
+  /// ✅ الملف المدمج داخل التطبيق: assets/audio/adhan/<id>.mp3
+  /// (إن لم يكن موجوداً يعيد null ويستمر النظام بالطرق الأخرى)
+  Future<String?> _bundledAsset(String id) async {
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      final full = 'assets/audio/adhan/$id.mp3';
+      if (manifest.listAssets().contains(full)) {
+        return 'audio/adhan/$id.mp3'; // AssetSource يضيف assets/ تلقائياً
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// يحمّل صوت المؤذن ويحفظه على الجهاز. يعيد true عند النجاح.
   Future<bool> precache(String id) async {
     if (kIsWeb) return false;
     if (_downloading.contains(id)) return false;
+
+    // لا حاجة للتحميل إذا كان الأذان مدمجاً داخل التطبيق
+    if (await _bundledAsset(id) != null) return true;
 
     final existing = await _cachedFile(id);
     if (existing != null) return true;
@@ -180,8 +197,19 @@ class AdhanService {
 
       bool started = false;
 
+      // 0) الملف المدمج داخل التطبيق (الأضمن — يعمل بدون إنترنت دائماً)
+      final bundled = await _bundledAsset(id);
+      if (bundled != null) {
+        try {
+          await _player.play(AssetSource(bundled));
+          started = true;
+        } catch (e) {
+          debugPrint('[ADHAN] bundled play failed: $e');
+        }
+      }
+
       // 1) الملف المحفوظ على الجهاز (يعمل بدون إنترنت)
-      final cached = await _cachedFile(id);
+      final cached = started ? null : await _cachedFile(id);
       if (cached != null) {
         try {
           await _player.play(DeviceFileSource(cached.path));
