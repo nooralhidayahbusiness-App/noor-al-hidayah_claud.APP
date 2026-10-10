@@ -13,47 +13,48 @@ import 'services/push_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+/// تشغيل مهمة بدون أن يوقف خطؤها التطبيق
+Future<void> _safe(Future<void> Function() task) async {
+  try {
+    await task();
+  } catch (_) {}
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1) Firebase
-  try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
-  } catch (_) {}
-
-  // 2) الإشعارات المحلية
-  try {
-    await notificationService.init();
-    notificationService.onPrayerTap = (prayerKey, time) {
-      final nav = navigatorKey.currentState;
-      if (nav == null) return;
-      nav.push(
-        MaterialPageRoute(
-          builder: (_) => AdhanScreen(
-            prayerKey: prayerKey,
-            prayerTime: time,
-          ),
+  // الإشعارات: ربط فتح شاشة الأذان عند الضغط على الإشعار
+  notificationService.onPrayerTap = (prayerKey, time) {
+    final nav = navigatorKey.currentState;
+    if (nav == null) return;
+    nav.push(
+      MaterialPageRoute(
+        builder: (_) => AdhanScreen(
+          prayerKey: prayerKey,
+          prayerTime: time,
         ),
-      );
-    };
-  } catch (_) {}
+      ),
+    );
+  };
 
-  // 3) خدمة الأذان
-  try {
-    await adhanService.init();
-  } catch (_) {}
+  // ✅ تشغيل الخدمات بالتوازي بدل التسلسل (بداية أسرع)
+  await Future.wait([
+    _safe(() => Firebase.initializeApp(options: DefaultFirebaseOptions.web)),
+    _safe(() => notificationService.init()),
+    _safe(() => adhanService.init()),
+  ]);
 
-  // 4) راقب تسجيل الدخول
+  // راقب تسجيل الدخول
   authService.authChanges.listen((user) {
     if (user != null) {
       pushService.saveTokenForCurrentUser();
     }
   });
 
-  // 5) شغّل التطبيق
+  // شغّل التطبيق
   runApp(const NoorApp());
 
-  // 6) OneSignal بعد runApp
+  // OneSignal بعد runApp
   Future.microtask(() async {
     try {
       await pushService.init();
