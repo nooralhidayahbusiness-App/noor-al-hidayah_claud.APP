@@ -68,10 +68,6 @@
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
             android:exported="false">
-        <!-- ✅ Native Prayer Countdown Receiver -->
-        <receiver
-            android:name="com.nooralhidayah.noor_al_hidayah.PrayerCountdownReceiver"
-            android:exported="false" />
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
@@ -85,12 +81,12 @@
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false" />
 
-        <!-- ✅ الإشعار الدائم للصلاة القادمة: تحديث الألوان والعدّاد تلقائياً -->
+        <!-- ✅ Native Prayer Countdown Receiver -->
+        <!-- يُستدعى من AlarmManager + بعد إعادة تشغيل الجهاز -->
         <receiver
-            android:name=".PrayerCountdownReceiver"
+            android:name="com.nooralhidayah.noor_al_hidayah.PrayerCountdownReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.nooralhidayah.noor_al_hidayah.PRAYER_COUNTDOWN_TICK"/>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
             </intent-filter>
