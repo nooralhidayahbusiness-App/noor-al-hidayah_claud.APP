@@ -11,13 +11,23 @@ import 'auth_widgets.dart';
 import 'glass_card.dart';
 
 /// Verse of the day, hadith of the day and dua of the day.
-class DailyContentSection extends StatelessWidget {
+///
+/// ✅ تحسين الأداء: المحتوى يُحمَّل مرة واحدة فقط (كان يُعاد تحميله مع كل
+/// إعادة بناء للصفحة الرئيسية فيظهر دوران التحميل ويحدث تقطيع).
+class DailyContentSection extends StatefulWidget {
   const DailyContentSection({super.key});
+
+  @override
+  State<DailyContentSection> createState() => _DailyContentSectionState();
+}
+
+class _DailyContentSectionState extends State<DailyContentSection> {
+  late final Future<DailyContent> _future = DailyContentService.load();
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<DailyContent>(
-      future: DailyContentService.load(),
+      future: _future,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return ListenableBuilder(
