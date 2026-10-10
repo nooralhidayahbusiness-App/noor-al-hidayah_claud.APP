@@ -12,17 +12,47 @@ import 'number_text.dart';
 
 /// Next prayer: shimmering gold adhan icon, prayer name with its time,
 /// and the countdown.
-class NextPrayerCard extends StatelessWidget {
+///
+/// ✅ تحسين الأداء: البطاقة كلها لا تُعاد بناءً كل ثانية،
+/// فقط نص العدّاد التنازلي. وتُعاد بالكامل عند تغيّر الصلاة القادمة.
+class NextPrayerCard extends StatefulWidget {
   const NextPrayerCard({super.key});
+
+  @override
+  State<NextPrayerCard> createState() => _NextPrayerCardState();
+}
+
+class _NextPrayerCardState extends State<NextPrayerCard> {
+  DateTime? _shownNextAt;
+
+  @override
+  void initState() {
+    super.initState();
+    prayerState.now.addListener(_onTick);
+  }
+
+  @override
+  void dispose() {
+    prayerState.now.removeListener(_onTick);
+    super.dispose();
+  }
+
+  void _onTick() {
+    if (!mounted) return;
+    final next = prayerState.nextPrayer();
+    if (next?.at != _shownNextAt) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([appState, prayerState, prayerState.now]),
+      listenable: Listenable.merge([appState, prayerState]),
       builder: (context, _) {
         final next = prayerState.nextPrayer();
+        _shownNextAt = next?.at;
         if (next == null) return const SizedBox.shrink();
-        final remaining = next.at.difference(prayerState.now.value);
         final name = appState.tr(next.key);
         final iconSize = R.s(context, 118);
 
@@ -86,10 +116,17 @@ class NextPrayerCard extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            CountdownText(
-                              formatCountdown(remaining),
-                              fontSize: R.f(context, 32),
-                              color: AppColors.gold,
+                            // ✅ هذا فقط ما يتحدث كل ثانية
+                            ValueListenableBuilder<DateTime>(
+                              valueListenable: prayerState.now,
+                              builder: (context, now, _) {
+                                final remaining = next.at.difference(now);
+                                return CountdownText(
+                                  formatCountdown(remaining),
+                                  fontSize: R.f(context, 32),
+                                  color: AppColors.gold,
+                                );
+                              },
                             ),
                             SizedBox(height: R.s(context, 3)),
                             Text(
@@ -140,38 +177,41 @@ class _ShimmerAdhanIconState extends State<_ShimmerAdhanIcon>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _shimmer,
-      builder: (context, child) {
-        final t = _shimmer.value;
-        return ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (rect) {
-            return LinearGradient(
-              begin: Alignment(-1 - 2 * (1 - t), -0.4),
-              end: Alignment(-1 + 2 * t + 1, 0.4),
-              colors: const [
-                Color(0xFFB8860B), // ذهبي داكن
-                Color(0xFFD4AF37), // ذهبي
-                Color(0xFFFFF8E7), // كريمي لامع
-                Color(0xFFD4AF37),
-                Color(0xFFB8860B),
-              ],
-              stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
-            ).createShader(rect);
-          },
-          child: child,
-        );
-      },
-      child: Image.asset(
-        'assets/icons/adhan.png',
-        width: widget.size,
-        height: widget.size,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => Icon(
-          Icons.notifications_active_rounded,
-          size: widget.size,
-          color: AppColors.gold,
+    // ✅ RepaintBoundary: اللمعان لا يعيد رسم بقية البطاقة
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _shimmer,
+        builder: (context, child) {
+          final t = _shimmer.value;
+          return ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (rect) {
+              return LinearGradient(
+                begin: Alignment(-1 - 2 * (1 - t), -0.4),
+                end: Alignment(-1 + 2 * t + 1, 0.4),
+                colors: const [
+                  Color(0xFFB8860B), // ذهبي داكن
+                  Color(0xFFD4AF37), // ذهبي
+                  Color(0xFFFFF8E7), // كريمي لامع
+                  Color(0xFFD4AF37),
+                  Color(0xFFB8860B),
+                ],
+                stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+              ).createShader(rect);
+            },
+            child: child,
+          );
+        },
+        child: Image.asset(
+          'assets/icons/adhan.png',
+          width: widget.size,
+          height: widget.size,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => Icon(
+            Icons.notifications_active_rounded,
+            size: widget.size,
+            color: AppColors.gold,
+          ),
         ),
       ),
     );
