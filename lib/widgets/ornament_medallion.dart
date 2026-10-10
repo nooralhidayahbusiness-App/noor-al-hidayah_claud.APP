@@ -64,13 +64,16 @@ class _OrnamentMedallionState extends State<OrnamentMedallion>
                   painter: _MedallionBasePainter(bg: bg, gold: gold),
                 ),
               ),
+              // ✅ RepaintBoundary: النجمة تُرسم مرة واحدة ثم تدور على الـ GPU
               RotationTransition(
                 turns: _rotation,
-                child: SizedBox.expand(
-                  child: CustomPaint(
-                    painter: _MedallionOrnamentPainter(
-                      bg: bg,
-                      gold: gold,
+                child: RepaintBoundary(
+                  child: SizedBox.expand(
+                    child: CustomPaint(
+                      painter: _MedallionOrnamentPainter(
+                        bg: bg,
+                        gold: gold,
+                      ),
                     ),
                   ),
                 ),
@@ -83,11 +86,15 @@ class _OrnamentMedallionState extends State<OrnamentMedallion>
             ],
           ),
         );
-        if (!widget.glow) return medallion;
-        return GlowSparks(
-          spread: size * 0.3,
-          sparks: 6,
-          child: medallion,
+
+        // ✅ عزل كل ميدالية: أنيميشنها لا يعيد رسم الشاشة كلها
+        if (!widget.glow) return RepaintBoundary(child: medallion);
+        return RepaintBoundary(
+          child: GlowSparks(
+            spread: size * 0.3,
+            sparks: 6,
+            child: medallion,
+          ),
         );
       },
     );
