@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/mosque.dart';
 
@@ -9,69 +11,88 @@ class MosquesService {
   MosquesService._();
   static final MosquesService instance = MosquesService._();
 
-  /// نلف الطلب بـ CORS proxy ليعمل على الويب.
-  static const String _proxy = 'https://api.allorigins.win/raw?url=';
-  static const String _overpass =
-      'https://overpass-api.de/api/interpreter';
+  /// عدة خوادم Overpass — إذا فشل الأول ننتقل للتالي تلقائياً.
+  static const List<String> _endpoints = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass.private.coffee/api/interpreter',
+  ];
+
+  static const String _cacheKey = 'mosques_cache_v1';
+
+  /// أقصى عدد مساجد تُعرض (الأقرب أولاً) للحفاظ على سرعة الخريطة.
+  static const int _maxResults = 80;
 
   Future<List<Mosque>> findNearby({
     required double latitude,
     required double longitude,
     int radiusMeters = 10000,
   }) async {
-    final query = '[out:json][timeout:60];'
-        'node["amenity"="place_of_worship"]["religion"="muslim"]'
+    // nwr = نقاط + مبانٍ + علاقات (كثير من المساجد مرسومة كمبنى وليس نقطة)
+    final query = '[out:json][timeout:25];'
+        'nwr["amenity"="place_of_worship"]["religion"="muslim"]'
         '(around:$radiusMeters,$latitude,$longitude);'
-        'out;';
+        'out tags center;';
 
-    final overpassUrl = Uri.parse(_overpass);
-    final finalUrl = Uri.parse(
-      '$_proxy${Uri.encodeComponent(overpassUrl.toString())}'
-      '&data=${Uri.encodeComponent(query)}',
-    );
+    final cacheId = _cacheId(latitude, longitude, radiusMeters);
 
-    http.Response res;
-    try {
-      res = await http
-          .get(
-            finalUrl,
-            headers: {'User-Agent': 'NoorAlHidayahApp/1.0'},
-          )
-          .timeout(const Duration(seconds: 45));
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
-
-    if (res.statusCode != 200) {
-      throw Exception('HTTP ${res.statusCode}');
-    }
-
-    // مع CORS proxy، قد يكون الرد بتنسيق غير مباشر.
-    var body = res.body;
-    if (!body.contains('"elements"')) {
-      // محاولة فك التغليف
+    String? lastError;
+    for (final endpoint in _endpoints) {
       try {
-        final wrapped = json.decode(body);
-        if (wrapped is Map && wrapped['contents'] != null) {
-          body = wrapped['contents'] as String;
+        final res = await http.post(
+          Uri.parse(endpoint),
+          headers: {'User-Agent': 'NoorAlHidayahApp/1.0'},
+          body: {'data': query},
+        ).timeout(const Duration(seconds: 25));
+
+        if (res.statusCode != 200) {
+          lastError = 'HTTP ${res.statusCode}';
+          debugPrint('[MOSQUES] $endpoint → ${res.statusCode}');
+          continue;
         }
-      } catch (_) {}
+
+        final data = json.decode(utf8.decode(res.bodyBytes))
+            as Map<String, dynamic>;
+        final elements = (data['elements'] as List?) ?? [];
+        final raw = _parseRaw(elements);
+
+        await _saveCache(cacheId, raw);
+        return _build(raw, latitude, longitude);
+      } catch (e) {
+        lastError = e.toString();
+        debugPrint('[MOSQUES] $endpoint failed: $e');
+      }
     }
 
-    if (!body.contains('"elements"')) {
-      throw Exception('Invalid response from Overpass');
+    // كل الخوادم فشلت → استخدم آخر نتيجة محفوظة لنفس المنطقة
+    final cached = await _loadCache(cacheId);
+    if (cached != null) {
+      debugPrint('[MOSQUES] using cached results');
+      return _build(cached, latitude, longitude);
     }
 
-    final data = json.decode(body) as Map<String, dynamic>;
-    final elements = (data['elements'] as List?) ?? [];
+    throw Exception(lastError ?? 'Network error');
+  }
 
-    final list = <Mosque>[];
+  // ============================================================
+  // تحويل عناصر Overpass إلى بيانات خام مبسّطة
+  // ============================================================
+  List<Map<String, dynamic>> _parseRaw(List elements) {
+    final out = <Map<String, dynamic>>[];
     for (final el in elements) {
-      final e = el as Map<String, dynamic>;
+      if (el is! Map) continue;
+      final e = Map<String, dynamic>.from(el);
       final tags = (e['tags'] as Map?) ?? {};
 
-      final lat = (e['lat'] as num?)?.toDouble();
-      final lng = (e['lon'] as num?)?.toDouble();
+      double? lat = (e['lat'] as num?)?.toDouble();
+      double? lng = (e['lon'] as num?)?.toDouble();
+
+      // المباني والعلاقات: الإحداثيات داخل center
+      final center = e['center'];
+      if ((lat == null || lng == null) && center is Map) {
+        lat = (center['lat'] as num?)?.toDouble();
+        lng = (center['lon'] as num?)?.toDouble();
+      }
       if (lat == null || lng == null) continue;
 
       final name = (tags['name:ar'] as String?) ??
@@ -79,23 +100,84 @@ class MosquesService {
           (tags['name:en'] as String?) ??
           'مسجد';
 
-      final address = _buildAddress(tags);
-      final distKm = _haversine(latitude, longitude, lat, lng);
-      final brg = _bearing(latitude, longitude, lat, lng);
+      out.add({
+        'id': '${e['type']}_${e['id']}',
+        'name': name,
+        'lat': lat,
+        'lng': lng,
+        'address': _buildAddress(tags),
+      });
+    }
+    return out;
+  }
 
+  List<Mosque> _build(
+    List<Map<String, dynamic>> raw,
+    double latitude,
+    double longitude,
+  ) {
+    final list = <Mosque>[];
+    for (final r in raw) {
+      final lat = (r['lat'] as num).toDouble();
+      final lng = (r['lng'] as num).toDouble();
       list.add(Mosque(
-        id: e['id'].toString(),
-        name: name,
+        id: r['id'].toString(),
+        name: r['name'].toString(),
         latitude: lat,
         longitude: lng,
-        address: address,
-        distanceKm: distKm,
-        bearing: brg,
+        address: r['address'] as String?,
+        distanceKm: _haversine(latitude, longitude, lat, lng),
+        bearing: _bearing(latitude, longitude, lat, lng),
       ));
     }
-
     list.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
-    return list;
+    return list.length > _maxResults ? list.sublist(0, _maxResults) : list;
+  }
+
+  // ============================================================
+  // التخزين المؤقت (للعمل عند ضعف الشبكة)
+  // ============================================================
+  String _cacheId(double lat, double lng, int radius) =>
+      '${lat.toStringAsFixed(2)}_${lng.toStringAsFixed(2)}_$radius';
+
+  Future<void> _saveCache(
+    String id,
+    List<Map<String, dynamic>> raw,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // نحفظ الأقرب فقط لتقليل الحجم
+      final trimmed = raw.length > 150 ? raw.sublist(0, 150) : raw;
+      await prefs.setString(
+        _cacheKey,
+        json.encode({
+          'id': id,
+          'savedAt': DateTime.now().toIso8601String(),
+          'items': trimmed,
+        }),
+      );
+    } catch (_) {}
+  }
+
+  Future<List<Map<String, dynamic>>?> _loadCache(String id) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final text = prefs.getString(_cacheKey);
+      if (text == null) return null;
+      final data = json.decode(text) as Map<String, dynamic>;
+      if (data['id'] != id) return null;
+
+      final savedAt = DateTime.tryParse(data['savedAt'] as String? ?? '');
+      if (savedAt == null ||
+          DateTime.now().difference(savedAt).inDays > 7) {
+        return null;
+      }
+      return (data['items'] as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } catch (_) {
+      return null;
+    }
   }
 
   String? _buildAddress(Map tags) {
