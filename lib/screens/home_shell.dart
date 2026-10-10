@@ -50,6 +50,9 @@ class _HomeShellState extends State<HomeShell> {
   bool _rescheduleInFlight = false;
   DateTime? _lastRescheduledPrayerDay;
 
+  // ✅ التبويبات تُبنى عند أول زيارة فقط (يسرّع فتح التطبيق)
+  final Set<int> _visited = {0};
+
   static const String _kOpenCount = 'app_open_count';
   static const String _kShown2 = 'premium_promo_shown_2';
   static const String _kShown5 = 'premium_promo_shown_5';
@@ -309,7 +312,13 @@ class _HomeShellState extends State<HomeShell> {
     } catch (_) {}
   }
 
-  void _select(int index) => setState(() => _index = index);
+  void _select(int index) => setState(() {
+        _index = index;
+        _visited.add(index);
+      });
+
+  Widget _lazyTab(int i, Widget Function() build) =>
+      _visited.contains(i) ? build() : const SizedBox.shrink();
 
   @override
   Widget build(BuildContext context) {
@@ -395,12 +404,12 @@ class _HomeShellState extends State<HomeShell> {
                     child: IndexedStack(
                       index: _index,
                       children: [
-                        HomeTab(onOpenTab: _select),
-                        const QuranBrowserTab(),
-                        const AdhkarTab(),
-                        const ChallengeScreen(),
-                        const CommunityTab(),
-                        const MoreTab(),
+                        _lazyTab(0, () => HomeTab(onOpenTab: _select)),
+                        _lazyTab(1, () => const QuranBrowserTab()),
+                        _lazyTab(2, () => const AdhkarTab()),
+                        _lazyTab(3, () => const ChallengeScreen()),
+                        _lazyTab(4, () => const CommunityTab()),
+                        _lazyTab(5, () => const MoreTab()),
                       ],
                     ),
                   ),
