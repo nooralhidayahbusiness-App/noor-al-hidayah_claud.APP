@@ -593,6 +593,8 @@ class _StoreCard extends StatelessWidget {
       return Image.asset(
         item.imagePath!,
         fit: BoxFit.cover,
+        // ✅ تصغير الصورة عند فك الترميز (المتجر كان يحمّل صوراً كاملة الحجم)
+        cacheWidth: 450,
         errorBuilder: (_, _, _) => _gradientBg(),
       );
     }
