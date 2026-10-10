@@ -20,3 +20,12 @@ class MainActivity : FlutterActivity() {
                     PrayerCountdown.update(applicationContext, json)
                     result.success(true)
                 }
+                "cancel" -> {
+                    PrayerCountdown.cancel(applicationContext)
+                    result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
+    }
+}
