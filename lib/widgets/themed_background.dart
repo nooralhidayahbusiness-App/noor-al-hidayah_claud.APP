@@ -44,6 +44,42 @@ class ThemedBackground extends StatelessWidget {
   }
 }
 
+/// بيانات نجمة واحدة (تُحسب مرة واحدة فقط بدل كل إطار)
+class _StarData {
+  const _StarData({
+    required this.fx,
+    required this.fy,
+    required this.phase,
+    required this.speed,
+    required this.radius,
+  });
+
+  final double fx; // نسبة من العرض
+  final double fy; // نسبة من الارتفاع
+  final double phase;
+  final double speed;
+  final double radius;
+}
+
+/// نفس القيم العشوائية السابقة تماماً (Random(99)) → نفس الشكل بالضبط
+final List<_StarData> _kStars = () {
+  final rnd = math.Random(99);
+  return List<_StarData>.generate(45, (_) {
+    final fx = rnd.nextDouble();
+    final fy = rnd.nextDouble();
+    final phase = rnd.nextDouble() * math.pi * 2;
+    final speed = 0.25 + rnd.nextDouble() * 0.6;
+    final radius = 1.5 + rnd.nextDouble() * 2.5;
+    return _StarData(
+      fx: fx,
+      fy: fy,
+      phase: phase,
+      speed: speed,
+      radius: radius,
+    );
+  });
+}();
+
 class _AnimatedVipOverlay extends StatefulWidget {
   const _AnimatedVipOverlay({required this.palette, required this.child});
 
@@ -99,13 +135,17 @@ class _AnimatedVipOverlayState extends State<_AnimatedVipOverlay>
         ),
 
         // 2) نجوم متحركة
+        // ✅ RepaintBoundary: الأنيميشن لا يعيد رسم بقية الشاشة
         IgnorePointer(
-          child: AnimatedBuilder(
-            animation: _stars,
-            builder: (context, _) => CustomPaint(
-              painter: _VipStarsPainter(
-                progress: _stars.value,
-                gold: widget.palette.gold,
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _stars,
+              builder: (context, _) => CustomPaint(
+                size: Size.infinite,
+                painter: _VipStarsPainter(
+                  progress: _stars.value,
+                  gold: widget.palette.gold,
+                ),
               ),
             ),
           ),
@@ -113,49 +153,53 @@ class _AnimatedVipOverlayState extends State<_AnimatedVipOverlay>
 
         // 3) Shimmer ذهبي
         IgnorePointer(
-          child: AnimatedBuilder(
-            animation: _shimmer,
-            builder: (context, _) {
-              final t = _shimmer.value;
-              return DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment(-1 - 2 * (1 - t), -0.5),
-                    end: Alignment(-1 + 2 * t + 1, 0.5),
-                    colors: [
-                      Colors.transparent,
-                      widget.palette.gold.withValues(alpha: 0.05),
-                      widget.palette.gold.withValues(alpha: 0.20),
-                      widget.palette.gold.withValues(alpha: 0.05),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _shimmer,
+              builder: (context, _) {
+                final t = _shimmer.value;
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment(-1 - 2 * (1 - t), -0.5),
+                      end: Alignment(-1 + 2 * t + 1, 0.5),
+                      colors: [
+                        Colors.transparent,
+                        widget.palette.gold.withValues(alpha: 0.05),
+                        widget.palette.gold.withValues(alpha: 0.20),
+                        widget.palette.gold.withValues(alpha: 0.05),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
 
         // 4) توهج نابض
         IgnorePointer(
-          child: AnimatedBuilder(
-            animation: _glow,
-            builder: (context, _) {
-              return DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 0.7 + _glow.value * 0.4,
-                    colors: [
-                      widget.palette.gold
-                          .withValues(alpha: 0.03 + 0.08 * _glow.value),
-                      Colors.transparent,
-                    ],
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _glow,
+              builder: (context, _) {
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment.center,
+                      radius: 0.7 + _glow.value * 0.4,
+                      colors: [
+                        widget.palette.gold
+                            .withValues(alpha: 0.03 + 0.08 * _glow.value),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
 
@@ -174,27 +218,23 @@ class _VipStarsPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rnd = math.Random(99);
     final paint = Paint();
 
-    for (int i = 0; i < 45; i++) {
-      final x = rnd.nextDouble() * size.width;
-      final baseY = rnd.nextDouble() * size.height;
-      final phase = rnd.nextDouble() * math.pi * 2;
-      final speed = 0.25 + rnd.nextDouble() * 0.6;
-      final radius = 1.5 + rnd.nextDouble() * 2.5;
+    for (final star in _kStars) {
+      final x = star.fx * size.width;
+      final baseY = star.fy * size.height;
 
-      final y =
-          baseY - (progress * size.height * 0.45 * speed) % size.height;
+      final y = baseY -
+          (progress * size.height * 0.45 * star.speed) % size.height;
       final wrapped = (y + size.height) % size.height;
       final alpha =
-          0.35 + 0.65 * (0.5 + 0.5 * math.sin(progress * 8 + phase));
+          0.35 + 0.65 * (0.5 + 0.5 * math.sin(progress * 8 + star.phase));
 
       paint.color = gold.withValues(alpha: alpha * 0.25);
-      canvas.drawCircle(Offset(x, wrapped), radius * 2.5, paint);
+      canvas.drawCircle(Offset(x, wrapped), star.radius * 2.5, paint);
 
       paint.color = gold.withValues(alpha: alpha);
-      canvas.drawCircle(Offset(x, wrapped), radius, paint);
+      canvas.drawCircle(Offset(x, wrapped), star.radius, paint);
     }
   }
 
