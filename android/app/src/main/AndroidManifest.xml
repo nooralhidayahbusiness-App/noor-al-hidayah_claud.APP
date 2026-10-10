@@ -68,7 +68,7 @@
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
             android:exported="false">
-            <!-- ✅ Native Prayer Countdown Receiver -->
+        <!-- ✅ Native Prayer Countdown Receiver -->
         <receiver
             android:name="com.nooralhidayah.noor_al_hidayah.PrayerCountdownReceiver"
             android:exported="false" />
