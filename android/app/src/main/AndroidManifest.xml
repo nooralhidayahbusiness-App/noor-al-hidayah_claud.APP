@@ -65,12 +65,8 @@
             android:value="ca-app-pub-7354273374998913~5567231375"/>
 
         <meta-data
-    android:name="com.onesignal.messaging.default_notification_icon"
-    android:resource="@drawable/ic_notification" />
-
-<meta-data
-    android:name="com.onesignal.messaging.default_notification_accent_color"
-    android:resource="@color/onesignal_accent_color" />
+            android:name="com.onesignal.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
         
         <!-- ✅ Boot Receiver لإعادة الجدولة بعد restart -->
         <receiver
