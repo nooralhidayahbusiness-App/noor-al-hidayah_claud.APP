@@ -4,6 +4,42 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 
+/// بيانات نجمة واحدة (تُحسب مرة واحدة بدل كل إطار)
+class _StarData {
+  const _StarData({
+    required this.fx,
+    required this.fy,
+    required this.phase,
+    required this.speed,
+    required this.radius,
+  });
+
+  final double fx;
+  final double fy;
+  final double phase;
+  final double speed;
+  final double radius;
+}
+
+/// نفس القيم العشوائية السابقة (Random(42)) → نفس الشكل بالضبط
+final List<_StarData> _kStars = () {
+  final rnd = math.Random(42);
+  return List<_StarData>.generate(25, (_) {
+    final fx = rnd.nextDouble();
+    final fy = rnd.nextDouble();
+    final phase = rnd.nextDouble() * math.pi * 2;
+    final speed = 0.3 + rnd.nextDouble() * 0.7;
+    final radius = 1.0 + rnd.nextDouble() * 1.8;
+    return _StarData(
+      fx: fx,
+      fy: fy,
+      phase: phase,
+      speed: speed,
+      radius: radius,
+    );
+  });
+}();
+
 /// خلفية VIP متحركة: zoom بطيء + نجوم + shimmer + طبقة الثيم فوقها.
 class AnimatedVipBackground extends StatefulWidget {
   const AnimatedVipBackground({
@@ -55,16 +91,20 @@ class _AnimatedVipBackgroundState extends State<AnimatedVipBackground>
       fit: StackFit.expand,
       children: [
         // 1) الصورة مع zoom بطيء
+        // ✅ الصورة في طبقة مستقلة: التكبير يتم على مستوى الـ GPU بدون إعادة رسمها
         AnimatedBuilder(
           animation: _zoom,
-          builder: (context, _) {
+          child: RepaintBoundary(
+            child: Image.asset(
+              widget.imagePath,
+              fit: BoxFit.cover,
+            ),
+          ),
+          builder: (context, child) {
             final scale = 1.0 + 0.08 * _zoom.value;
             return Transform.scale(
               scale: scale,
-              child: Image.asset(
-                widget.imagePath,
-                fit: BoxFit.cover,
-              ),
+              child: child,
             );
           },
         ),
@@ -82,37 +122,42 @@ class _AnimatedVipBackgroundState extends State<AnimatedVipBackground>
 
         // 3) نجوم متحركة
         IgnorePointer(
-          child: AnimatedBuilder(
-            animation: _stars,
-            builder: (context, _) => CustomPaint(
-              painter: _StarsPainter(_stars.value),
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _stars,
+              builder: (context, _) => CustomPaint(
+                size: Size.infinite,
+                painter: _StarsPainter(_stars.value),
+              ),
             ),
           ),
         ),
 
         // 4) shimmer
         IgnorePointer(
-          child: AnimatedBuilder(
-            animation: _shimmer,
-            builder: (context, _) {
-              final t = _shimmer.value;
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment(-1 - 2 * (1 - t), -0.5),
-                    end: Alignment(-1 + 2 * t + 1, 0.5),
-                    colors: [
-                      Colors.transparent,
-                      AppColors.gold.withValues(alpha: 0.08),
-                      AppColors.gold.withValues(alpha: 0.18),
-                      AppColors.gold.withValues(alpha: 0.08),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _shimmer,
+              builder: (context, _) {
+                final t = _shimmer.value;
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment(-1 - 2 * (1 - t), -0.5),
+                      end: Alignment(-1 + 2 * t + 1, 0.5),
+                      colors: [
+                        Colors.transparent,
+                        AppColors.gold.withValues(alpha: 0.08),
+                        AppColors.gold.withValues(alpha: 0.18),
+                        AppColors.gold.withValues(alpha: 0.08),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
 
@@ -133,23 +178,20 @@ class _StarsPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rnd = math.Random(42);
-    final paint = Paint()..color = AppColors.gold;
+    final paint = Paint();
 
-    for (int i = 0; i < 25; i++) {
-      final baseX = rnd.nextDouble() * size.width;
-      final baseY = rnd.nextDouble() * size.height;
-      final phase = rnd.nextDouble() * math.pi * 2;
-      final speed = 0.3 + rnd.nextDouble() * 0.7;
-      final radius = 1.0 + rnd.nextDouble() * 1.8;
+    for (final star in _kStars) {
+      final baseX = star.fx * size.width;
+      final baseY = star.fy * size.height;
 
-      final y = baseY - (progress * size.height * 0.3 * speed) % size.height;
+      final y = baseY -
+          (progress * size.height * 0.3 * star.speed) % size.height;
       final wrappedY = (y + size.height) % size.height;
       final alpha =
-          0.3 + 0.7 * (0.5 + 0.5 * math.sin(progress * 6 + phase));
+          0.3 + 0.7 * (0.5 + 0.5 * math.sin(progress * 6 + star.phase));
 
       paint.color = AppColors.gold.withValues(alpha: alpha);
-      canvas.drawCircle(Offset(baseX, wrappedY), radius, paint);
+      canvas.drawCircle(Offset(baseX, wrappedY), star.radius, paint);
     }
   }
 
