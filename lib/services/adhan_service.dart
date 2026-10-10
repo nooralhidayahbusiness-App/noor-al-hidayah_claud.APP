@@ -126,7 +126,7 @@ class AdhanService {
     return null;
   }
 
-  /// ✅ الملف المدمج داخل التطبيق: assets/audio/adhan/<id>.mp3
+  /// ✅ الملف المدمج داخل التطبيق: `assets/audio/adhan/<id>.mp3`
   /// (إن لم يكن موجوداً يعيد null ويستمر النظام بالطرق الأخرى)
   Future<String?> _bundledAsset(String id) async {
     try {
