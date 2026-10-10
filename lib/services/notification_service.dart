@@ -28,11 +28,14 @@ class NotificationService {
   bool _initialized = false;
   bool _supported = false;
 
-  /// آخر خطأ حدث أثناء الجدولة (يظهر في رسالة الاختبار)
   String lastError = '';
 
   OnPrayerTap? onPrayerTap;
   NotificationResponse? _pendingLaunchResponse;
+
+  // ✅ أيقونة الإشعار (silhouette بيضاء)
+  static const String _smallIcon = '@drawable/ic_notification';
+  static const String _largeIcon = '@mipmap/ic_launcher';
 
   static const _prayerIds = {
     'fajr': 100,
@@ -42,7 +45,6 @@ class NotificationService {
     'isha': 104,
   };
 
-  /// عدد الأيام التي تُجدول مسبقاً (اليوم + الأيام التالية)
   static const int _daysAhead = 3;
 
   static const _dailyChallengeId = 300;
@@ -75,7 +77,7 @@ class NotificationService {
         debugPrint('[ERROR] Timezone: $e');
       }
 
-      const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const android = AndroidInitializationSettings(_smallIcon);
       const ios = DarwinInitializationSettings(
         requestAlertPermission: false,
         requestBadgePermission: false,
@@ -111,7 +113,7 @@ class NotificationService {
 
       await android?.createNotificationChannel(
         const AndroidNotificationChannel(
-          'prayer_channel_v4',
+          'prayer_channel_v5',
           'Prayer Notifications',
           description: 'Adhan notifications',
           importance: Importance.max,
@@ -123,7 +125,7 @@ class NotificationService {
 
       await android?.createNotificationChannel(
         const AndroidNotificationChannel(
-          'ongoing_prayer_channel_v4',
+          'ongoing_prayer_channel_v5',
           'Next Prayer Countdown',
           description: 'Persistent next prayer countdown',
           importance: Importance.low,
@@ -134,7 +136,7 @@ class NotificationService {
 
       await android?.createNotificationChannel(
         const AndroidNotificationChannel(
-          'daily_channel_v3',
+          'daily_channel_v4',
           'Daily Reminders',
           description: 'Daily reminders',
           importance: Importance.defaultImportance,
@@ -229,7 +231,6 @@ class NotificationService {
     } catch (_) {}
   }
 
-  /// ✅ جدولة بدقة عالية (alarmClock) مع بديل احتياطي (inexact)
   Future<void> _zonedScheduleSafe({
     required int id,
     required String title,
@@ -269,11 +270,12 @@ class NotificationService {
   NotificationDetails _prayerDetails({Color? color}) {
     return NotificationDetails(
       android: AndroidNotificationDetails(
-        'prayer_channel_v4',
+        'prayer_channel_v5',
         appState.tr('notifChannelPrayer'),
         importance: Importance.max,
         priority: Priority.max,
-        icon: '@mipmap/ic_launcher',
+        icon: _smallIcon,
+        largeIcon: const DrawableResourceAndroidBitmap(_largeIcon),
         playSound: true,
         enableVibration: true,
         category: AndroidNotificationCategory.alarm,
@@ -384,11 +386,12 @@ class NotificationService {
         body,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'ongoing_prayer_channel_v4',
+            'ongoing_prayer_channel_v5',
             appState.tr('notifChannelPrayer'),
             importance: Importance.low,
             priority: Priority.low,
-            icon: '@mipmap/ic_launcher',
+            icon: _smallIcon,
+            largeIcon: const DrawableResourceAndroidBitmap(_largeIcon),
             ongoing: true,
             autoCancel: false,
             showWhen: true,
@@ -430,7 +433,6 @@ class NotificationService {
     } catch (_) {}
   }
 
-  /// معرّف إشعار الصلاة ليوم معيّن (0 = اليوم، 1 = غداً ...)
   int _prayerNotifId(String name, int dayOffset) {
     final base = _prayerIds[name] ?? 100;
     return base + (dayOffset * 10);
@@ -441,8 +443,6 @@ class NotificationService {
 
     debugPrint('[ALARM] Rescheduling ${prayers.length} prayers');
 
-    // ✅ نلغي إشعارات الصلاة والتذكيرات فقط
-    // (cancelAll كان يمسح الإشعار الدائم وإشعار الاختبار أيضاً)
     try {
       for (int d = 0; d < _daysAhead; d++) {
         for (final name in _prayerIds.keys) {
@@ -564,11 +564,12 @@ class NotificationService {
         tz.TZDateTime.from(first, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'daily_channel_v3',
+            'daily_channel_v4',
             appState.tr('notifChannelDaily'),
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
-            icon: '@mipmap/ic_launcher',
+            icon: _smallIcon,
+            largeIcon: const DrawableResourceAndroidBitmap(_largeIcon),
           ),
           iOS: const DarwinNotificationDetails(),
         ),
