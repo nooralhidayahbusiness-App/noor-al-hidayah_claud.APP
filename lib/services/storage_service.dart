@@ -13,8 +13,11 @@ class StorageService {
   static const _address = 'location_address';
   static const _label = 'location_label';
 
-  // ✅ جديد: cache لمواقيت الصلاة
+  // cache قديم ليوم واحد (يبقى كاحتياط أخير)
   static const _prayerCacheKey = 'prayer_times_cache_v2';
+
+  // ✅ جديد: تقويم مواقيت الصلاة لعدة أسابيع (للعمل بدون إنترنت)
+  static const _calendarKey = 'prayer_calendar_v1';
 
   Future<SavedLocation?> loadLocation() async {
     try {
@@ -78,7 +81,7 @@ class StorageService {
   }
 
   // ============================================================
-  // ✅ cache لمواقيت الصلاة
+  // cache قديم لمواقيت يوم واحد (احتياط)
   // ============================================================
 
   /// يحفظ JSON مواقيت الصلاة كـ cache.
@@ -132,6 +135,116 @@ class StorageService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_prayerCacheKey);
+      await prefs.remove(_calendarKey);
     } catch (_) {}
+  }
+
+  // ============================================================
+  // ✅ تقويم مواقيت الصلاة (أيام متعددة)
+  // المفتاح: التاريخ الميلادي بصيغة dd-MM-yyyy
+  // ============================================================
+
+  /// يحوّل "dd-MM-yyyy" إلى تاريخ.
+  DateTime? _parseDateKey(String key) {
+    final p = key.split('-');
+    if (p.length != 3) return null;
+    final d = int.tryParse(p[0]);
+    final m = int.tryParse(p[1]);
+    final y = int.tryParse(p[2]);
+    if (d == null || m == null || y == null) return null;
+    return DateTime(y, m, d);
+  }
+
+  /// يحفظ أيام التقويم لموقع معيّن (يدمجها مع المحفوظ لنفس الموقع).
+  Future<void> saveCalendarDays(
+    String locationKey,
+    Map<String, Map<String, dynamic>> days,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      Map<String, dynamic> merged = {};
+      final raw = prefs.getString(_calendarKey);
+      if (raw != null) {
+        try {
+          final decoded = jsonDecode(raw) as Map<String, dynamic>;
+          if (decoded['locationKey'] == locationKey) {
+            merged = Map<String, dynamic>.from(
+              (decoded['days'] as Map?) ?? {},
+            );
+          }
+        } catch (_) {}
+      }
+
+      merged.addAll(days);
+
+      // نحذف الأيام القديمة (أقدم من أمس) لتقليل الحجم
+      final now = DateTime.now();
+      final cutoff = DateTime(now.year, now.month, now.day)
+          .subtract(const Duration(days: 1));
+      merged.removeWhere((key, _) {
+        final d = _parseDateKey(key);
+        return d == null || d.isBefore(cutoff);
+      });
+
+      await prefs.setString(
+        _calendarKey,
+        jsonEncode({
+          'locationKey': locationKey,
+          'savedAt': DateTime.now().toIso8601String(),
+          'days': merged,
+        }),
+      );
+    } catch (e) {
+      debugPrint('saveCalendarDays error: $e');
+    }
+  }
+
+  /// يعيد بيانات يوم معيّن من التقويم المحفوظ (أو null).
+  Future<Map<String, dynamic>?> loadCalendarDay(
+    String locationKey,
+    String dateKey,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_calendarKey);
+      if (raw == null) return null;
+
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      if (decoded['locationKey'] != locationKey) return null;
+
+      final days = decoded['days'] as Map?;
+      final day = days?[dateKey];
+      if (day is Map) return Map<String, dynamic>.from(day);
+      return null;
+    } catch (e) {
+      debugPrint('loadCalendarDay error: $e');
+      return null;
+    }
+  }
+
+  /// عدد الأيام المحفوظة من اليوم فصاعداً (لمعرفة متى نحدّث التقويم).
+  Future<int> calendarDaysAhead(String locationKey) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_calendarKey);
+      if (raw == null) return 0;
+
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      if (decoded['locationKey'] != locationKey) return 0;
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final days = (decoded['days'] as Map?) ?? {};
+
+      var count = 0;
+      for (final key in days.keys) {
+        final d = _parseDateKey(key.toString());
+        if (d != null && !d.isBefore(today)) count++;
+      }
+      return count;
+    } catch (_) {
+      return 0;
+    }
   }
 }
