@@ -50,10 +50,14 @@ public class PrayerCountdown {
     // ✅ عرض الإشعار
     private static void showNotification(Context context, JSONObject obj) {
         try {
-            String prayerName = obj.optString("prayer", "");
-            long targetTime  = obj.optLong("targetTime", 0L);
-            boolean urgent   = obj.optBoolean("urgent", false);
-            String hijri     = obj.optString("hijri", "");
+            String nameAr     = obj.optString("nameAr", "");
+            String nameEn     = obj.optString("nameEn", "");
+            String label      = obj.optString("label", "");
+            String appName    = obj.optString("appName", "Noor Al-Hidayah");
+            String dateStr    = obj.optString("date", "");
+            String hijri      = obj.optString("hijri", "");
+            long   targetTime = obj.optLong("targetTime", 0L);
+            boolean urgent    = obj.optBoolean("urgent", false);
 
             NotificationManager nm =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -81,47 +85,66 @@ public class PrayerCountdown {
                 R.layout.notification_prayer_big
             );
 
-            // نصوص اسم الصلاة
-            smallView.setTextViewText(R.id.notif_prayer_name, prayerName);
-            bigView.setTextViewText(R.id.notif_prayer_name, prayerName);
+            // ============ تعبئة النصوص ============
+            // اسم التطبيق + Label
+            smallView.setTextViewText(R.id.pc_app_name, appName);
+            smallView.setTextViewText(R.id.pc_label, label);
+
+            bigView.setTextViewText(R.id.pc_app_name, appName);
+            bigView.setTextViewText(R.id.pc_label, label);
+
+            // اسم الصلاة (عربي/إنجليزي)
+            smallView.setTextViewText(R.id.pc_name_ar, nameAr);
+            smallView.setTextViewText(R.id.pc_name_en, nameEn);
+
+            bigView.setTextViewText(R.id.pc_name_ar, nameAr);
+            bigView.setTextViewText(R.id.pc_name_en, nameEn);
+
+            // التاريخ الميلادي
+            if (dateStr != null && !dateStr.isEmpty()) {
+                bigView.setTextViewText(R.id.pc_date, dateStr);
+            }
 
             // التاريخ الهجري
             if (hijri != null && !hijri.isEmpty()) {
-                smallView.setTextViewText(R.id.notif_hijri, hijri);
-                bigView.setTextViewText(R.id.notif_hijri, hijri);
+                bigView.setTextViewText(R.id.pc_hijri, hijri);
             }
 
-            // عدّاد تنازلي حي
+            // ============ العدّاد التنازلي ============
             if (targetTime > 0) {
-                smallView.setChronometerCountDown(R.id.notif_chronometer, true);
+                smallView.setChronometerCountDown(R.id.pc_counter, true);
                 smallView.setChronometer(
-                    R.id.notif_chronometer, targetTime, null, true
+                    R.id.pc_counter, targetTime, null, true
                 );
-                bigView.setChronometerCountDown(R.id.notif_chronometer, true);
+
+                bigView.setChronometerCountDown(R.id.pc_counter, true);
                 bigView.setChronometer(
-                    R.id.notif_chronometer, targetTime, null, true
+                    R.id.pc_counter, targetTime, null, true
                 );
             }
 
-            // Intent لفتح التطبيق عند النقر
+            // ============ Intent لفتح التطبيق ============
             Intent launchIntent = context.getPackageManager()
                 .getLaunchIntentForPackage(context.getPackageName());
+
             PendingIntent pendingIntent = null;
             if (launchIntent != null) {
                 launchIntent.setFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK |
                     Intent.FLAG_ACTIVITY_CLEAR_TOP
                 );
+
                 int flags = PendingIntent.FLAG_UPDATE_CURRENT;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
+
                 pendingIntent = PendingIntent.getActivity(
                     context, 0, launchIntent, flags
                 );
             }
 
-            // بناء الإشعار
+            // ============ بناء الإشعار ============
             NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(context, CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_notification)
@@ -135,7 +158,7 @@ public class PrayerCountdown {
                     .setCategory(NotificationCompat.CATEGORY_STATUS)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
-            // لون حسب حالة الاستعجال
+            // لون حسب الاستعجال
             if (urgent) {
                 builder.setColor(Color.parseColor("#FFA000"));
             } else {
