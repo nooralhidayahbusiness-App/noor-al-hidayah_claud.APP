@@ -56,7 +56,8 @@ public class PrayerCountdown {
         } catch (Exception ignored) {}
     }
 
-    public static void onAlarmFire(Context context) {
+    /// ✅ يُستدعى من PrayerCountdownReceiver
+    public static void refresh(Context context) {
         try {
             String json = loadJson(context);
             if (json == null) return;
