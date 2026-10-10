@@ -317,8 +317,11 @@ class _HomeShellState extends State<HomeShell> {
         _visited.add(index);
       });
 
-  Widget _lazyTab(int i, Widget Function() build) =>
-      _visited.contains(i) ? build() : const SizedBox.shrink();
+  // ✅ TickerMode: الأنيميشن يتوقف في التبويبات المخفية (يوفر المعالج والبطارية)
+  Widget _lazyTab(int i, Widget Function() build) => TickerMode(
+        enabled: i == _index,
+        child: _visited.contains(i) ? build() : const SizedBox.shrink(),
+      );
 
   @override
   Widget build(BuildContext context) {
