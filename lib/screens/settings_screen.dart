@@ -41,6 +41,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'dailyChallenge': true,
     'quranReminder': true,
     'dailyVerse': true,
+    // ✅ جديد: تذكير الضحى وقيام الليل (معطّلان افتراضياً)
+    'duha': false,
+    'qiyam': false,
   };
 
   int _adhanBeforeMinutes = 0;
@@ -590,6 +593,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           true,
                                   onChanged: (v) =>
                                       _toggleNotif('dailyVerse', v),
+                                ),
+                                _Divider(),
+                                // ✅ جديد: تذكير صلاة الضحى
+                                _ToggleRow(
+                                  icon: Icons.wb_sunny_outlined,
+                                  title: appState.isArabic
+                                      ? 'تذكير صلاة الضحى'
+                                      : 'Duha prayer reminder',
+                                  subtitle: appState.isArabic
+                                      ? 'بعد الشروق بـ 20 دقيقة'
+                                      : '20 minutes after sunrise',
+                                  value: _notifications['duha'] ?? false,
+                                  onChanged: (v) =>
+                                      _toggleNotif('duha', v),
+                                ),
+                                _Divider(),
+                                // ✅ جديد: تذكير قيام الليل
+                                _ToggleRow(
+                                  icon: Icons.bedtime_outlined,
+                                  title: appState.isArabic
+                                      ? 'تذكير قيام الليل'
+                                      : 'Night prayer reminder',
+                                  subtitle: appState.isArabic
+                                      ? 'عند بداية الثلث الأخير من الليل'
+                                      : 'At the start of the last third of the night',
+                                  value: _notifications['qiyam'] ?? false,
+                                  onChanged: (v) =>
+                                      _toggleNotif('qiyam', v),
                                 ),
                               ],
                             ),
