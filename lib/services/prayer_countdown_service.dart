@@ -47,7 +47,11 @@ class PrayerCountdownService {
   String? _lastPayload;
   DateTime? _lastSentAt;
 
-  bool get isAvailable => !kIsWeb && Platform.isAndroid;
+  /// مفتاح التشغيل: افتراضياً مفعّل. للتجربة: --dart-define=NATIVE_COUNTDOWN=false
+  static const bool _enabled =
+      bool.fromEnvironment('NATIVE_COUNTDOWN', defaultValue: true);
+
+  bool get isAvailable => _enabled && !kIsWeb && Platform.isAndroid;
 
   /// يرسل الجدول للجزء الأصلي. يعيد true عند النجاح.
   Future<bool> sync({
