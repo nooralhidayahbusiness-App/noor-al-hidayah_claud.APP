@@ -41,6 +41,19 @@ jobs:
           storeFile=/tmp/noor-release.jks
           PROPS
 
+      # ✅ ينسخ ملفات الأذان من المجلد المرفوع بالخطأ (الاسم assets) إلى assets/audio/adhan
+      - name: Prepare adhan audio
+        run: |
+          mkdir -p assets/audio/adhan
+          for d in ./*" assets"; do
+            if [ -d "$d/audio/adhan" ]; then
+              cp -r "$d/audio/adhan/." assets/audio/adhan/
+            fi
+          done
+          rm -f assets/audio/adhan/readme.txt
+          echo "Adhan files:"
+          ls -la assets/audio/adhan
+
       - run: flutter pub get
       - run: flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons
 
