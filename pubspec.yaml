@@ -64,3 +64,5 @@ flutter:
     - assets/images/adhan_backgrounds/
     - assets/icons/owner.png
     - assets/icons/premium.png
+    # ⚠️ لا تضف هذا السطر إلا بعد رفع ملفات الأذان إلى هذا المجلد
+    - assets/audio/adhan/
