@@ -51,7 +51,11 @@ class PrayerCountdownService {
   static const bool _enabled =
       bool.fromEnvironment('NATIVE_COUNTDOWN', defaultValue: true);
 
-  bool get isAvailable => _enabled && !kIsWeb && Platform.isAndroid;
+  /// وضع آمن: يُفعَّل تلقائياً بعد انهيار سابق (يمنع تكراره)
+  bool safeMode = false;
+
+  bool get isAvailable =>
+      _enabled && !safeMode && !kIsWeb && Platform.isAndroid;
 
   /// يرسل الجدول للجزء الأصلي. يعيد true عند النجاح.
   Future<bool> sync({
