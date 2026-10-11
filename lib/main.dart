@@ -8,6 +8,7 @@ import 'screens/adhan_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/adhan_service.dart';
 import 'services/auth_service.dart';
+import 'services/crash_report.dart';
 import 'services/notification_service.dart';
 import 'services/push_service.dart';
 
@@ -53,6 +54,9 @@ void main() async {
 
   // شغّل التطبيق
   runApp(const NoorApp());
+
+  // عرض سجل آخر انهيار (إن وُجد) لتشخيص المشاكل
+  crashReport.checkAndShow(navigatorKey);
 
   // OneSignal بعد runApp
   Future.microtask(() async {
