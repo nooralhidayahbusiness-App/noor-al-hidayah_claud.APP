@@ -137,22 +137,14 @@ class _MosquesScreenState extends State<MosquesScreen> {
     );
   }
 
-  Future<void> _openInMaps(Mosque m) async {
-    final googleUrl = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1'
-      '&destination=${m.latitude},${m.longitude}',
-    );
-    final appleUrl = Uri.parse(
-      'https://maps.apple.com/?daddr=${m.latitude},${m.longitude}',
-    );
-
+  /// ✅ فتح الرابط مباشرة (بدون canLaunchUrl الذي يفشل على أندرويد 11+)
+  Future<void> _launch(Uri uri) async {
     try {
-      if (await canLaunchUrl(googleUrl)) {
-        await launchUrl(googleUrl, mode: LaunchMode.externalApplication);
-      } else if (await canLaunchUrl(appleUrl)) {
-        await launchUrl(appleUrl, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'no_app';
+      final ok =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && mounted) {
+        showAuthMessage(context, appState.tr('mosquesNoMapsApp'),
+            error: true);
       }
     } catch (_) {
       if (mounted) {
@@ -160,6 +152,100 @@ class _MosquesScreenState extends State<MosquesScreen> {
             error: true);
       }
     }
+  }
+
+  Uri _mapsPinUrl(Mosque m) => Uri.parse(
+        'https://www.google.com/maps/search/?api=1'
+        '&query=${m.latitude},${m.longitude}',
+      );
+
+  /// mode: driving | transit | walking
+  Uri _mapsRouteUrl(Mosque m, String mode) => Uri.parse(
+        'https://www.google.com/maps/dir/?api=1'
+        '&destination=${m.latitude},${m.longitude}'
+        '&travelmode=$mode',
+      );
+
+  /// ✅ قائمة الخيارات: فتح Google Maps + التوجيه (سيارة / حافلة / مشي)
+  void _openRouteSheet(Mosque m) {
+    final ar = appState.isArabic;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => Container(
+        padding: EdgeInsets.all(R.s(context, 16)),
+        decoration: const BoxDecoration(
+          color: AppColors.deepGreen,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: R.s(context, 12)),
+            Text(
+              m.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: R.f(context, 14),
+                fontWeight: FontWeight.w700,
+                color: AppColors.softGold,
+              ),
+            ),
+            SizedBox(height: R.s(context, 2)),
+            Text(
+              m.distanceText(),
+              style: TextStyle(
+                fontSize: R.f(context, 11),
+                color: AppColors.cream.withValues(alpha: 0.7),
+              ),
+            ),
+            SizedBox(height: R.s(context, 12)),
+            _RouteOption(
+              icon: Icons.map_rounded,
+              label: ar ? 'فتح في Google Maps' : 'Open in Google Maps',
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _launch(_mapsPinUrl(m));
+              },
+            ),
+            _RouteOption(
+              icon: Icons.directions_car_rounded,
+              label: ar ? 'توجيه بالسيارة' : 'Directions by car',
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _launch(_mapsRouteUrl(m, 'driving'));
+              },
+            ),
+            _RouteOption(
+              icon: Icons.directions_bus_rounded,
+              label: ar ? 'توجيه بالحافلة / النقل العام' : 'Directions by bus',
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _launch(_mapsRouteUrl(m, 'transit'));
+              },
+            ),
+            _RouteOption(
+              icon: Icons.directions_walk_rounded,
+              label: ar ? 'توجيه مشياً على الأقدام' : 'Directions on foot',
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _launch(_mapsRouteUrl(m, 'walking'));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -319,14 +405,20 @@ class _MosquesScreenState extends State<MosquesScreen> {
         backgroundColor: AppColors.deepGreen,
       ),
       children: [
-        // ✅ خريطة داكنة (CARTO) مع بديل احتياطي (OpenStreetMap)
-        TileLayer(
-          urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c', 'd'],
-          fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          maxNativeZoom: 19,
-          userAgentPackageName: 'com.nooralhidayah.noor_al_hidayah',
+        // ✅ خريطة OpenStreetMap بدون مفتاح، مع فلتر داكن يناسب التطبيق
+        // (CARTO أصبحت تتطلب مفتاح API وتعرض علامة مائية)
+        ColorFiltered(
+          colorFilter: const ColorFilter.matrix(<double>[
+            -0.2126, -0.7152, -0.0722, 0, 255,
+            -0.2126, -0.7152, -0.0722, 0, 255,
+            -0.2126, -0.7152, -0.0722, 0, 255,
+            0, 0, 0, 1, 0,
+          ]),
+          child: TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            maxNativeZoom: 19,
+            userAgentPackageName: 'com.nooralhidayah.noor_al_hidayah',
+          ),
         ),
         MarkerLayer(
           markers: [
@@ -430,7 +522,7 @@ class _MosquesScreenState extends State<MosquesScreen> {
             mosque: m,
             selected: selected,
             onTap: () => _onMosqueTap(m),
-            onNavigate: () => _openInMaps(m),
+            onNavigate: () => _openRouteSheet(m),
           ),
         );
       },
@@ -700,6 +792,62 @@ class _RadiusChip extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RouteOption extends StatelessWidget {
+  const _RouteOption({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: R.s(context, 6)),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: R.s(context, 14),
+            vertical: R.s(context, 12),
+          ),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.gold.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: AppColors.gold, size: R.s(context, 22)),
+              SizedBox(width: R.s(context, 12)),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: R.f(context, 13),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.cream,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.softGold.withValues(alpha: 0.7),
+                size: R.s(context, 18),
+              ),
+            ],
+          ),
         ),
       ),
     );
