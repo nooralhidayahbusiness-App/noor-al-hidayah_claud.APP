@@ -55,10 +55,25 @@ jobs:
           ls -la assets/audio/adhan
 
       - run: flutter pub get
-      - run: flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons
+
+      # نسخة 1: كاملة (الإشعار الدائم المخصّص مفعّل)
+      - name: Build FULL apk
+        run: flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons
+
+      - name: Save FULL apk
+        run: |
+          mkdir -p out
+          cp build/app/outputs/flutter-apk/app-release.apk out/noor-FULL.apk
+
+      # نسخة 2: آمنة (بدون الإشعار الدائم المخصّص) — لتحديد سبب الانهيار
+      - name: Build SAFE apk
+        run: flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons --dart-define=NATIVE_COUNTDOWN=false
+
+      - name: Save SAFE apk
+        run: cp build/app/outputs/flutter-apk/app-release.apk out/noor-SAFE.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: noor-al-hidayah-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: out/*.apk
           retention-days: 30
