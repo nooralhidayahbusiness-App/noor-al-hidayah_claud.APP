@@ -28,13 +28,14 @@ class NotificationService {
   bool _initialized = false;
   bool _supported = false;
 
+  /// آخر خطأ حدث أثناء الجدولة (يظهر في رسالة الاختبار)
   String lastError = '';
 
   OnPrayerTap? onPrayerTap;
   NotificationResponse? _pendingLaunchResponse;
 
-  // ✅ أيقونة الإشعار (silhouette بيضاء)
-  static const String _smallIcon = '@drawable/ic_notification';
+  // ✅ أيقونة الإشعار الصغيرة: vector أبيض صغير (res/drawable/ic_stat_prayer.xml)
+  static const String _smallIcon = '@drawable/ic_stat_prayer';
   static const String _largeIcon = '@mipmap/ic_launcher';
 
   static const _prayerIds = {
@@ -45,12 +46,16 @@ class NotificationService {
     'isha': 104,
   };
 
+  /// عدد الأيام التي تُجدول مسبقاً (اليوم + الأيام التالية)
   static const int _daysAhead = 3;
 
   static const _dailyChallengeId = 300;
   static const _quranReminderId = 301;
   static const _dailyVerseId = 302;
   static const int _ongoingId = 400;
+  // ✅ تذكير الضحى (310..) وقيام الليل (320..) — رقم لكل يوم
+  static const int _duhaId = 310;
+  static const int _qiyamId = 320;
   static const int _testAdhanId = 999;
 
   static const Color _goldColor = Color(0xFFD4AF37);
@@ -231,6 +236,7 @@ class NotificationService {
     } catch (_) {}
   }
 
+  /// ✅ جدولة بدقة عالية (alarmClock) مع بديل احتياطي (inexact)
   Future<void> _zonedScheduleSafe({
     required int id,
     required String title,
@@ -433,6 +439,7 @@ class NotificationService {
     } catch (_) {}
   }
 
+  /// معرّف إشعار الصلاة ليوم معيّن (0 = اليوم، 1 = غداً ...)
   int _prayerNotifId(String name, int dayOffset) {
     final base = _prayerIds[name] ?? 100;
     return base + (dayOffset * 10);
@@ -443,6 +450,8 @@ class NotificationService {
 
     debugPrint('[ALARM] Rescheduling ${prayers.length} prayers');
 
+    // ✅ نلغي إشعارات الصلاة والتذكيرات فقط
+    // (cancelAll كان يمسح الإشعار الدائم وإشعار الاختبار أيضاً)
     try {
       for (int d = 0; d < _daysAhead; d++) {
         for (final name in _prayerIds.keys) {
@@ -452,6 +461,10 @@ class NotificationService {
       await _plugin.cancel(_dailyChallengeId);
       await _plugin.cancel(_quranReminderId);
       await _plugin.cancel(_dailyVerseId);
+      for (int d = 0; d < _daysAhead; d++) {
+        await _plugin.cancel(_duhaId + d);
+        await _plugin.cancel(_qiyamId + d);
+      }
     } catch (_) {}
 
     final settings = await userService.loadSettings();
@@ -512,6 +525,132 @@ class NotificationService {
         hour: 7,
         minute: 0,
       );
+    }
+
+    await _scheduleDuhaAndQiyam(
+      duhaEnabled: notifs['duha'] == true,
+      qiyamEnabled: notifs['qiyam'] == true,
+    );
+  }
+
+  // ============================================================
+  // ✅ تذكير الضحى + قيام الليل (الثلث الأخير)
+  // ============================================================
+  Future<void> _scheduleDuhaAndQiyam({
+    required bool duhaEnabled,
+    required bool qiyamEnabled,
+  }) async {
+    if (!duhaEnabled && !qiyamEnabled) return;
+
+    final data = prayerState.data;
+    if (data == null) return;
+
+    final base = DateTime.now();
+    final sunrise = _parseTimeText(data.sunrise, base);
+    final fajr = _parseTimeText(data.fajr, base);
+    final maghrib = _parseTimeText(data.maghrib, base);
+    final ar = appState.isArabic;
+
+    for (int d = 0; d < _daysAhead; d++) {
+      // الضحى: بعد الشروق بـ 20 دقيقة
+      if (duhaEnabled && sunrise != null) {
+        final at = DateTime(
+          sunrise.year,
+          sunrise.month,
+          sunrise.day + d,
+          sunrise.hour,
+          sunrise.minute + 20,
+        );
+        await _scheduleReminder(
+          id: _duhaId + d,
+          title: ar ? 'صلاة الضحى' : 'Duha Prayer',
+          body: ar
+              ? 'دخل وقت صلاة الضحى — لا تفوّت ركعتين.'
+              : "Duha time has begun — don't miss two rak'ahs.",
+          at: at,
+        );
+      }
+
+      // قيام الليل: بداية الثلث الأخير = المغرب + ثلثا الليل
+      if (qiyamEnabled && maghrib != null && fajr != null) {
+        final m = DateTime(
+          maghrib.year,
+          maghrib.month,
+          maghrib.day + d,
+          maghrib.hour,
+          maghrib.minute,
+        );
+        final f = DateTime(
+          fajr.year,
+          fajr.month,
+          fajr.day + d + 1,
+          fajr.hour,
+          fajr.minute,
+        );
+        if (f.isAfter(m)) {
+          final nightMs = f.difference(m).inMilliseconds;
+          final at = m.add(Duration(milliseconds: (nightMs * 2 / 3).round()));
+          await _scheduleReminder(
+            id: _qiyamId + d,
+            title: ar ? 'قيام الليل' : 'Night Prayer',
+            body: ar
+                ? 'دخل الثلث الأخير من الليل — وقت الدعاء والاستغفار.'
+                : 'The last third of the night has begun — a time for dua and istighfar.',
+            at: at,
+          );
+        }
+      }
+    }
+  }
+
+  /// تذكير واحد في وقت محدد (دقيق إن أمكن، وإلا تقريبي)
+  Future<void> _scheduleReminder({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime at,
+  }) async {
+    if (at.isBefore(DateTime.now())) return;
+
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'daily_channel_v4',
+        appState.tr('notifChannelDaily'),
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: _smallIcon,
+        largeIcon: const DrawableResourceAndroidBitmap(_largeIcon),
+      ),
+      iOS: const DarwinNotificationDetails(),
+    );
+    final when = tz.TZDateTime.from(at, tz.local);
+
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        when,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (_) {
+      try {
+        await _plugin.zonedSchedule(
+          id,
+          title,
+          body,
+          when,
+          details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+      } catch (e) {
+        debugPrint('[ERROR] reminder $id: $e');
+      }
     }
   }
 
