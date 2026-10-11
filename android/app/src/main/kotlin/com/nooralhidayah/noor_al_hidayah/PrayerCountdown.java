@@ -13,8 +13,6 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.widget.RemoteViews;
 
-import androidx.core.app.NotificationCompat;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -22,285 +20,291 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * الإشعار الدائم المخصّص للصلاة القادمة.
+ *
+ * الحالات:
+ *  - NORMAL : أكثر من 10 دقائق للأذان  → عدّاد أخضر
+ *  - SOON   : أقل من 10 دقائق للأذان   → عدّاد برتقالي فاتح
+ *  - PASSED : بعد دخول الوقت          → عدّاد أحمر سالب (الوقت المنقضي)
+ */
 public class PrayerCountdown {
 
-    private static final String CHANNEL_ID = "native_prayer_countdown_v1";
-    private static final String CHANNEL_NAME = "Next Prayer Countdown";
-    private static final int NOTIFICATION_ID = 8888;
+    static final String CHANNEL_ID = "prayer_countdown_v2";
+    static final int NOTIFICATION_ID = 400;
+    static final String ACTION_TICK =
+            "com.nooralhidayah.noor_al_hidayah.PRAYER_COUNTDOWN_TICK";
+
     private static final String PREFS = "prayer_countdown_prefs";
-    private static final String KEY_JSON = "json";
+    private static final String KEY_JSON = "payload";
+    private static final int ALARM_REQUEST_CODE = 4001;
 
-    private static final int RC_SOON = 1;
-    private static final int RC_TIME = 2;
-    private static final int RC_AFTER = 3;
+    private static final int PHASE_NORMAL = 0;
+    private static final int PHASE_SOON = 1;
+    private static final int PHASE_PASSED = 2;
 
-    // ============ Public API ============
+    private static final int COLOR_NORMAL = Color.parseColor("#43A047"); // أخضر
+    private static final int COLOR_SOON = Color.parseColor("#FFB74D");   // برتقالي فاتح
+    private static final int COLOR_PASSED = Color.parseColor("#E53935"); // أحمر
 
+    private PrayerCountdown() {}
+
+    // ============================================================
+    // واجهة عامة
+    // ============================================================
+
+    /** يُستدعى من Flutter: يحفظ الجدول ويحدّث الإشعار. */
     public static void update(Context context, String json) {
         try {
-            JSONObject obj = new JSONObject(json);
-            saveJson(context, json);
-            render(context, obj);
-            scheduleNextAlarm(context, obj);
-        } catch (Exception e) {
-            e.printStackTrace();
+            SharedPreferences prefs =
+                    context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            prefs.edit().putString(KEY_JSON, json).apply();
+            refresh(context);
+        } catch (Throwable ignored) {
         }
     }
 
+    /** يلغي الإشعار والمنبّه. */
     public static void cancel(Context context) {
         try {
-            cancelAlarms(context);
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .edit().remove(KEY_JSON).apply();
             NotificationManager nm = (NotificationManager)
-                context.getSystemService(Context.NOTIFICATION_SERVICE);
+                    context.getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm != null) nm.cancel(NOTIFICATION_ID);
-        } catch (Exception ignored) {}
-    }
-
-    /// ✅ يُستدعى من PrayerCountdownReceiver
-    public static void refresh(Context context) {
-        try {
-            String json = loadJson(context);
-            if (json == null) return;
-            JSONObject obj = new JSONObject(json);
-            render(context, obj);
-            scheduleNextAlarm(context, obj);
-        } catch (Exception e) {
-            e.printStackTrace();
+            cancelAlarm(context);
+        } catch (Throwable ignored) {
         }
     }
 
-    // ============ Storage ============
-
-    private static void saveJson(Context context, String json) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        prefs.edit().putString(KEY_JSON, json).apply();
-    }
-
-    private static String loadJson(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_JSON, null);
-    }
-
-    // ============ Render ============
-
-    private static void render(Context context, JSONObject obj) {
+    /** يعيد حساب الحالة ويعرض الإشعار ويجدول المنبّه التالي. */
+    public static void refresh(Context context) {
         try {
-            String appName = obj.optString("appName", "Noor Al-Hidayah");
-            String labelNext = obj.optString("labelNext", "Next prayer");
-            String labelNow = obj.optString("labelNow", "Prayer time");
-            String hijri = obj.optString("hijri", "");
-            int soonMinutes = obj.optInt("soonMinutes", 10);
-            int afterMinutes = obj.optInt("afterMinutes", 30);
+            SharedPreferences prefs =
+                    context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            String text = prefs.getString(KEY_JSON, null);
+            if (text == null || text.isEmpty()) return;
 
-            JSONArray prayers = obj.optJSONArray("prayers");
-            if (prayers == null || prayers.length() == 0) return;
-
+            JSONObject root = new JSONObject(text);
+            JSONArray prayers = root.getJSONArray("prayers");
+            int soonMin = root.optInt("soonMinutes", 10);
+            int afterMin = root.optInt("afterMinutes", 30);
+            long soonMs = soonMin * 60000L;
+            long afterMs = afterMin * 60000L;
             long now = System.currentTimeMillis();
 
+            JSONObject shown = null;
+            int phase = PHASE_NORMAL;
             JSONObject next = null;
+
             for (int i = 0; i < prayers.length(); i++) {
                 JSONObject p = prayers.getJSONObject(i);
                 long t = p.getLong("t");
-                if (t + afterMinutes * 60_000L > now) {
+                if (t <= now && now < t + afterMs) {
+                    shown = p;
+                    phase = PHASE_PASSED;
+                }
+                if (t > now && next == null) {
                     next = p;
-                    break;
                 }
             }
-            if (next == null) return;
 
-            long targetTime = next.getLong("t");
-            String nameAr = next.optString("ar", "");
-            String nameEn = next.optString("en", "");
-
-            boolean isNow = now >= targetTime;
-            boolean isSoon = !isNow && (targetTime - now) <= soonMinutes * 60_000L;
-
-            String label = isNow ? labelNow : labelNext;
-
-            int color;
-            if (isNow) {
-                color = Color.parseColor("#E53935");
-            } else if (isSoon) {
-                color = Color.parseColor("#FFA000");
-            } else {
-                color = Color.parseColor("#4CAF50");
+            if (shown == null && next != null) {
+                shown = next;
+                long left = next.getLong("t") - now;
+                phase = (left <= soonMs) ? PHASE_SOON : PHASE_NORMAL;
             }
-
-            long targetElapsed = SystemClock.elapsedRealtime() + (targetTime - now);
 
             NotificationManager nm = (NotificationManager)
-                context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm != null) {
-                NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW);
-                channel.setShowBadge(false);
-                channel.setSound(null, null);
-                channel.enableVibration(false);
-                nm.createNotificationChannel(channel);
+                    context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            if (shown == null) {
+                // انتهى الجدول (لم يُفتح التطبيق منذ أيام)
+                nm.cancel(NOTIFICATION_ID);
+                return;
             }
 
-            RemoteViews smallView = new RemoteViews(
-                context.getPackageName(), R.layout.notification_prayer_small);
-            RemoteViews bigView = new RemoteViews(
-                context.getPackageName(), R.layout.notification_prayer_big);
+            ensureChannel(context, nm);
+            Notification notification = buildNotification(context, root, shown, phase);
+            nm.notify(NOTIFICATION_ID, notification);
 
-            smallView.setTextViewText(R.id.pc_app_name, appName);
-            smallView.setTextViewText(R.id.pc_label, label);
-            smallView.setTextViewText(R.id.pc_name_ar, nameAr);
-            smallView.setTextViewText(R.id.pc_name_en, nameEn);
-
-            bigView.setTextViewText(R.id.pc_app_name, appName);
-            bigView.setTextViewText(R.id.pc_label, label);
-            bigView.setTextViewText(R.id.pc_name_ar, nameAr);
-            bigView.setTextViewText(R.id.pc_name_en, nameEn);
-            if (hijri != null && !hijri.isEmpty()) {
-                bigView.setTextViewText(R.id.pc_hijri, hijri);
-            }
-
-            bigView.setTextViewText(R.id.pc_date, formatDate(now));
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                if (isNow) {
-                    smallView.setChronometerCountDown(R.id.pc_counter, false);
-                    bigView.setChronometerCountDown(R.id.pc_counter, false);
-                } else {
-                    smallView.setChronometerCountDown(R.id.pc_counter, true);
-                    bigView.setChronometerCountDown(R.id.pc_counter, true);
+            // المنبّه التالي: عند أقرب حدّ تغيير (قبل الأذان بـ10د / الأذان / نهاية الفترة)
+            long nextAlarm = Long.MAX_VALUE;
+            for (int i = 0; i < prayers.length(); i++) {
+                long t = prayers.getJSONObject(i).getLong("t");
+                long[] candidates = new long[]{
+                        t - soonMs + 1000L,
+                        t + 1000L,
+                        t + afterMs + 1000L
+                };
+                for (long c : candidates) {
+                    if (c > now && c < nextAlarm) nextAlarm = c;
                 }
             }
-            smallView.setChronometer(R.id.pc_counter, targetElapsed, null, true);
-            bigView.setChronometer(R.id.pc_counter, targetElapsed, null, true);
-
-            Intent launchIntent = context.getPackageManager()
-                .getLaunchIntentForPackage(context.getPackageName());
-            PendingIntent pendingIntent = null;
-            if (launchIntent != null) {
-                launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    flags |= PendingIntent.FLAG_IMMUTABLE;
-                }
-                pendingIntent = PendingIntent.getActivity(context, 0, launchIntent, flags);
+            if (nextAlarm != Long.MAX_VALUE) {
+                scheduleAlarm(context, nextAlarm);
             }
-
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setOngoing(true)
-                .setAutoCancel(false)
-                .setOnlyAlertOnce(true)
-                .setShowWhen(false)
-                .setContent(smallView)
-                .setCustomBigContentView(bigView)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setCategory(NotificationCompat.CATEGORY_STATUS)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setColor(color);
-
-            if (pendingIntent != null) {
-                builder.setContentIntent(pendingIntent);
-            }
-
-            if (nm != null) {
-                nm.notify(NOTIFICATION_ID, builder.build());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable ignored) {
         }
     }
 
-    private static String formatDate(long timeMs) {
+    // ============================================================
+    // بناء الإشعار
+    // ============================================================
+
+    private static Notification buildNotification(
+            Context context, JSONObject root, JSONObject prayer, int phase)
+            throws Exception {
+
+        String appName = root.optString("appName", "Noor Al-Hidayah");
+        String lang = root.optString("lang", "ar");
+        String hijri = root.optString("hijri", "");
+        boolean passed = (phase == PHASE_PASSED);
+        String label = passed
+                ? root.optString("labelNow", "Prayer time")
+                : root.optString("labelNext", "Next prayer");
+
+        String nameAr = prayer.optString("ar", "");
+        String nameEn = prayer.optString("en", "");
+        long target = prayer.getLong("t");
+
+        int color = (phase == PHASE_PASSED) ? COLOR_PASSED
+                : (phase == PHASE_SOON ? COLOR_SOON : COLOR_NORMAL);
+
+        String gregorian = formatGregorian(lang);
+
+        String pkg = context.getPackageName();
+        RemoteViews small = new RemoteViews(pkg, R.layout.notification_prayer_small);
+        RemoteViews big = new RemoteViews(pkg, R.layout.notification_prayer_big);
+
+        bindCommon(small, appName, label, nameAr, nameEn, target, color);
+        bindCommon(big, appName, label, nameAr, nameEn, target, color);
+        big.setTextViewText(R.id.pc_date, gregorian);
+        big.setTextViewText(R.id.pc_hijri, hijri);
+
+        Notification.Builder b;
+        if (Build.VERSION.SDK_INT >= 26) {
+            b = new Notification.Builder(context, CHANNEL_ID);
+        } else {
+            b = new Notification.Builder(context);
+            b.setPriority(Notification.PRIORITY_LOW);
+        }
+
+        b.setSmallIcon(R.drawable.ic_stat_prayer);
+        b.setOngoing(true);
+        b.setAutoCancel(false);
+        b.setOnlyAlertOnce(true);
+        b.setShowWhen(false);
+        b.setContentIntent(launchIntent(context));
+
+        if (Build.VERSION.SDK_INT >= 21) {
+            b.setCategory(Notification.CATEGORY_STATUS);
+            b.setVisibility(Notification.VISIBILITY_PUBLIC);
+        }
+
+        if (Build.VERSION.SDK_INT >= 24) {
+            b.setStyle(new Notification.DecoratedCustomViewStyle());
+            b.setCustomContentView(small);
+            b.setCustomBigContentView(big);
+        } else {
+            b.setContent(small);
+        }
+
+        return b.build();
+    }
+
+    private static void bindCommon(
+            RemoteViews rv, String appName, String label,
+            String nameAr, String nameEn, long target, int color) {
+
+        rv.setTextViewText(R.id.pc_app_name, appName);
+        rv.setTextViewText(R.id.pc_label, label);
+        rv.setTextViewText(R.id.pc_name_ar, nameAr);
+        rv.setTextViewText(R.id.pc_name_en, nameEn);
+
+        // العدّاد الحيّ: base = لحظة الأذان على ساعة النظام
+        long base = SystemClock.elapsedRealtime()
+                + (target - System.currentTimeMillis());
+        rv.setChronometer(R.id.pc_counter, base, null, true);
+        if (Build.VERSION.SDK_INT >= 24) {
+            rv.setChronometerCountDown(R.id.pc_counter, true);
+        }
+        rv.setTextColor(R.id.pc_counter, color);
+    }
+
+    private static String formatGregorian(String lang) {
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("EEEE, d MMM", Locale.getDefault());
-            return sdf.format(new Date(timeMs));
+            boolean ar = "ar".equals(lang);
+            Locale locale = ar
+                    ? Locale.forLanguageTag("ar-u-nu-latn")
+                    : Locale.ENGLISH;
+            SimpleDateFormat f = new SimpleDateFormat(
+                    ar ? "EEEE، d MMMM yyyy" : "EEE, d MMM yyyy", locale);
+            return f.format(new Date());
         } catch (Exception e) {
             return "";
         }
     }
 
-    // ============ Alarm scheduling ============
+    private static PendingIntent launchIntent(Context context) {
+        Intent intent = context.getPackageManager()
+                .getLaunchIntentForPackage(context.getPackageName());
+        if (intent == null) intent = new Intent();
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= 23) flags |= PendingIntent.FLAG_IMMUTABLE;
+        return PendingIntent.getActivity(context, 0, intent, flags);
+    }
 
-    private static void scheduleNextAlarm(Context context, JSONObject obj) {
+    private static void ensureChannel(Context context, NotificationManager nm) {
+        if (Build.VERSION.SDK_INT < 26) return;
+        NotificationChannel ch = new NotificationChannel(
+                CHANNEL_ID,
+                "Next Prayer Countdown",
+                NotificationManager.IMPORTANCE_LOW);
+        ch.setDescription("Persistent next prayer countdown");
+        ch.setShowBadge(false);
+        ch.setSound(null, null);
+        ch.enableVibration(false);
+        nm.createNotificationChannel(ch);
+    }
+
+    // ============================================================
+    // المنبّهات
+    // ============================================================
+
+    private static PendingIntent alarmIntent(Context context) {
+        Intent intent = new Intent(context, PrayerCountdownReceiver.class);
+        intent.setAction(ACTION_TICK);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= 23) flags |= PendingIntent.FLAG_IMMUTABLE;
+        return PendingIntent.getBroadcast(context, ALARM_REQUEST_CODE, intent, flags);
+    }
+
+    private static void scheduleAlarm(Context context, long at) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return;
+        PendingIntent pi = alarmIntent(context);
         try {
-            JSONArray prayers = obj.optJSONArray("prayers");
-            if (prayers == null || prayers.length() == 0) return;
-
-            int soonMinutes = obj.optInt("soonMinutes", 10);
-            int afterMinutes = obj.optInt("afterMinutes", 30);
-
-            long now = System.currentTimeMillis();
-
-            JSONObject next = null;
-            for (int i = 0; i < prayers.length(); i++) {
-                JSONObject p = prayers.getJSONObject(i);
-                long t = p.getLong("t");
-                if (t + afterMinutes * 60_000L > now) {
-                    next = p;
-                    break;
-                }
-            }
-            if (next == null) return;
-
-            long targetTime = next.getLong("t");
-            long soonTime = targetTime - soonMinutes * 60_000L;
-            long afterTime = targetTime + afterMinutes * 60_000L;
-
-            long triggerAt;
-            int requestCode;
-
-            if (now < soonTime) {
-                triggerAt = soonTime;
-                requestCode = RC_SOON;
-            } else if (now < targetTime) {
-                triggerAt = targetTime;
-                requestCode = RC_TIME;
+            if (Build.VERSION.SDK_INT >= 23) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
             } else {
-                triggerAt = afterTime;
-                requestCode = RC_AFTER;
+                am.setExact(AlarmManager.RTC_WAKEUP, at, pi);
             }
-
-            cancelAlarms(context);
-
-            AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            if (am == null) return;
-
-            Intent intent = new Intent(context, PrayerCountdownReceiver.class);
-            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                flags |= PendingIntent.FLAG_IMMUTABLE;
+        } catch (SecurityException e) {
+            // لا توجد صلاحية المنبّه الدقيق → منبّه تقريبي
+            if (Build.VERSION.SDK_INT >= 23) {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+            } else {
+                am.set(AlarmManager.RTC_WAKEUP, at, pi);
             }
-            PendingIntent pi = PendingIntent.getBroadcast(context, requestCode, intent, flags);
-
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi);
-                } else {
-                    am.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pi);
-                }
-            } catch (SecurityException se) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi);
-                } else {
-                    am.set(AlarmManager.RTC_WAKEUP, triggerAt, pi);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
-    private static void cancelAlarms(Context context) {
-        try {
-            AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            if (am == null) return;
-            Intent intent = new Intent(context, PrayerCountdownReceiver.class);
-            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                flags |= PendingIntent.FLAG_IMMUTABLE;
-            }
-            for (int rc : new int[]{RC_SOON, RC_TIME, RC_AFTER}) {
-                PendingIntent pi = PendingIntent.getBroadcast(context, rc, intent, flags);
-                am.cancel(pi);
-            }
-        } catch (Exception ignored) {}
+    private static void cancelAlarm(Context context) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return;
+        am.cancel(alarmIntent(context));
     }
 }
