@@ -126,14 +126,26 @@ class AdhanService {
     return null;
   }
 
-  /// ✅ الملف المدمج داخل التطبيق: `assets/audio/adhan/<id>.mp3`
+  /// ✅ الملف المدمج داخل التطبيق داخل assets/audio/adhan/
+  /// يقبل اسم الملف الأصلي من الرابط (مثل Abdul-Basit.mp3) أو <id>.mp3
   /// (إن لم يكن موجوداً يعيد null ويستمر النظام بالطرق الأخرى)
   Future<String?> _bundledAsset(String id) async {
     try {
       final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-      final full = 'assets/audio/adhan/$id.mp3';
-      if (manifest.listAssets().contains(full)) {
-        return 'audio/adhan/$id.mp3'; // AssetSource يضيف assets/ تلقائياً
+      final assets = manifest.listAssets();
+
+      final names = <String>[];
+      final reciter = adhanReciterById(id);
+      if (reciter != null) {
+        final segments = Uri.parse(reciter.mp3Url).pathSegments;
+        if (segments.isNotEmpty) names.add(segments.last);
+      }
+      names.add('$id.mp3');
+
+      for (final name in names) {
+        if (assets.contains('assets/audio/adhan/$name')) {
+          return 'audio/adhan/$name'; // AssetSource يضيف assets/ تلقائياً
+        }
       }
     } catch (_) {}
     return null;
