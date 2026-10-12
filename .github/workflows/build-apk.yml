@@ -13,12 +13,53 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ✅ يعيد ملف build.gradle.kts إلى النسخة السليمة (commit a2c9f72 — آخر بناء ناجح #135)
-      - name: Restore known-good build.gradle.kts
+      # ✅ يعيد ملفات إعدادات Gradle إلى النسخة السليمة (commit a2c9f72 — آخر بناء ناجح #135)
+      # السبب المرجّح للفشل: لصق ملف build.gradle.kts في المكان الخطأ (android/build.gradle.kts)
+      # فيُطبَّق Flutter plugin مرتين → "generateLockfiles already exists"
+      - name: Restore known-good Gradle files
         run: |
-          git show a2c9f72:android/app/build.gradle.kts > android/app/build.gradle.kts
-          echo "---- build.gradle.kts (restored) ----"
-          cat android/app/build.gradle.kts | head -25
+          for f in \
+            android/app/build.gradle.kts \
+            android/build.gradle.kts \
+            android/settings.gradle.kts \
+            android/gradle.properties \
+            android/gradle/wrapper/gradle-wrapper.properties; do
+            git show a2c9f72:$f > $f
+            echo "restored $f ($(wc -l < $f) lines)"
+          done
+
+      # ✅ يضمن أن ملفات Java في المكان الصحيح وبالمحتوى الجديد
+      - name: Prepare native Java files
+        run: |
+          JAVA_DIR=android/app/src/main/java/com/nooralhidayah/noor_al_hidayah
+          KT_DIR=android/app/src/main/kotlin/com/nooralhidayah/noor_al_hidayah
+          # لا ملفات Java داخل مجلد kotlin (تتعارض)
+          rm -f $KT_DIR/*.java $KT_DIR/*.java.txt
+          # المحتوى الجديد موجود في الملف .txt → يصبح هو الـ .java
+          if [ -f $JAVA_DIR/PrayerCountdown.java.txt ]; then
+            mv -f $JAVA_DIR/PrayerCountdown.java.txt $JAVA_DIR/PrayerCountdown.java
+          fi
+          rm -f $JAVA_DIR/PrayerCountdownReceiver.java.txt
+          # أيقونة الإشعار الصغيرة (إن لم تكن موجودة)
+          mkdir -p android/app/src/main/res/drawable
+          if [ ! -f android/app/src/main/res/drawable/ic_stat_prayer.xml ]; then
+            cat > android/app/src/main/res/drawable/ic_stat_prayer.xml << 'XMLEOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#FFFFFFFF"
+                  android:pathData="M10,2c-1.82,0 -3.53,0.5 -5,1.35C7.99,5.08 10,8.3 10,12s-2.01,6.92 -5,8.65C6.47,21.5 8.18,22 10,22c5.52,0 10,-4.48 10,-10S15.52,2 10,2z"/>
+          </vector>
+          XMLEOF
+          fi
+          echo "== java dir"; ls -la $JAVA_DIR
+          echo "== kotlin dir"; ls -la $KT_DIR
+          echo "== PrayerCountdown.java lines: $(wc -l < $JAVA_DIR/PrayerCountdown.java)"
+          grep -c "countDown" $JAVA_DIR/PrayerCountdown.java || true
 
       - uses: actions/setup-java@v4
         with:
