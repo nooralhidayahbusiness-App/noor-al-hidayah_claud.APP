@@ -204,6 +204,12 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Future<void> _updateOngoing() async {
+    // المستخدم أوقف الإشعار الدائم من الإعدادات
+    if (!await prayerCountdownService.isEnabled()) {
+      await notificationService.hideOngoingPrayer();
+      return;
+    }
+
     final data = prayerState.data;
     final hijri = appState.isArabic ? data?.hijriAr : data?.hijriEn;
 
