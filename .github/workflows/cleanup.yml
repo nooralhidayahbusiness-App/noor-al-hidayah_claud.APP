@@ -1,0 +1,76 @@
+name: Repo cleanup
+
+# يُشغَّل يدوياً فقط: Actions ← Repo cleanup ← Run workflow
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cleanup repository
+        run: |
+          set -e
+
+          # 1) نقل ملفات الأذان من المجلد المرفوع بالخطأ إلى assets/audio/adhan
+          mkdir -p assets/audio/adhan
+          for d in ./*" assets"; do
+            if [ -d "$d/audio/adhan" ]; then
+              cp -r "$d/audio/adhan/." assets/audio/adhan/
+              git rm -r -q "$d"
+              echo "moved audio from: $d"
+            fi
+          done
+          rm -f assets/audio/adhan/readme.txt
+          git add assets/audio
+
+          # 2) PrayerCountdown.java: النسخة الجديدة موجودة في ملف .txt
+          J=android/app/src/main/java/com/nooralhidayah/noor_al_hidayah
+          if [ -f "$J/PrayerCountdown.java.txt" ]; then
+            git mv -f "$J/PrayerCountdown.java.txt" "$J/PrayerCountdown.java"
+            echo "PrayerCountdown.java replaced from .txt"
+          fi
+          if [ -f "$J/PrayerCountdownReceiver.java.txt" ]; then
+            git rm -q "$J/PrayerCountdownReceiver.java.txt"
+          fi
+
+          # 3) مجلد ib/ (خطأ إملائي لمجلد lib — نسخة قديمة من push_service)
+          if [ -d ib ]; then
+            git rm -r -q ib
+            echo "removed ib/"
+          fi
+
+          # 4) صورة أيقونة إشعار قديمة غير مستخدمة (768×768)
+          if [ -f android/app/src/main/res/drawable/ic_notification.png ]; then
+            if ! grep -rq "ic_notification" lib android/app/src --include=*.dart --include=*.java --include=*.kt --include=*.xml; then
+              git rm -q android/app/src/main/res/drawable/ic_notification.png
+              echo "removed ic_notification.png"
+            fi
+          fi
+
+          # 5) نافذة تشخيص الانهيار (إن لم يعد main.dart يستخدمها)
+          if [ -f lib/services/crash_report.dart ]; then
+            if ! grep -rq "crash_report.dart" lib --include=*.dart --exclude=crash_report.dart; then
+              git rm -q lib/services/crash_report.dart
+              echo "removed crash_report.dart"
+            fi
+          fi
+
+          echo "---- status ----"
+          git status --short | head -50
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --cached --quiet; then
+            echo "Nothing to clean."
+          else
+            git commit -m "chore: repo cleanup (audio folder, java file, unused files)"
+            git push
+          fi
