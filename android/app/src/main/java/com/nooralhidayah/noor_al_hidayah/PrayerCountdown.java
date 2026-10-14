@@ -26,7 +26,7 @@ import java.util.Locale;
  * الحالات:
  *  - NORMAL : أكثر من 10 دقائق للأذان  → عدّاد أخضر
  *  - SOON   : أقل من 10 دقائق للأذان   → عدّاد برتقالي فاتح
- *  - PASSED : بعد دخول الوقت          → عدّاد أحمر سالب (الوقت المنقضي)
+ *  - PASSED : بعد دخول الوقت (10 دقائق) → عدّاد أحمر تصاعدي (الوقت المنقضي)
  */
 public class PrayerCountdown {
 
@@ -88,7 +88,7 @@ public class PrayerCountdown {
             JSONObject root = new JSONObject(text);
             JSONArray prayers = root.getJSONArray("prayers");
             int soonMin = root.optInt("soonMinutes", 10);
-            int afterMin = root.optInt("afterMinutes", 30);
+            int afterMin = root.optInt("afterMinutes", 10);
             long soonMs = soonMin * 60000L;
             long afterMs = afterMin * 60000L;
             long now = System.currentTimeMillis();
@@ -178,8 +178,10 @@ public class PrayerCountdown {
         RemoteViews small = new RemoteViews(pkg, R.layout.notification_prayer_small);
         RemoteViews big = new RemoteViews(pkg, R.layout.notification_prayer_big);
 
-        bindCommon(small, appName, label, nameAr, nameEn, target, color);
-        bindCommon(big, appName, label, nameAr, nameEn, target, color);
+        // قبل الأذان: عدّ تنازلي | بعد الأذان: عدّ تصاعدي (00:01، 00:02 ...)
+        boolean countDown = !passed;
+        bindCommon(small, appName, label, nameAr, nameEn, target, color, countDown);
+        bindCommon(big, appName, label, nameAr, nameEn, target, color, countDown);
         big.setTextViewText(R.id.pc_date, gregorian);
         big.setTextViewText(R.id.pc_hijri, hijri);
 
@@ -216,7 +218,8 @@ public class PrayerCountdown {
 
     private static void bindCommon(
             RemoteViews rv, String appName, String label,
-            String nameAr, String nameEn, long target, int color) {
+            String nameAr, String nameEn, long target, int color,
+            boolean countDown) {
 
         rv.setTextViewText(R.id.pc_app_name, appName);
         rv.setTextViewText(R.id.pc_label, label);
@@ -228,7 +231,7 @@ public class PrayerCountdown {
                 + (target - System.currentTimeMillis());
         rv.setChronometer(R.id.pc_counter, base, null, true);
         if (Build.VERSION.SDK_INT >= 24) {
-            rv.setChronometerCountDown(R.id.pc_counter, true);
+            rv.setChronometerCountDown(R.id.pc_counter, countDown);
         }
         rv.setTextColor(R.id.pc_counter, color);
     }
@@ -307,4 +310,4 @@ public class PrayerCountdown {
         if (am == null) return;
         am.cancel(alarmIntent(context));
     }
-          }
+}
