@@ -2,7 +2,7 @@ name: noor_al_hidayah
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.13.4
@@ -64,5 +64,5 @@ flutter:
     - assets/images/adhan_backgrounds/
     - assets/icons/owner.png
     - assets/icons/premium.png
-    # ⚠️ لا تضف هذا السطر إلا بعد رفع ملفات الأذان إلى هذا المجلد
+    # ملفات الأذان المدمجة (تعمل بدون إنترنت)
     - assets/audio/adhan/
