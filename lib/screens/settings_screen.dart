@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../core/app_flow.dart';
 import '../core/app_state.dart';
+import '../core/prayer_state.dart';
 import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../core/theme_state.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
+import '../services/prayer_countdown_service.dart';
 import '../services/user_service.dart';
 import '../services/verification_service.dart';
 import '../widgets/glass_card.dart';
@@ -47,6 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   };
 
   int _adhanBeforeMinutes = 0;
+  bool _ongoingEnabled = true;
 
   @override
   void initState() {
@@ -72,6 +75,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final before =
           (notifs['adhanBeforeMinutes'] as num?)?.toInt() ?? 0;
 
+      final ongoing = await prayerCountdownService.isEnabled();
       final ownerFlag = authService.isOwner;
       int pending = 0;
       if (ownerFlag) {
@@ -84,6 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _notifications = loaded;
           _adhanBeforeMinutes = before;
+          _ongoingEnabled = ongoing;
           _isOwner = ownerFlag;
           _pendingVerifications = pending;
           _loading = false;
@@ -109,6 +114,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _notifications[key] = value);
     await _saveNotifications();
     await _rescheduleNotifications();
+  }
+
+  /// ✅ تفعيل/إيقاف الإشعار الدائم للصلاة القادمة
+  Future<void> _toggleOngoing(bool value) async {
+    setState(() => _ongoingEnabled = value);
+    await prayerCountdownService.setEnabled(value);
+    if (value) {
+      final data = prayerState.data;
+      final hijri = appState.isArabic ? data?.hijriAr : data?.hijriEn;
+      await prayerCountdownService.sync(
+        today: notificationService.collectPrayerTimes(),
+        hijri: hijri,
+      );
+    }
   }
 
   Future<void> _setAdhanBefore(int minutes) async {
@@ -502,6 +521,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   onChanged: (v) =>
                                       _toggleNotif('isha', v),
                                 ),
+                                _Divider(),
+                                // ✅ جديد: الإشعار الدائم للصلاة القادمة
+                                _ToggleRow(
+                                  icon: Icons.timer_rounded,
+                                  title: appState.isArabic
+                                      ? 'إشعار الصلاة القادمة (دائم)'
+                                      : 'Next prayer countdown (persistent)',
+                                  subtitle: appState.isArabic
+                                      ? 'عدّاد حيّ في شريط الإشعارات'
+                                      : 'Live countdown in the notification bar',
+                                  value: _ongoingEnabled,
+                                  onChanged: _toggleOngoing,
+                                ),
                               ],
                             ),
                           ),
@@ -691,7 +723,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 _InfoRow(
                                   icon: Icons.info_outline_rounded,
                                   title: appState.tr('appVersion'),
-                                  trailing: '1.0.0',
+                                  trailing: '1.1.0',
                                 ),
                                 _Divider(),
                                 _InfoRow(
