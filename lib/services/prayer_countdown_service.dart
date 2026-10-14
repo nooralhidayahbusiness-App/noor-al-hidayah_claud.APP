@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/app_state.dart';
 import 'notification_service.dart';
@@ -44,6 +45,29 @@ class PrayerCountdownService {
     'isha': 'Isha',
   };
 
+  static const String _prefKey = 'ongoing_countdown_enabled';
+
+  /// هل المستخدم يريد الإشعار الدائم؟ (افتراضياً نعم)
+  Future<bool> isEnabled() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_prefKey) ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// تفعيل/إيقاف الإشعار الدائم (يُزال فوراً عند الإيقاف)
+  Future<void> setEnabled(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_prefKey, value);
+    } catch (_) {}
+    if (!value) {
+      await cancel();
+    }
+  }
+
   String? _lastPayload;
   DateTime? _lastSentAt;
 
@@ -62,6 +86,9 @@ class PrayerCountdownService {
     required List<PrayerEntry> today,
     String? hijri,
   }) async {
+    // المستخدم أوقف الإشعار الدائم → لا نعرض شيئاً (ونعتبره "تم التعامل معه")
+    if (!await isEnabled()) return true;
+
     if (!isAvailable || today.isEmpty) return false;
 
     final prayers = <Map<String, dynamic>>[];
