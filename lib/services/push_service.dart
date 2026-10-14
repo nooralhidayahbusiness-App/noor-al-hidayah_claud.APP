@@ -19,8 +19,9 @@ class PushService {
     _initialized = true;
 
     try {
-      // 1) Logging لتشخيص المشاكل
-      OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+      // 1) السجلات: تحذيرات فقط (لا تفاصيل مطوّلة في النسخة النهائية)
+      OneSignal.Debug.setLogLevel(
+          kReleaseMode ? OSLogLevel.warn : OSLogLevel.verbose);
 
       // 2) تهيئة OneSignal
       OneSignal.initialize(_oneSignalAppId);
