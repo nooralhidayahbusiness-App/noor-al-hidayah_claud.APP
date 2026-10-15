@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_flow.dart';
 import '../core/app_state.dart';
@@ -50,6 +51,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   int _adhanBeforeMinutes = 0;
   bool _ongoingEnabled = true;
+
+  /// رابط سياسة الخصوصية (صفحة GitHub Pages — انظر الشرح)
+  static const String _privacyUrl =
+      'https://nooralhidayahbusiness-app.github.io/noor-privacy/';
 
   @override
   void initState() {
@@ -139,6 +144,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _rescheduleNotifications() async {
     final prayers = notificationService.collectPrayerTimes();
     await notificationService.reschedule(prayers: prayers);
+  }
+
+  Future<void> _openPrivacy() async {
+    try {
+      await launchUrl(
+        Uri.parse(_privacyUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {}
   }
 
   Future<void> _openStore() async {
@@ -737,6 +751,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   icon: Icons.image_rounded,
                                   title: appState.tr('iconsCredit'),
                                   trailing: 'Flaticon',
+                                ),
+                                _Divider(),
+                                _NavRow(
+                                  icon: Icons.privacy_tip_outlined,
+                                  title: appState.isArabic
+                                      ? 'سياسة الخصوصية'
+                                      : 'Privacy Policy',
+                                  onTap: _openPrivacy,
                                 ),
                               ],
                             ),
