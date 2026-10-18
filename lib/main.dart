@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'core/app_state.dart';
+import 'core/font_scale.dart';
 import 'core/firebase_options.dart';
 import 'core/theme.dart';
 import 'screens/adhan_screen.dart';
@@ -42,6 +43,7 @@ void main() async {
     _safe(() => Firebase.initializeApp(options: DefaultFirebaseOptions.web)),
     _safe(() => notificationService.init()),
     _safe(() => adhanService.init()),
+    _safe(() => fontScale.load()),
   ]);
 
   // راقب تسجيل الدخول
@@ -68,17 +70,26 @@ class NoorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: appState,
+      listenable: Listenable.merge([appState, fontScale]),
       builder: (ctx, _) {
         return MaterialApp(
           navigatorKey: navigatorKey,
           title: 'نور الهداية',
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(),
-          builder: (context, child) => Directionality(
-            textDirection: appState.direction,
-            child: child!,
-          ),
+          builder: (context, child) {
+            // ✅ حجم الخط: إعداد المستخدم داخل التطبيق × إعداد النظام
+            final mq = MediaQuery.of(context);
+            final system = mq.textScaler.scale(1.0);
+            final factor = (system * fontScale.value).clamp(0.8, 1.8).toDouble();
+            return MediaQuery(
+              data: mq.copyWith(textScaler: TextScaler.linear(factor)),
+              child: Directionality(
+                textDirection: appState.direction,
+                child: child!,
+              ),
+            );
+          },
           home: const SplashScreen(),
         );
       },
