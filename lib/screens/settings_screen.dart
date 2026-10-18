@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_flow.dart';
 import '../core/app_state.dart';
+import '../core/font_scale.dart';
 import '../core/prayer_state.dart';
 import '../core/reciter_prefs.dart';
 import '../core/responsive.dart';
@@ -144,6 +145,99 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _rescheduleNotifications() async {
     final prayers = notificationService.collectPrayerTimes();
     await notificationService.reschedule(prayers: prayers);
+  }
+
+  String _fontLabel() {
+    final v = fontScale.value;
+    final ar = appState.isArabic;
+    if (v < 0.95) return ar ? 'صغير' : 'Small';
+    if (v < 1.05) return ar ? 'عادي' : 'Normal';
+    if (v < 1.2) return ar ? 'كبير' : 'Large';
+    return ar ? 'كبير جداً' : 'Extra large';
+  }
+
+  void _openFontSizePicker() {
+    final ar = appState.isArabic;
+    final labels = ar
+        ? ['صغير', 'عادي', 'كبير', 'كبير جداً']
+        : ['Small', 'Normal', 'Large', 'Extra large'];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => Container(
+        padding: EdgeInsets.all(R.s(context, 16)),
+        decoration: const BoxDecoration(
+          color: AppColors.deepGreen,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: R.s(context, 12)),
+            Text(
+              ar ? 'حجم الخط' : 'Font size',
+              style: TextStyle(
+                fontSize: R.f(context, 14),
+                fontWeight: FontWeight.w700,
+                color: AppColors.softGold,
+              ),
+            ),
+            SizedBox(height: R.s(context, 10)),
+            for (int i = 0; i < FontScale.options.length; i++)
+              Padding(
+                padding: EdgeInsets.only(bottom: R.s(context, 6)),
+                child: GestureDetector(
+                  onTap: () async {
+                    await fontScale.set(FontScale.options[i]);
+                    if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                    if (mounted) setState(() {});
+                  },
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(vertical: R.s(context, 10)),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: (fontScale.value - FontScale.options[i]).abs() <
+                              0.01
+                          ? AppColors.gold.withValues(alpha: 0.2)
+                          : Colors.black.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color:
+                            (fontScale.value - FontScale.options[i]).abs() <
+                                    0.01
+                                ? AppColors.gold
+                                : AppColors.gold.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      labels[i],
+                      style: TextStyle(
+                        fontSize: R.f(context, 13),
+                        fontWeight: FontWeight.w700,
+                        color:
+                            (fontScale.value - FontScale.options[i]).abs() <
+                                    0.01
+                                ? AppColors.gold
+                                : AppColors.cream,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _openPrivacy() async {
@@ -684,6 +778,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   title: appState.tr('language'),
                                   textValue: _currentLanguageLabel(),
                                   onTap: _openLanguagePicker,
+                                ),
+                                _Divider(),
+                                // ✅ جديد: حجم الخط
+                                _ChoiceRow(
+                                  icon: Icons.text_fields_rounded,
+                                  title: appState.isArabic
+                                      ? 'حجم الخط'
+                                      : 'Font size',
+                                  textValue: _fontLabel(),
+                                  onTap: _openFontSizePicker,
                                 ),
                                 _Divider(),
                                 _NavRow(
