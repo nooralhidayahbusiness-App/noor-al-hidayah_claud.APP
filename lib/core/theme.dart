@@ -27,6 +27,18 @@ ThemeData buildThemedAppTheme(ThemePalette palette) {
     useMaterial3: true,
     colorScheme: scheme,
     scaffoldBackgroundColor: palette.accent,
+    // ✅ خطوط أوضح: وزن أثقل قليلاً للنصوص التي لا تحدد وزنها صراحةً
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(fontWeight: FontWeight.w500),
+      bodyMedium: TextStyle(fontWeight: FontWeight.w500),
+      bodySmall: TextStyle(fontWeight: FontWeight.w500),
+      titleLarge: TextStyle(fontWeight: FontWeight.w600),
+      titleMedium: TextStyle(fontWeight: FontWeight.w600),
+      titleSmall: TextStyle(fontWeight: FontWeight.w600),
+      labelLarge: TextStyle(fontWeight: FontWeight.w600),
+      labelMedium: TextStyle(fontWeight: FontWeight.w600),
+      labelSmall: TextStyle(fontWeight: FontWeight.w600),
+    ),
   );
 }
 
