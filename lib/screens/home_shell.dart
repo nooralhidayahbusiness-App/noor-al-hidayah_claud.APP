@@ -596,7 +596,7 @@ class _BottomBar extends StatelessWidget {
       builder: (context, _) {
         final accent = themeState.palette.accentLight;
         final iconSize = R.s(context, 24);
-        final labelSize = R.f(context, 10);
+        final labelSize = R.f(context, 12.5);
         final barHeight = R.s(context, 62);
 
         final tabs = <_TabData>[
@@ -680,7 +680,7 @@ class _BottomTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = selected
         ? AppColors.gold
-        : AppColors.softGold.withValues(alpha: 0.7);
+        : AppColors.softGold.withValues(alpha: 0.88);
 
     return InkWell(
       onTap: onTap,
@@ -716,7 +716,7 @@ class _BottomTab extends StatelessWidget {
               style: TextStyle(
                 fontSize: labelSize,
                 fontWeight:
-                    selected ? FontWeight.w700 : FontWeight.w500,
+                    selected ? FontWeight.w800 : FontWeight.w700,
                 color: color,
                 height: 1.1,
               ),
