@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_flow.dart';
@@ -235,6 +236,145 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _openAdhanHelp() {
+    final ar = appState.isArabic;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetCtx) => Container(
+        padding: EdgeInsets.all(R.s(context, 16)),
+        decoration: const BoxDecoration(
+          color: AppColors.deepGreen,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                SizedBox(height: R.s(context, 12)),
+                Text(
+                  ar ? 'ضبط الأذان' : 'Adhan setup',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: R.f(context, 15),
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.softGold,
+                  ),
+                ),
+                SizedBox(height: R.s(context, 8)),
+                Text(
+                  ar
+                      ? 'بعض الهواتف (مثل Infinix وTecno وXiaomi وHuawei) توقف التطبيقات في الخلفية. نفّذ الخطوات بالترتيب:'
+                      : 'Some phones (Infinix, Tecno, Xiaomi, Huawei) stop background apps. Do these steps in order:',
+                  style: TextStyle(
+                    fontSize: R.f(context, 12.5),
+                    height: 1.6,
+                    color: AppColors.cream.withValues(alpha: 0.9),
+                  ),
+                ),
+                SizedBox(height: R.s(context, 10)),
+                _HelpButton(
+                  icon: Icons.battery_charging_full_rounded,
+                  label: ar
+                      ? '1) السماح بالعمل في الخلفية (البطارية)'
+                      : '1) Allow background activity (battery)',
+                  onTap: () async {
+                    try {
+                      await Permission.ignoreBatteryOptimizations.request();
+                    } catch (_) {}
+                  },
+                ),
+                _HelpButton(
+                  icon: Icons.notifications_active_rounded,
+                  label: ar
+                      ? '2) السماح بالإشعارات والمنبّه وملء الشاشة'
+                      : '2) Allow notifications, alarms and full-screen',
+                  onTap: () async {
+                    await notificationService.requestPermissions();
+                  },
+                ),
+                _HelpButton(
+                  icon: Icons.settings_applications_rounded,
+                  label: ar
+                      ? '3) فتح إعدادات التطبيق في النظام'
+                      : '3) Open the app settings',
+                  onTap: () async {
+                    await openAppSettings();
+                  },
+                ),
+                _HelpButton(
+                  icon: Icons.play_circle_fill_rounded,
+                  label: ar
+                      ? '4) اختبار الأذان بعد 30 ثانية'
+                      : '4) Test the Adhan in 30 seconds',
+                  onTap: () async {
+                    final ok = await notificationService.scheduleTestAdhan();
+                    if (!sheetCtx.mounted) return;
+                    Navigator.pop(sheetCtx);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          ok
+                              ? (ar
+                                  ? '✅ تم — اقفل الشاشة وانتظر 30 ثانية'
+                                  : '✅ Done — lock the screen and wait 30 seconds')
+                              : (ar
+                                  ? '❌ تعذّرت الجدولة'
+                                  : '❌ Scheduling failed'),
+                        ),
+                        backgroundColor:
+                            ok ? AppColors.emerald : Colors.redAccent,
+                        duration: const Duration(seconds: 6),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: R.s(context, 8)),
+                Container(
+                  padding: EdgeInsets.all(R.s(context, 10)),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    ar
+                        ? '• شاشة الأذان الكاملة تظهر عندما يكون الهاتف مقفلاً. وإن كان مفتوحاً فيظهر إشعار علوي.\n'
+                            '• Infinix / Tecno / Xiaomi / Huawei: افتح مدير الهاتف (Phone Master) ← التشغيل التلقائي (Autostart) ← فعّل نور الهداية. ثم معلومات التطبيق ← البطارية ← بدون قيود.\n'
+                            '• أندرويد 14 وما بعده: معلومات التطبيق ← الإشعارات ← اسمح بالإشعارات بملء الشاشة.'
+                        : '• The full Adhan screen appears when the phone is locked. If it is unlocked you get a heads-up notification.\n'
+                            '• Infinix / Tecno / Xiaomi / Huawei: open Phone Manager ▸ Autostart ▸ enable Noor Al-Hidayah. Then App info ▸ Battery ▸ Unrestricted.\n'
+                            '• Android 14+: App info ▸ Notifications ▸ allow full-screen notifications.',
+                    style: TextStyle(
+                      fontSize: R.f(context, 12),
+                      height: 1.7,
+                      color: AppColors.cream.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -690,6 +830,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ? appState.tr('themeDefault')
                                       : themeState.adhanId,
                                   onTap: _openStore,
+                                ),
+                                _Divider(),
+                                // ✅ جديد: مساعدة الأذان (للهواتف التي تمنع الخلفية)
+                                _NavRow(
+                                  icon: Icons.build_circle_outlined,
+                                  title: appState.isArabic
+                                      ? 'الأذان لا يظهر والتطبيق مغلق؟'
+                                      : 'Adhan not showing when app is closed?',
+                                  subtitle: appState.isArabic
+                                      ? 'اضبط الصلاحيات واختبر الأذان'
+                                      : 'Fix permissions and test the Adhan',
+                                  onTap: _openAdhanHelp,
                                 ),
                               ],
                             ),
@@ -1272,6 +1424,62 @@ class _InfoRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HelpButton extends StatelessWidget {
+  const _HelpButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Future<void> Function() onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: R.s(context, 6)),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: R.s(context, 14),
+            vertical: R.s(context, 12),
+          ),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.gold.withValues(alpha: 0.45),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: AppColors.gold, size: 22),
+              SizedBox(width: R.s(context, 12)),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: R.f(context, 13),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.cream,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.softGold.withValues(alpha: 0.7),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
