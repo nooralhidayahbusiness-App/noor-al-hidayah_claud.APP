@@ -5,16 +5,70 @@ import '../core/app_state.dart';
 import '../core/responsive.dart';
 import '../core/theme.dart';
 import '../data/duas.dart';
+import '../services/tts_service.dart';
+import '../widgets/read_aloud_banner.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/themed_background.dart';
 
-class DuasDetailScreen extends StatelessWidget {
+class DuasDetailScreen extends StatefulWidget {
   const DuasDetailScreen({super.key, required this.category});
 
   final DuaCategory category;
 
   @override
+  State<DuasDetailScreen> createState() => _DuasDetailScreenState();
+}
+
+class _DuasDetailScreenState extends State<DuasDetailScreen> {
+  late final String _sessionKey = 'dua:${widget.category.id}';
+  late final List<GlobalKey> _keys =
+      List.generate(widget.category.items.length, (_) => GlobalKey());
+  int _lastScrolled = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    ttsService.addListener(_onTts);
+  }
+
+  @override
+  void dispose() {
+    ttsService.removeListener(_onTts);
+    if (!ttsService.keepInBackground && ttsService.activeKey == _sessionKey) {
+      ttsService.stop();
+    }
+    super.dispose();
+  }
+
+  void _onTts() {
+    if (ttsService.activeKey != _sessionKey ||
+        ttsService.status != TtsStatus.playing) {
+      return;
+    }
+    final i = ttsService.index;
+    if (i == _lastScrolled || i < 0 || i >= _keys.length) return;
+    _lastScrolled = i;
+    final ctx = _keys[i].currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        alignment: 0.1,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  List<String> _readItems() {
+    final ar = appState.isArabic;
+    return widget.category.items
+        .map((d) => ar ? d.textAr : d.textEn)
+        .toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final category = widget.category;
     final title = appState.isArabic ? category.nameAr : category.nameEn;
 
     return Scaffold(
@@ -55,17 +109,60 @@ class DuasDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // ✅ شريط الاستماع الكبير
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  R.s(context, 16),
+                  R.s(context, 8),
+                  R.s(context, 16),
+                  0,
+                ),
+                child: ReadAloudBanner(
+                  sessionKey: _sessionKey,
+                  title: title,
+                  items: _readItems(),
+                  lang: appState.isArabic ? 'ar-SA' : 'en-US',
+                ),
+              ),
+
               Expanded(
-                child: ListView.builder(
-                  padding: EdgeInsets.all(R.s(context, 16)),
-                  itemCount: category.items.length,
-                  itemBuilder: (context, i) => Padding(
-                    padding: EdgeInsets.only(bottom: R.s(context, 12)),
-                    child: _DuaCard(
-                      dua: category.items[i],
-                      index: i + 1,
-                    ),
-                  ),
+                child: ListenableBuilder(
+                  listenable: ttsService,
+                  builder: (context, _) {
+                    final activeIndex =
+                        (ttsService.activeKey == _sessionKey &&
+                                ttsService.status != TtsStatus.idle)
+                            ? ttsService.index
+                            : -1;
+                    return ListView(
+                      padding: EdgeInsets.all(R.s(context, 16)),
+                      children: [
+                        for (int i = 0; i < category.items.length; i++)
+                          Padding(
+                            key: _keys[i],
+                            padding:
+                                EdgeInsets.only(bottom: R.s(context, 12)),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                border: Border.all(
+                                  color: i == activeIndex
+                                      ? AppColors.gold
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              child: _DuaCard(
+                                dua: category.items[i],
+                                index: i + 1,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
