@@ -16,7 +16,7 @@ class MainActivity : FlutterActivity() {
     companion object {
         /// true  = تظهر شاشة تشخيص عند أي انهيار (نسخة الاختبار)
         /// false = السلوك العادي (للنسخة النهائية)
-        const val SHOW_CRASH_SCREEN = true
+        const val SHOW_CRASH_SCREEN = false
         private const val PREFS = "crash_log"
     }
 
