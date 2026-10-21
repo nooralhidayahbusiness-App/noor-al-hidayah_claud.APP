@@ -80,17 +80,8 @@ jobs:
           mkdir -p out
           cp build/app/outputs/flutter-apk/app-release.apk "out/NoorAlHidayah-$VER.apk"
 
-      # نسخة تجريبية: نفس التطبيق لكن بدون Impeller (محرك الرسم الجديد) — لتشخيص هواتف قديمة
-      - name: Build test APK without Impeller
+      - name: Checksums
         run: |
-          sed -i 's#</application>#    <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />\n    </application>#' android/app/src/main/AndroidManifest.xml
-          grep -n "EnableImpeller" android/app/src/main/AndroidManifest.xml
-          flutter build apk --release --target-platform android-arm,android-arm64 --no-tree-shake-icons
-
-      - name: Collect test APK
-        run: |
-          VER=$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
-          cp build/app/outputs/flutter-apk/app-release.apk "out/NoorAlHidayah-$VER-skia-test.apk"
           (cd out && sha256sum *.apk > SHA256.txt && cat SHA256.txt && ls -lh)
 
       - uses: actions/upload-artifact@v4
