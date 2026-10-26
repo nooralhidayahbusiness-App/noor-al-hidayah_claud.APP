@@ -55,6 +55,30 @@ jobs:
           done
           rm -f assets/audio/adhan/readme.txt
           echo "Adhan files: $(ls assets/audio/adhan | wc -l)"
+          # مجلدات تسجيلات المشايخ (يجب أن تكون موجودة حتى لو فارغة)
+          mkdir -p assets/audio/adhkar assets/audio/duas
+          echo "Adhkar files: $(ls assets/audio/adhkar | wc -l) | Duas files: $(ls assets/audio/duas | wc -l)"
+
+      # ضغط تسجيلات المشايخ لتصغير حجم التطبيق (mono 64kbps — مناسب للكلام والتلاوة)
+      # الملفات الأصلية في المستودع لا تتغير؛ الضغط داخل البناء فقط.
+      - name: Compress sheikh audio
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg > /dev/null
+          for f in assets/audio/adhkar/*.mp3 assets/audio/duas/*.mp3; do
+            [ -f "$f" ] || continue
+            tmp="$f.tmp.mp3"
+            if ffmpeg -nostdin -loglevel error -y -i "$f" -vn -ac 1 -ar 44100 -b:a 64k "$tmp"; then
+              if [ "$(stat -c%s "$tmp")" -lt "$(stat -c%s "$f")" ]; then
+                mv -f "$tmp" "$f"
+              else
+                rm -f "$tmp"
+              fi
+            else
+              rm -f "$tmp"
+            fi
+          done
+          du -sh assets/audio/* 2>/dev/null || true
 
       # ملفات Java: النسخة الجديدة قد تكون داخل ملف .txt (حماية من أخطاء الرفع)
       - name: Prepare native files
