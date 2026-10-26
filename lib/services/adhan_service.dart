@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/adhan_reciters.dart';
+import 'sheikh_audio_service.dart';
 
 class AdhanService {
   AdhanService._();
@@ -193,6 +194,11 @@ class AdhanService {
 
   Future<bool> play({String? reciterId}) async {
     try {
+      // الأذان له الأولوية: نوقف أي تسجيل شيخ يعمل (أذكار/أدعية)
+      try {
+        await sheikhAudio.stop();
+      } catch (_) {}
+
       await _setupAudioContext();
 
       String id = reciterId ?? _currentReciterId;
