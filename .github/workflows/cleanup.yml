@@ -61,6 +61,17 @@ jobs:
             fi
           fi
 
+          # 6) قراءة الأذكار الآلية (TTS) استُبدلت بتسجيلات المشايخ
+          for f in lib/services/tts_service.dart lib/widgets/read_aloud_banner.dart; do
+            if [ -f "$f" ]; then
+              base=$(basename "$f")
+              if ! grep -rq "$base" lib --include=*.dart --exclude="$base"; then
+                git rm -q "$f"
+                echo "removed $f"
+              fi
+            fi
+          done
+
           echo "---- status ----"
           git status --short | head -50
 
