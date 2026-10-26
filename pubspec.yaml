@@ -43,7 +43,6 @@ dependencies:
   image_picker: ^1.1.2
   image: ^4.2.0
   google_mobile_ads: ^5.2.0
-  flutter_tts: ^4.2.0
 
 dev_dependencies:
   flutter_test:
@@ -67,3 +66,6 @@ flutter:
     - assets/icons/premium.png
     # ملفات الأذان المدمجة (تعمل بدون إنترنت)
     - assets/audio/adhan/
+    # تسجيلات المشايخ (أذكار الصباح/المساء وأدعية السديس)
+    - assets/audio/adhkar/
+    - assets/audio/duas/
