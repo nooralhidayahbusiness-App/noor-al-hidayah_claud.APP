@@ -57,6 +57,11 @@ jobs:
           echo "Adhan files: $(ls assets/audio/adhan | wc -l)"
           # مجلدات تسجيلات المشايخ (يجب أن تكون موجودة حتى لو فارغة)
           mkdir -p assets/audio/adhkar assets/audio/duas
+          # أي ملف أدعية السديس موجود في مكان آخر من المستودع → ننسخه إلى assets/audio/duas
+          find . -type f -iname '*sudais*.mp3' -not -path './build/*' -not -path './.git/*' -not -path './assets/audio/duas/*' -print0 | while IFS= read -r -d '' f; do
+            cp -n "$f" assets/audio/duas/
+            echo "copied duas file: $f"
+          done
           echo "Adhkar files: $(ls assets/audio/adhkar | wc -l) | Duas files: $(ls assets/audio/duas | wc -l)"
 
       # ضغط تسجيلات المشايخ لتصغير حجم التطبيق (mono 64kbps — مناسب للكلام والتلاوة)
