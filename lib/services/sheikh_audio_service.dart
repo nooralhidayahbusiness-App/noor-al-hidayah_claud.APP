@@ -15,6 +15,7 @@ class AudioOption {
     required this.label,
     required this.labelEn,
     required this.assets,
+    this.pattern,
   });
 
   final String id;
@@ -23,6 +24,10 @@ class AudioOption {
 
   /// مسارات الملفات داخل التطبيق (مثل assets/audio/adhkar/afasymorning.mp3)
   final List<String> assets;
+
+  /// اكتشاف تلقائي: أي ملف mp3 داخل التطبيق يحتوي مساره هذه الكلمة (يُرتَّب بالاسم).
+  /// يُستعمل إن لم تُوجد الملفات المحددة بأسمائها الدقيقة.
+  final String? pattern;
 }
 
 /// يشغّل تسجيلات المشايخ (أذكار الصباح والمساء، وأدعية السديس) من داخل التطبيق.
@@ -84,7 +89,7 @@ class SheikhAudioService extends ChangeNotifier {
   // ===================== التشغيل =====================
 
   /// زر التشغيل: يبدأ / يوقف مؤقتاً / يستأنف حسب الحالة.
-  Future<void> toggle(String key, List<String> assets) async {
+  Future<void> toggle(String key, AudioOption option) async {
     if (_activeKey == key) {
       if (_status == SheikhStatus.playing) {
         await pause();
@@ -95,11 +100,55 @@ class SheikhAudioService extends ChangeNotifier {
         return;
       }
     }
-    await start(key, assets);
+    await start(key, option);
   }
 
-  Future<void> start(String key, List<String> assets) async {
-    if (assets.isEmpty) return;
+  Future<Set<String>> _allAssets() async {
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      return manifest.listAssets().toSet();
+    } catch (_) {
+      return <String>{};
+    }
+  }
+
+  /// يحدّد الملفات الفعلية الموجودة داخل التطبيق لهذا الخيار.
+  Future<List<String>> _resolve(AudioOption option, Set<String> all) async {
+    final listed = option.assets.where(all.contains).toList();
+    if (listed.isNotEmpty && listed.length == option.assets.length) {
+      return listed;
+    }
+    final p = option.pattern?.toLowerCase();
+    if (p != null && p.isNotEmpty) {
+      final found = all
+          .where((a) =>
+              a.toLowerCase().endsWith('.mp3') && a.toLowerCase().contains(p))
+          .toList()
+        ..sort();
+      if (found.isNotEmpty) return found;
+    }
+    return listed;
+  }
+
+  String _summary(Set<String> all) {
+    int c(String prefix) => all.where((a) => a.startsWith(prefix)).length;
+    return 'الموجود في التطبيق: أذان ${c('assets/audio/adhan/')}، '
+        'أذكار ${c('assets/audio/adhkar/')}، '
+        'أدعية ${c('assets/audio/duas/')}';
+  }
+
+  Future<void> start(String key, AudioOption option) async {
+    final all = await _allAssets();
+    final assets = await _resolve(option, all);
+    if (assets.isEmpty) {
+      _errorKey = key;
+      _error = 'لم يُعثر على الملفات الصوتية لهذا القسم داخل التطبيق. '
+          '${_summary(all)}.';
+      _status = SheikhStatus.idle;
+      _activeKey = null;
+      notifyListeners();
+      return;
+    }
 
     final token = ++_token;
     _activeKey = key;
@@ -244,6 +293,7 @@ const List<AudioOption> kSudaisDuasOptions = [
     id: 'sudais',
     label: 'الشيخ عبد الرحمن السديس',
     labelEn: 'Sheikh Abdul Rahman Al-Sudais',
+    pattern: 'sudais',
     assets: [
       'assets/audio/duas/01sudaisiduas.mp3',
       'assets/audio/duas/02sudaisiduas.mp3',
