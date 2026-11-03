@@ -53,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   int _adhanBeforeMinutes = 0;
   bool _ongoingEnabled = true;
+  TimeOfDay _verseTime = const TimeOfDay(hour: 7, minute: 0);
 
   /// رابط سياسة الخصوصية (صفحة GitHub Pages — انظر الشرح)
   static const String _privacyUrl =
@@ -83,6 +84,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           (notifs['adhanBeforeMinutes'] as num?)?.toInt() ?? 0;
 
       final ongoing = await prayerCountdownService.isEnabled();
+      final verseTime = await notificationService.verseTime();
       final ownerFlag = authService.isOwner;
       int pending = 0;
       if (ownerFlag) {
@@ -96,6 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _notifications = loaded;
           _adhanBeforeMinutes = before;
           _ongoingEnabled = ongoing;
+          _verseTime = verseTime;
           _isOwner = ownerFlag;
           _pendingVerifications = pending;
           _loading = false;
@@ -293,6 +296,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 SizedBox(height: R.s(context, 10)),
+                FutureBuilder<int>(
+                  future: notificationService.pendingCount(),
+                  builder: (context, snap) => Container(
+                    padding: EdgeInsets.all(R.s(context, 10)),
+                    margin: EdgeInsets.only(bottom: R.s(context, 8)),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      ar
+                          ? 'التنبيهات المجدولة الآن: ${snap.data ?? '...'}  (يجب أن تكون أكثر من 0)'
+                          : 'Scheduled alerts now: ${snap.data ?? '...'}  (should be above 0)',
+                      style: TextStyle(
+                        fontSize: R.f(context, 12.5),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                  ),
+                ),
+                _HelpButton(
+                  icon: Icons.refresh_rounded,
+                  label: ar
+                      ? '0) إعادة جدولة الأذان الآن'
+                      : '0) Reschedule the Adhan now',
+                  onTap: () async {
+                    await notificationService.requestPermissions();
+                    await notificationService.reschedule(
+                      prayers: notificationService.collectPrayerTimes(),
+                    );
+                    final n = await notificationService.pendingCount();
+                    if (!sheetCtx.mounted) return;
+                    Navigator.pop(sheetCtx);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          ar
+                              ? 'تمت الجدولة — عدد التنبيهات: $n'
+                              : 'Done — scheduled alerts: $n',
+                        ),
+                        backgroundColor:
+                            n > 0 ? AppColors.emerald : Colors.redAccent,
+                        duration: const Duration(seconds: 6),
+                      ),
+                    );
+                  },
+                ),
                 _HelpButton(
                   icon: Icons.battery_charging_full_rounded,
                   label: ar
@@ -376,6 +428,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _pickVerseTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _verseTime,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _verseTime = picked);
+    await notificationService.setVerseTime(picked);
+    await _rescheduleNotifications();
+  }
+
+  Future<void> _previewVerse() async {
+    await notificationService.requestPermissions();
+    await notificationService.showVerseNow();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          appState.isArabic
+              ? '📖 ظهرت آية اليوم في الإشعارات'
+              : '📖 Verse of the day sent to notifications',
+        ),
+        backgroundColor: AppColors.emerald,
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -885,6 +965,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           true,
                                   onChanged: (v) =>
                                       _toggleNotif('dailyVerse', v),
+                                ),
+                                _Divider(),
+                                // ✅ وقت إشعار آية اليوم
+                                _ChoiceRow(
+                                  icon: Icons.schedule_rounded,
+                                  title: appState.isArabic
+                                      ? 'وقت آية اليوم'
+                                      : 'Verse of the day time',
+                                  textValue: _verseTime.format(context),
+                                  onTap: _pickVerseTime,
+                                ),
+                                _Divider(),
+                                // ✅ معاينة الإشعار الآن
+                                _NavRow(
+                                  icon: Icons.visibility_rounded,
+                                  title: appState.isArabic
+                                      ? 'معاينة آية اليوم الآن'
+                                      : 'Preview the verse now',
+                                  onTap: _previewVerse,
                                 ),
                                 _Divider(),
                                 // ✅ جديد: تذكير صلاة الضحى
