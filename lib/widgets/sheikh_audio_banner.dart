@@ -84,12 +84,12 @@ class _SheikhAudioBannerState extends State<SheikhAudioBanner> {
         final active = sheikhAudio.activeKey == widget.sessionKey;
         final playing = active && sheikhAudio.status == SheikhStatus.playing;
         final paused = active && sheikhAudio.status == SheikhStatus.paused;
-        final multi = selected.assets.length > 1;
+        final multi = selected.assets.length > 1 || selected.pattern != null;
         final label = ar ? selected.label : selected.labelEn;
         final hasError = sheikhAudio.errorKey == widget.sessionKey &&
             (sheikhAudio.error ?? '').isNotEmpty;
 
-        final part = (active && multi)
+        final part = (active && multi && sheikhAudio.total > 1)
             ? (ar
                 ? ' — الجزء ${sheikhAudio.index + 1} من ${sheikhAudio.total}'
                 : ' — Part ${sheikhAudio.index + 1} of ${sheikhAudio.total}')
@@ -137,7 +137,7 @@ class _SheikhAudioBannerState extends State<SheikhAudioBanner> {
                   // زر التشغيل الكبير
                   GestureDetector(
                     onTap: () =>
-                        sheikhAudio.toggle(widget.sessionKey, selected.assets),
+                        sheikhAudio.toggle(widget.sessionKey, selected),
                     child: Container(
                       width: 56,
                       height: 56,
@@ -189,7 +189,7 @@ class _SheikhAudioBannerState extends State<SheikhAudioBanner> {
                       ],
                     ),
                   ),
-                  if (active && multi)
+                  if (active && multi && sheikhAudio.total > 1)
                     IconButton(
                       tooltip: ar ? 'الجزء السابق' : 'Previous part',
                       onPressed: sheikhAudio.previous,
@@ -197,7 +197,7 @@ class _SheikhAudioBannerState extends State<SheikhAudioBanner> {
                       color: AppColors.gold,
                       iconSize: 30,
                     ),
-                  if (active && multi)
+                  if (active && multi && sheikhAudio.total > 1)
                     IconButton(
                       tooltip: ar ? 'الجزء التالي' : 'Next part',
                       onPressed: sheikhAudio.next,
