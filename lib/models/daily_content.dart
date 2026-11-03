@@ -48,14 +48,19 @@ class DailyContent {
   final List<HadithEntry> hadiths;
   final List<QuranEntry> duas;
 
-  static int get _day {
-    final n = DateTime.now();
-    return DateTime.utc(n.year, n.month, n.day)
+  /// رقم اليوم (منذ 1 يناير 2024) لتاريخ معيّن
+  static int dayIndex(DateTime date) {
+    return DateTime.utc(date.year, date.month, date.day)
         .difference(DateTime.utc(2024, 1, 1))
         .inDays;
   }
 
+  static int get _day => dayIndex(DateTime.now());
+
   QuranEntry get verseToday => verses[_day % verses.length];
   HadithEntry get hadithToday => hadiths[(_day + 7) % hadiths.length];
   QuranEntry get duaToday => duas[(_day + 13) % duas.length];
+
+  /// آية يوم معيّن (تُستعمل لجدولة إشعارات الأيام القادمة)
+  QuranEntry verseFor(DateTime date) => verses[dayIndex(date) % verses.length];
 }
