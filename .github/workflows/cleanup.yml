@@ -72,6 +72,19 @@ jobs:
             fi
           done
 
+          # 7) ملفات أدعية السديس: ننقلها كلها إلى assets/audio/duas
+          mkdir -p assets/audio/duas
+          find . -type f -iname '*sudais*.mp3' -not -path './build/*' -not -path './.git/*' -not -path './assets/audio/duas/*' -print0 | while IFS= read -r -d '' f; do
+            dest="assets/audio/duas/$(basename "$f")"
+            if [ -e "$dest" ]; then
+              git rm -q "$f"
+            else
+              git mv "$f" "$dest"
+            fi
+            echo "moved duas file: $f"
+          done
+          git add assets/audio/duas 2>/dev/null || true
+
           echo "---- status ----"
           git status --short | head -50
 
