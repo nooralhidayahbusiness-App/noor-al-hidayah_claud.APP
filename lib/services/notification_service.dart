@@ -665,4 +665,273 @@ class NotificationService {
           _verseBaseId + d,
           title,
           v.text,
-          tz.TZDateTime.from(at, tz.l
+          tz.TZDateTime.from(at, tz.local),
+          _verseDetails(v.text, title, ref),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+      } catch (e) {
+        debugPrint('[VERSE] schedule failed: $e');
+      }
+    }
+  }
+
+  /// معاينة: يعرض آية اليوم الآن (لتجربة شكل الإشعار)
+  Future<void> showVerseNow() async {
+    if (!_supported) return;
+    try {
+      final content = await DailyContentService.load();
+      final v = content.verseFor(DateTime.now());
+      final title = appState.isArabic ? '📖 آية اليوم' : '📖 Verse of the Day';
+      final ref = appState.isArabic
+          ? '${v.surahAr} • الآية ${v.ayah}'
+          : '${v.surahEn} • ${v.ayah}';
+      await _plugin.show(
+        _verseNowId,
+        title,
+        v.text,
+        _verseDetails(v.text, title, ref),
+      );
+    } catch (e) {
+      debugPrint('[VERSE] preview failed: $e');
+    }
+  }
+
+  // ============================================================
+  // ✅ تذكير الضحى + قيام الليل (الثلث الأخير)
+  // ============================================================
+  Future<void> _scheduleDuhaAndQiyam({
+    required bool duhaEnabled,
+    required bool qiyamEnabled,
+  }) async {
+    if (!duhaEnabled && !qiyamEnabled) return;
+
+    final data = prayerState.data;
+    if (data == null) return;
+
+    final base = DateTime.now();
+    final sunrise = _parseTimeText(data.sunrise, base);
+    final fajr = _parseTimeText(data.fajr, base);
+    final maghrib = _parseTimeText(data.maghrib, base);
+    final ar = appState.isArabic;
+
+    for (int d = 0; d < _daysAhead; d++) {
+      // الضحى: بعد الشروق بـ 20 دقيقة
+      if (duhaEnabled && sunrise != null) {
+        final at = DateTime(
+          sunrise.year,
+          sunrise.month,
+          sunrise.day + d,
+          sunrise.hour,
+          sunrise.minute + 20,
+        );
+        await _scheduleReminder(
+          id: _duhaId + d,
+          title: ar ? 'صلاة الضحى' : 'Duha Prayer',
+          body: ar
+              ? 'دخل وقت صلاة الضحى — لا تفوّت ركعتين.'
+              : "Duha time has begun — don't miss two rak'ahs.",
+          at: at,
+        );
+      }
+
+      // قيام الليل: بداية الثلث الأخير = المغرب + ثلثا الليل
+      if (qiyamEnabled && maghrib != null && fajr != null) {
+        final m = DateTime(
+          maghrib.year,
+          maghrib.month,
+          maghrib.day + d,
+          maghrib.hour,
+          maghrib.minute,
+        );
+        final f = DateTime(
+          fajr.year,
+          fajr.month,
+          fajr.day + d + 1,
+          fajr.hour,
+          fajr.minute,
+        );
+        if (f.isAfter(m)) {
+          final nightMs = f.difference(m).inMilliseconds;
+          final at = m.add(Duration(milliseconds: (nightMs * 2 / 3).round()));
+          await _scheduleReminder(
+            id: _qiyamId + d,
+            title: ar ? 'قيام الليل' : 'Night Prayer',
+            body: ar
+                ? 'دخل الثلث الأخير من الليل — وقت الدعاء والاستغفار.'
+                : 'The last third of the night has begun — a time for dua and istighfar.',
+            at: at,
+          );
+        }
+      }
+    }
+  }
+
+  /// تذكير واحد في وقت محدد (دقيق إن أمكن، وإلا تقريبي)
+  Future<void> _scheduleReminder({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime at,
+  }) async {
+    if (at.isBefore(DateTime.now())) return;
+
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'daily_channel_v4',
+        appState.tr('notifChannelDaily'),
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: _smallIcon,
+        largeIcon: const DrawableResourceAndroidBitmap(_largeIcon),
+      ),
+      iOS: const DarwinNotificationDetails(),
+    );
+    final when = tz.TZDateTime.from(at, tz.local);
+
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        when,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (_) {
+      try {
+        await _plugin.zonedSchedule(
+          id,
+          title,
+          body,
+          when,
+          details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+      } catch (e) {
+        debugPrint('[ERROR] reminder $id: $e');
+      }
+    }
+  }
+
+  Future<void> _schedulePrayer({
+    required int id,
+    required String name,
+    required DateTime at,
+    required DateTime notifyAt,
+    required int beforeMin,
+  }) async {
+    final prayerName = appState.tr(name);
+    final title = beforeMin == 0
+        ? '${appState.tr('notifAdhanNow')} · $prayerName'
+        : '${appState.tr('notifAdhanBefore')} $beforeMin ${appState.tr('minutes')} · $prayerName';
+    final body = appState.tr('notifAdhanBody');
+    final payload = '$name|${at.millisecondsSinceEpoch}';
+
+    try {
+      await _zonedScheduleSafe(
+        id: id,
+        title: title,
+        body: body,
+        when: tz.TZDateTime.from(notifyAt, tz.local),
+        details: _prayerDetails(color: _goldColor),
+        payload: payload,
+      );
+      debugPrint('[ALARM] ✅ $name at $notifyAt');
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('[ERROR] $name: $e');
+    }
+  }
+
+  Future<void> _scheduleDaily({
+    required int id,
+    required String title,
+    required String body,
+    required int hour,
+    required int minute,
+  }) async {
+    final now = DateTime.now();
+    var first = DateTime(now.year, now.month, now.day, hour, minute);
+    if (first.isBefore(now)) first = first.add(const Duration(days: 1));
+
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(first, tz.local),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_channel_v4',
+            appState.tr('notifChannelDaily'),
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            icon: _smallIcon,
+            largeIcon: const DrawableResourceAndroidBitmap(_largeIcon),
+          ),
+          iOS: const DarwinNotificationDetails(),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (e) {
+      debugPrint('[ERROR] Daily ($id): $e');
+    }
+  }
+
+  List<PrayerEntry> collectPrayerTimes() {
+    final list = <PrayerEntry>[];
+    final data = prayerState.data;
+    if (data == null) return list;
+
+    try {
+      final now = DateTime.now();
+      void add(String key, String value) {
+        final parsed = _parseTimeText(value, now);
+        if (parsed != null) list.add(PrayerEntry(key, parsed));
+      }
+
+      add('fajr', data.fajr);
+      add('dhuhr', data.dhuhr);
+      add('asr', data.asr);
+      add('maghrib', data.maghrib);
+      add('isha', data.isha);
+    } catch (_) {}
+
+    return list;
+  }
+
+  DateTime? _parseTimeText(String text, DateTime day) {
+    try {
+      final isAm = text.contains('ص') || text.toUpperCase().contains('AM');
+      final isPm = text.contains('م') || text.toUpperCase().contains('PM');
+      final cleaned = text
+          .replaceAll('ص', '')
+          .replaceAll('م', '')
+          .replaceAll('AM', '')
+          .replaceAll('PM', '')
+          .replaceAll('am', '')
+          .replaceAll('pm', '')
+          .trim();
+      final parts = cleaned.split(':');
+      if (parts.length < 2) return null;
+      var h = int.tryParse(parts[0]) ?? 0;
+      final m = int.tryParse(parts[1]) ?? 0;
+      if (isPm && h < 12) h += 12;
+      if (isAm && h == 12) h = 0;
+      return DateTime(day.year, day.month, day.day, h, m);
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+final notificationService = NotificationService.instance;
