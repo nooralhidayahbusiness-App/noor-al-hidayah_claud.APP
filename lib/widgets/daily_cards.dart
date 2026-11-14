@@ -9,6 +9,7 @@ import '../models/daily_content.dart';
 import '../services/daily_content_service.dart';
 import 'auth_widgets.dart';
 import 'glass_card.dart';
+import 'voice_dhikr_card.dart';
 
 /// Verse of the day, hadith of the day and dua of the day.
 ///
@@ -26,6 +27,17 @@ class _DailyContentSectionState extends State<DailyContentSection> {
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // ✅ بطاقة «بصوتك» — بين الدوائر وآية اليوم
+        const VoiceDhikrCard(),
+        const SizedBox(height: 16),
+        _buildDaily(context),
+      ],
+    );
+  }
+
+  Widget _buildDaily(BuildContext context) {
     return FutureBuilder<DailyContent>(
       future: _future,
       builder: (context, snapshot) {
